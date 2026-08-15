@@ -1,0 +1,74 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "devices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "score.total", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "devices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "brand", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "devices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "priceSummary.latest", "order": "ASCENDING" },
+        { "fieldPath": "score.value", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "price_history",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "deviceId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "price_alerts",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "targetPriceUsd", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "devices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "embedding",
+          "vectorConfig": { "dimension": 768, "flat": {} }
+        }
+      ]
+    },
+    {
+      "collectionGroup": "device_embeddings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "embedding",
+          "vectorConfig": { "dimension": 768, "flat": {} }
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "devices",
+      "fieldPath": "embedding",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION" },
+        { "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" }
+      ]
+    }
+  ]
+}

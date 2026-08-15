@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Staff roles — mirrored from Firebase Auth custom claims
+    // ({ admin: true } / { editor: true } / { roles.admin|roles.editor }).
+    function isStaff() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.editor == true ||
+        request.auth.token.roles.admin == true ||
+        request.auth.token.roles.editor == true
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.roles.admin == true
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Public read catalog — zero auth friction for indexing + SSR.
+    // Staff (admin/editor) may author and update devices; only admins may
+    // delete. The scrape/embedding pipeline writes via the Admin SDK.
+    // ------------------------------------------------------------------
+    match /devices/{deviceId} {
+      allow read: if true;
+      allow create: if isStaff();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /devices/{deviceId}/variants/{variantId} {
+      allow read: if true;
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /devices/{deviceId}/embeddings/{vectorId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /price_history/{variantId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Carrier band map is a static dataset — read-only, public.
+    match /carrier_bands/{bandId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // On-demand fallback scrape queue.
+    // Public enqueue is rate-limited to 1 per 60s per identity + capped
+    // document size. Only the scraping pipeline may transition state.
+    // ------------------------------------------------------------------
+    match /scrape_jobs/{jobId} {
+      allow create: if isSignedIn() && request.resource.data.type == 'on-demand';
+      allow read: if isSignedIn();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Immutable admin audit trail — appended via the Admin SDK, never
+    // updated or deleted. Staff can read it from the dashboard.
+    // ------------------------------------------------------------------
+    match /audit_logs/{entryId} {
+      allow read: if isStaff();
+      allow create: if isStaff() && request.resource.data.action is string;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Price alerts — fully private per-user.
+    // ------------------------------------------------------------------
+    match /price_alerts/{userId} {
+      allow read, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
+    }
+
+    // ------------------------------------------------------------------
+    // User profiles — self-editable, FCM token sync from functions.
+    // ------------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if true;
+      allow update: if isOwner(userId) && request.resource.data.diff(user).keys().hasOnly([
+        'fcmTokens', 'displayName', 'photoUrl', 'priceAlertCount'
+      ]);
+      allow create: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // Embedded review summaries are append-only pipeline artifacts.
+    match /review_summaries/{deviceId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

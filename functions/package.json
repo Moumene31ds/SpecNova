@@ -1,0 +1,30 @@
+{
+  "name": "specnova-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SpecNova background pipeline: scraping, Gemini normalization, price ingestion, embeddings, FCM.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "npm run build && firebase deploy --only functions"
+  },
+  "dependencies": {
+    "@crawlee/playwright": "^3.13.0",
+    "@genkit-ai/googleai": "^1.1.0",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.3.1",
+    "genkit": "^1.1.0",
+    "playwright": "^1.49.1",
+    "sharp": "^0.33.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2"
+  }
+}

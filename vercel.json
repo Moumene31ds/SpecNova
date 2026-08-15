@@ -1,0 +1,53 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scrape",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/prices",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/embeddings",
+      "schedule": "15 2 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "X-Accel-Buffering", "value": "no" }
+      ]
+    },
+    {
+      "source": "/phone/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/compare/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=60, stale-while-revalidate=600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=60, stale-while-revalidate=600"
+        }
+      ]
+    }
+  ],
+  "regions": ["iad1"]
+}
