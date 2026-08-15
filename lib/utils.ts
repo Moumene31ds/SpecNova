@@ -52,9 +52,12 @@ export function classNamesOfDevice(device: {
 }
 
 export function absoluteUrl(path: string): string {
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  const base = configured
+    ? configured
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
   return new URL(path, base).toString();
 }
 
