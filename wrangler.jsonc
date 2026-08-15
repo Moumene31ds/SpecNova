@@ -11,12 +11,6 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "specnova"
-    }
-  ],
   "r2_buckets": [
     // Optional: uncomment to enable ISR/incremental-cache persistence.
     // Create the bucket once:  npx wrangler r2 bucket create specnova-cache
