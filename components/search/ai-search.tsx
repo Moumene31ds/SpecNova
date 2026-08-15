@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Loader2, Search, Sparkles, Zap } from "lucide-react";
 import type { AiSearchResult } from "@/actions/search";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 type Hit = {
   device: {
@@ -30,18 +31,17 @@ interface AiSearchProps {
   defaultQuery?: string;
 }
 
-/**
- * Hero AI live search: debounces keystrokes, runs the hybrid vector
- * search server action, and previews ranked results with brand-lit glows.
- * Falls back to local lexical search when the live index is unreachable.
- */
 export function AiSearch({
   placeholder = "Search any device ever made…",
   initialResults = [],
   showFallbackCta = true,
   defaultQuery,
 }: AiSearchProps) {
+  const t = useTranslations("search");
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
+
   const [query, setQuery] = React.useState(defaultQuery ?? "");
   const [results, setResults] = React.useState<Hit[]>(initialResults);
   const [open, setOpen] = React.useState(false);
@@ -69,7 +69,6 @@ export function AiSearch({
       setLatency(res.latencyMs);
       setOpen(true);
     } catch {
-      // Live index unavailable -> local lexical fallback.
       const { localSearch } = await import("@/lib/search/local-search");
       const { getDevCatalog } = await import("@/lib/dev-data");
       const hits = localSearch(trimmed, getDevCatalog(), 8);
@@ -90,7 +89,6 @@ export function AiSearch({
     };
   }, [query, runSearch]);
 
-  // React to a `?q=` change while staying mounted (soft navigation).
   React.useEffect(() => {
     if (defaultQuery) setQuery(defaultQuery);
   }, [defaultQuery]);
@@ -100,8 +98,8 @@ export function AiSearch({
     if (!hit) return;
     setOpen(false);
     setQuery("");
-    router.push(`/phone/${hit.device.slug}`);
-  }, [results, router]);
+    router.push(`/${locale}/phone/${hit.device.slug}`);
+  }, [results, router, locale]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -113,7 +111,7 @@ export function AiSearch({
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (results[activeIndex]) navigate(activeIndex);
-      else if (query.trim()) router.push(`/search?q=${encodeURIComponent(query)}`);
+      else if (query.trim()) router.push(`/${locale}/search?q=${encodeURIComponent(query)}`);
     } else if (e.key === "Escape") {
       setOpen(false);
     }
@@ -137,11 +135,11 @@ export function AiSearch({
           onFocus={() => results.length > 0 && setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 160)}
           placeholder={placeholder}
-          aria-label="AI search devices"
+          aria-label={t("aiSearchPlaceholder")}
           className="h-14 w-full rounded-2xl border border-border bg-card/80 pl-12 pr-4 font-mono text-sm text-foreground shadow-[0_0_40px_hsl(var(--glow-primary)/0.08)] outline-none backdrop-blur-xl transition-all placeholder:text-muted-foreground focus:border-ring focus:shadow-[0_0_48px_hsl(var(--glow-primary)/0.2)]"
         />
         <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
-          {loading ? "Embedding…" : "AI · vector search"}
+          {loading ? t("embedding") : t("aiVectorSearch")}
         </div>
       </div>
 
@@ -161,18 +159,17 @@ export function AiSearch({
                   <Sparkles className="h-6 w-6 text-neon-cyan" />
                 </div>
                 <div>
-                  <p className="font-medium">Not in the index — yet.</p>
+                  <p className="font-medium">{t("notInIndex")}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    SpecNova&apos;s Zero-Missing engine will scrape it live
-                    in ~3 seconds.
+                    {t("requestScrape")}
                   </p>
                 </div>
                 {showFallbackCta && (
                   <Link
-                    href={`/search?q=${encodeURIComponent(query)}`}
+                    href={`/${locale}/search?q=${encodeURIComponent(query)}`}
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
-                    <Zap className="h-4 w-4" /> Request on-demand scrape
+                    <Zap className="h-4 w-4" /> {t("requestScrape")}
                   </Link>
                 )}
               </div>
@@ -185,7 +182,7 @@ export function AiSearch({
                     ) : (
                       <Sparkles className="h-3 w-3 text-neon-cyan" />
                     )}
-                    {usedFallback ? "Local index preview" : "Semantic matches"}
+                    {usedFallback ? t("localPreview") : t("semanticMatches")}
                   </span>
                   {latency !== null && (
                     <span className="font-mono text-[11px] text-muted-foreground">
@@ -233,10 +230,10 @@ export function AiSearch({
                   ))}
                 </ul>
                 <button
-                  onMouseDown={() => router.push(`/search?q=${encodeURIComponent(query)}`)}
+                  onMouseDown={() => router.push(`/${locale}/search?q=${encodeURIComponent(query)}`)}
                   className="flex w-full items-center justify-center gap-1.5 border-t border-border/60 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Open full AI search <ArrowRight className="h-3 w-3" />
+                  {t("openFullSearch")} <ArrowRight className="h-3 w-3" />
                 </button>
               </div>
             )}

@@ -2,40 +2,79 @@ import { NextRequest, NextResponse } from "next/server";
 import { authMiddleware } from "next-firebase-auth-edge";
 import { authConfig, isAuthConfigValid } from "@/lib/firebase/auth-config";
 import { hasAdminClaim, hasEditorClaim } from "@/lib/firebase/roles";
-
-/**
- * Edge middleware.
- *
- * 1. Session management — verifies the signed session cookie, refreshes
- *    near-expiry ID tokens, and stamps `x-firebase-uid` / `x-firebase-email`
- *    for downstream server actions & routes. The `loginPath` (`/api/session`)
- *    and `logoutPath` (`/api/signout`) endpoints exchange the Firebase ID
- *    token for an HttpOnly session cookie.
- *
- * 2. Admin guard — requests under `/admin/*` require a verified session whose
- *    custom claims include `admin` or `editor`:
- *      - anonymous / invalid token  -> redirect to `/sign-in?redirect=...`
- *      - signed in but no role      -> redirect to `/`
- *      - admin with MFA enforcement -> optional `REQUIRE_ADMIN_MFA=true`
- *        blocks sessions that were not completed with a TOTP second factor.
- *
- * Data access itself is still enforced by Firestore Security Rules + App Check.
- */
+import { locales, defaultLocale } from "@/lib/i18n";
 
 function isAdminPath(pathname: string) {
-  return pathname === "/admin" || pathname.startsWith("/admin/");
+  const pathWithoutLocale = stripLocale(pathname);
+  return pathWithoutLocale === "/admin" || pathWithoutLocale.startsWith("/admin/");
+}
+
+function stripLocale(pathname: string): string {
+  for (const locale of locales) {
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(locale.length + 1) || "/";
+    }
+  }
+  return pathname;
+}
+
+function isApiRoute(pathname: string): boolean {
+  return pathname.startsWith("/api/");
+}
+
+function getLocaleFromRequest(request: NextRequest): string {
+  const pathname = request.nextUrl.pathname;
+  for (const locale of locales) {
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) {
+      return locale;
+    }
+  }
+  const acceptLanguage = request.headers.get("accept-language") ?? "";
+  for (const locale of locales) {
+    if (acceptLanguage.startsWith(locale)) return locale;
+  }
+  return defaultLocale;
 }
 
 function signInRedirect(request: NextRequest) {
-  const url = new URL("/sign-in", request.url);
+  const locale = getLocaleFromRequest(request);
+  const url = new URL(`/${locale}/sign-in`, request.url);
   url.searchParams.set("redirect", request.nextUrl.pathname + request.nextUrl.search);
   return NextResponse.redirect(url);
 }
 
 export async function middleware(request: NextRequest) {
-  if (!isAuthConfigValid()) return NextResponse.next();
+  const pathname = request.nextUrl.pathname;
 
-  const requestPath = request.nextUrl.pathname;
+  // Skip locale handling for API routes
+  if (isApiRoute(pathname)) {
+    if (!isAuthConfigValid()) return NextResponse.next();
+
+    return authMiddleware(request, {
+      serviceAccount: authConfig.serviceAccount,
+      apiKey: authConfig.apiKey,
+      cookieName: authConfig.cookieName,
+      cookieSignatureKeys: authConfig.cookieSignatureKeys,
+      cookieSerializeOptions: authConfig.cookieSerializeOptions,
+      loginPath: "/api/session",
+      logoutPath: "/api/signout",
+      debug: process.env.NODE_ENV !== "production",
+      handleValidToken: async ({ decodedToken }, extraHeaders) => {
+        const headers = new Headers(extraHeaders);
+        headers.set("x-firebase-uid", decodedToken.uid ?? "");
+        headers.set("x-firebase-email", decodedToken.email ?? "");
+        return NextResponse.next({ request: { headers } });
+      },
+      handleInvalidToken: async () => NextResponse.next(),
+      handleError: async () => NextResponse.next(),
+    });
+  }
+
+  if (!isAuthConfigValid()) {
+    return handleLocaleRedirect(request);
+  }
+
+  const requestPath = pathname;
 
   return authMiddleware(request, {
     serviceAccount: authConfig.serviceAccount,
@@ -55,7 +94,7 @@ export async function middleware(request: NextRequest) {
         const claims = decodedToken as unknown as Record<string, unknown>;
         const isStaff = hasAdminClaim(claims) || hasEditorClaim(claims);
         if (!isStaff) {
-          return NextResponse.redirect(new URL("/", request.url));
+          return NextResponse.redirect(new URL(`/${getLocaleFromRequest(request)}/`, request.url));
         }
 
         if (process.env.REQUIRE_ADMIN_MFA === "true") {
@@ -64,7 +103,8 @@ export async function middleware(request: NextRequest) {
             firebase.sign_in_second_factor === "totp" ||
             firebase.sign_in_second_factor === "sms";
           if (!mfaVerified) {
-            const url = new URL("/sign-in", request.url);
+            const locale = getLocaleFromRequest(request);
+            const url = new URL(`/${locale}/sign-in`, request.url);
             url.searchParams.set("mfa", "required");
             url.searchParams.set("redirect", request.nextUrl.pathname);
             return NextResponse.redirect(url);
@@ -76,18 +116,38 @@ export async function middleware(request: NextRequest) {
     },
     handleInvalidToken: async () => {
       if (isAdminPath(requestPath)) return signInRedirect(request);
-      return NextResponse.next();
+      return handleLocaleRedirect(request);
     },
     handleError: async () => {
       if (isAdminPath(requestPath)) return signInRedirect(request);
-      return NextResponse.next();
+      return handleLocaleRedirect(request);
     },
   });
 }
 
+function handleLocaleRedirect(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Skip if already has locale or is root
+  const hasLocale = locales.some((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
+
+  if (pathname === "/") {
+    const locale = getLocaleFromRequest(request);
+    const url = new URL(`/${locale}`, request.url);
+    return NextResponse.redirect(url);
+  }
+
+  if (!hasLocale) {
+    const locale = getLocaleFromRequest(request);
+    const url = new URL(`/${locale}${pathname}`, request.url);
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
+}
+
 export const config = {
   matcher: [
-    // Run on every route except static assets & framework files.
     "/((?!_next/static|_next/image|favicon.ico|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|avif|woff2?|ico|mp4)$).*)",
   ],
 };
