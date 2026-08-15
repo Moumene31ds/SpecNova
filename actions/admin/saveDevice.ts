@@ -1,6 +1,6 @@
 "use server";
 
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "@/lib/firebase/firestore-rest";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import {

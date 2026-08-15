@@ -1,6 +1,6 @@
 import "server-only";
 
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue } from "@/lib/firebase/firestore-rest";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { COLLECTIONS } from "@/lib/firebase/types";
 import { getClientIp, getClientUserAgent } from "./adminAuth";

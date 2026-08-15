@@ -1,12 +1,10 @@
 import "server-only";
 
-import { FieldValue, type Query } from "firebase-admin/firestore";
+import { FieldValue, type QuerySnapshot } from "@/lib/firebase/firestore-rest";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { COLLECTIONS, EMBEDDING_DIMENSION } from "@/lib/firebase/types";
 import { embedText } from "@/lib/ai/embeddings";
 import { classNamesOfDevice } from "@/lib/utils";
-
-type VectorQuerySnap = Awaited<ReturnType<ReturnType<Query["findNearest"]>["get"]>>;
 
 export interface SearchHit {
   device: Record<string, unknown>;
@@ -33,7 +31,7 @@ export async function vectorSearch(
   // runs first and never blocks on the vector index being deployed.
   const keywordSnap = await keywordSearch(query, limit);
 
-  let vectorSnap: VectorQuerySnap | null = null;
+  let vectorSnap: QuerySnapshot | null = null;
   try {
     vectorSnap = await db
       .collection(COLLECTIONS.devices)

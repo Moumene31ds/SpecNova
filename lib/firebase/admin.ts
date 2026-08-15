@@ -1,10 +1,10 @@
 import "server-only";
 
 import { initializeApp, getApps, cert, type App } from "firebase-admin/app";
-import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getStorage, type Storage } from "firebase-admin/storage";
 import { getMessaging, type Messaging } from "firebase-admin/messaging";
+import { FirestoreRest } from "./firestore-rest";
 
 export interface ServiceAccount {
   projectId: string;
@@ -54,9 +54,28 @@ function getAdminApp(): App {
   });
 }
 
-/** Lazily-initialized Firestore handle shared across the server runtime. */
-export function getAdminFirestore(): Firestore {
-  return getFirestore(getAdminApp());
+/**
+ * Lazily-initialized Firestore handle shared across the server runtime.
+ *
+ * Uses the self-contained REST client (`firebase-admin/firestore` pulls a gRPC
+ * stack that is blocked on Cloudflare Workers). The same code path serves both
+ * Vercel and Cloudflare.
+ */
+let _firestoreRest: FirestoreRest | null = null;
+
+export function getAdminFirestore(): FirestoreRest {
+  if (_firestoreRest) return _firestoreRest;
+  if (!SERVICE_ACCOUNT) {
+    throw new Error(
+      "FIREBASE_SERVICE_ACCOUNT_JSON is not set. Server-side Firebase calls are unavailable.",
+    );
+  }
+  _firestoreRest = new FirestoreRest({
+    projectId: SERVICE_ACCOUNT.projectId,
+    clientEmail: SERVICE_ACCOUNT.clientEmail,
+    privateKey: SERVICE_ACCOUNT.privateKey,
+  });
+  return _firestoreRest;
 }
 
 export function getAdminAuth(): Auth {

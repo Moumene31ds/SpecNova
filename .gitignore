@@ -4,7 +4,11 @@ out/
 .env
 .env.local
 .env.*.local
+.dev.vars
+.open-next/
+.wrangler/
 tsconfig.tsbuildinfo
+cloudflare-env.d.ts
 firebase-debug.log
 firestore-debug.log
 functions/.env

@@ -44,3 +44,10 @@ const nextConfig = {
 };
 
 export default nextConfig;
+
+// Cloudflare local dev: wire worker bindings into `next dev`.
+// Guarded to `development` so Vercel/`next build` is never affected.
+if (process.env.NODE_ENV === "development") {
+  const { initOpenNextCloudflareForDev } = await import("@opennextjs/cloudflare");
+  initOpenNextCloudflareForDev();
+}
