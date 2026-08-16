@@ -39,9 +39,8 @@ export default async function AdminDashboardPage() {
     Promise.all(statuses.map((s) => db.collection("devices").where("status", "==", s).count().get())),
     db
       .collection("scrape_jobs")
-      .where("status", "in", ["queued", "running"])
       .orderBy("createdAt", "asc")
-      .limit(25)
+      .limit(100)
       .get(),
     db
       .collection("audit_logs")
@@ -52,16 +51,19 @@ export default async function AdminDashboardPage() {
 
   const counts = Object.fromEntries(statuses.map((s, i) => [s, countSnapshots[i]!.data().count]));
 
-  const jobs = jobsSnapshot.docs.map((d) => {
-    const data = d.data();
-    return {
-      id: d.id,
-      query: data.query ?? "—",
-      status: data.status ?? "queued",
-      attempts: data.attempts ?? 0,
-      createdAt: data.createdAt?.toDate?.() ?? null,
-    };
-  });
+  const jobs = jobsSnapshot.docs
+    .map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        query: data.query ?? "—",
+        status: data.status ?? "queued",
+        attempts: data.attempts ?? 0,
+        createdAt: data.createdAt?.toDate?.() ?? null,
+      };
+    })
+    .filter((j) => j.status === "queued" || j.status === "running")
+    .slice(0, 25);
 
   const audit = auditSnapshot.docs.map((d) => {
     const data = d.data();
