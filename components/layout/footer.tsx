@@ -34,10 +34,7 @@ export function Footer() {
             >
               {t("carrierBands")}
             </Link>
-            <Link
-              href={getLocalizedHref(currentLocale, "/api/health")}
-              className="transition-colors hover:text-foreground"
-            >
+            <Link href="/api/health" className="transition-colors hover:text-foreground">
               {t("status")}
             </Link>
             <Link
