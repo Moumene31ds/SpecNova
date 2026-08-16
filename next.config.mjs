@@ -1,3 +1,5 @@
+import createNextIntlPlugin from "next-intl/plugin";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -43,7 +45,9 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin("./lib/i18n.ts");
+
+export default withNextIntl(nextConfig);
 
 // Cloudflare local dev: wire worker bindings into `next dev`.
 // Guarded to `development` so Vercel/`next build` is never affected.

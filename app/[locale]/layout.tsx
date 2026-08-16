@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AmbientBackground } from "@/components/ui/ambient-background";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { locales } from "@/lib/i18n";
 import "./globals.css";
 
 const inter = Inter({
@@ -64,12 +67,21 @@ export const viewport: Viewport = {
 
 const themeInitScript = `try{var t=localStorage.getItem("specnova-theme");document.documentElement.setAttribute("data-theme",t||"light")}catch(e){};`;
 
-export default function RootLayout({
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
+export default async function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+  params,
+}: Readonly<{ children: React.ReactNode; params: Promise<{ locale: string }> }>) {
+  const { locale } = await params;
+  const messages = await getMessages({ locale });
+  setRequestLocale(locale);
+
   return (
     <html
-      lang="en"
+      lang={locale}
       data-theme="light"
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
@@ -78,14 +90,16 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="font-sans">
-        <ThemeProvider>
-          <TooltipProvider delayDuration={150}>
-            <AmbientBackground />
-            <Navbar />
-            <main className="min-h-screen">{children}</main>
-            <Footer />
-          </TooltipProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider>
+            <TooltipProvider delayDuration={150}>
+              <AmbientBackground />
+              <Navbar />
+              <main className="min-h-screen">{children}</main>
+              <Footer />
+            </TooltipProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
