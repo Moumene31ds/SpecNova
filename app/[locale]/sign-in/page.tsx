@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { Loader2, Lock, Mail, Eye, EyeOff, AlertCircle, CheckCircle2, Zap, Sparkles, Shield, ArrowRight } from "lucide-react";
 
-import { getFirebaseClient } from "@/lib/firebase/client";
+import { getFirebaseClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
 import { initializeAppCheckForApp } from "@/lib/firebase/app-check";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -72,6 +72,12 @@ function SignInForm({ locale }: { locale: string }) {
 
     setInputErrors({});
     setStatus("busy");
+
+    if (!isFirebaseClientConfigured()) {
+      setStatus("error");
+      setError(t("notConfigured"));
+      return;
+    }
 
     try {
       const { auth } = getFirebaseClient();

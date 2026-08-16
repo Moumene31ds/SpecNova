@@ -191,7 +191,8 @@
     "passwordMismatch": "Les mots de passe ne correspondent pas.",
     "weakPassword": "Le mot de passe doit contenir au moins 8 caractères.",
     "emailInUse": "Un compte avec cet e-mail existe déjà.",
-    "accountCreated": "Compte créé !"
+    "accountCreated": "Compte créé !",
+    "notConfigured": "L'authentification n'est pas configurée sur ce déploiement. Ajoutez les variables d'environnement Firebase (NEXT_PUBLIC_FIREBASE_API_KEY) sur Vercel, puis redéployez."
   },
   "search": {
     "title": "Recherche IA",
