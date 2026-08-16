@@ -201,7 +201,8 @@
     "tryDifferent": "Essayez d'autres mots-clés ou demandez un scraping à la demande",
     "recentSearches": "Recherches récentes",
     "clearHistory": "Effacer l'historique",
-    "popularQueries": "Requêtes populaires"
+    "popularQueries": "Requêtes populaires",
+    "aiSearchPlaceholder": "Demandez un téléphone, pas une fiche technique…"
   },
   "compare": {
     "title": "Comparer les appareils",

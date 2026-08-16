@@ -201,7 +201,8 @@
     "tryDifferent": "Try different keywords or request an on-demand scrape",
     "recentSearches": "Recent searches",
     "clearHistory": "Clear history",
-    "popularQueries": "Popular queries"
+    "popularQueries": "Popular queries",
+    "aiSearchPlaceholder": "Ask for a phone, not a spec sheet…"
   },
   "compare": {
     "title": "Compare Devices",
