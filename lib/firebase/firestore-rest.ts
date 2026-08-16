@@ -374,8 +374,13 @@ async function getAccessToken(creds: FirestoreRestOptions): Promise<string> {
 
 async function safeErrorBody(res: Response): Promise<string> {
   try {
-    const json = (await res.json()) as { error?: { message?: string } };
-    return json.error?.message ?? res.statusText;
+    const raw: unknown = await res.json();
+    const error = Array.isArray(raw) ? raw[0] : raw;
+    const msg = (error as { error?: { message?: string } })?.error?.message;
+    if (msg) return msg;
+    return typeof raw === "object" && raw !== null && "status" in raw
+      ? JSON.stringify(raw)
+      : res.statusText;
   } catch {
     return res.statusText;
   }
