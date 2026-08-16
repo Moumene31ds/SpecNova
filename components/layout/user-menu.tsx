@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut, type User } from "firebase/auth";
 import { LogOut, Shield, UserCircle2, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getFirebaseClient } from "@/lib/firebase/client";
+import { getFirebaseClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
 import { getLocaleFromPathname } from "@/lib/i18n";
 import {
   DropdownMenu,
@@ -34,6 +34,10 @@ export function UserMenu() {
   const [signingOut, setSigningOut] = React.useState(false);
 
   React.useEffect(() => {
+    if (!isFirebaseClientConfigured()) {
+      setLoading(false);
+      return;
+    }
     const { auth } = getFirebaseClient();
     const unsubscribe = auth.onAuthStateChanged((next) => {
       setUser(next);
