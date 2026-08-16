@@ -177,7 +177,21 @@
     "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
     "accessDenied": "Accès refusé. Privilèges administrateur requis.",
     "redirecting": "Redirection…",
-    "error": "Une erreur est survenue."
+    "error": "Une erreur est survenue.",
+    "signUpTitle": "Créez votre compte",
+    "signUpSubtitle": "Rejoignez SpecNova et ne manquez plus aucune baisse de prix",
+    "name": "Nom complet",
+    "namePlaceholder": "Jean Dupont",
+    "confirmPassword": "Confirmer le mot de passe",
+    "confirmPasswordPlaceholder": "Répétez votre mot de passe",
+    "signUpButton": "Créer le compte",
+    "signingUp": "Création du compte…",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "signInLink": "Se connecter",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "weakPassword": "Le mot de passe doit contenir au moins 8 caractères.",
+    "emailInUse": "Un compte avec cet e-mail existe déjà.",
+    "accountCreated": "Compte créé !"
   },
   "search": {
     "title": "Recherche IA",

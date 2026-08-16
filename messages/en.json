@@ -177,7 +177,21 @@
     "sessionExpired": "Your session has expired. Please sign in again.",
     "accessDenied": "Access denied. Admin privileges required.",
     "redirecting": "Redirecting…",
-    "error": "Something went wrong."
+    "error": "Something went wrong.",
+    "signUpTitle": "Create your account",
+    "signUpSubtitle": "Join SpecNova and never miss a price drop",
+    "name": "Full name",
+    "namePlaceholder": "John Doe",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Repeat your password",
+    "signUpButton": "Create account",
+    "signingUp": "Creating account…",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInLink": "Sign in",
+    "passwordMismatch": "Passwords do not match.",
+    "weakPassword": "Password must be at least 8 characters.",
+    "emailInUse": "An account with this email already exists.",
+    "accountCreated": "Account created!"
   },
   "search": {
     "title": "AI Search",
