@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { locales, localeNames, defaultLocale } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/theme/theme-provider";
+import { UserMenu } from "@/components/layout/user-menu";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -135,6 +136,8 @@ export function Navbar() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <UserMenu />
 
           <ThemeToggle />
         </div>

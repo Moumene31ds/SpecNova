@@ -1,8 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ThemeName } from "@/lib/constants";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "specnova-theme";
 
@@ -55,17 +65,47 @@ function applyTheme(theme: ThemeName) {
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const t = useTranslations("common");
 
-  const next: ThemeName = theme === "oled" ? "neon" : theme === "neon" ? "light" : "oled";
   const Icon = theme === "light" ? Sun : theme === "neon" ? Monitor : Moon;
 
+  const items: Array<{ value: ThemeName; label: string; icon: React.ReactNode }> = [
+    { value: "light", label: t("themeLight"), icon: <Sun className="h-4 w-4" /> },
+    { value: "oled", label: t("themeOled"), icon: <Moon className="h-4 w-4" /> },
+    { value: "neon", label: t("themeNeon"), icon: <Sparkles className="h-4 w-4" /> },
+  ];
+
   return (
-    <button
-      onClick={() => setTheme(next)}
-      className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-secondary/50 text-muted-foreground transition-colors hover:text-foreground"
-      aria-label={`Switch theme (current: ${theme})`}
-    >
-      <Icon className="h-4 w-4" />
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          aria-label={t("theme")}
+        >
+          <Icon className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[160px]">
+        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+          {t("theme")}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {items.map((item) => (
+          <DropdownMenuItem
+            key={item.value}
+            onClick={() => setTheme(item.value)}
+            className="flex items-center gap-2.5"
+          >
+            {item.icon}
+            <span>{item.label}</span>
+            {theme === item.value && (
+              <span className="ml-auto h-4 w-4 text-primary">✓</span>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

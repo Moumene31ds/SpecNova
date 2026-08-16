@@ -5,6 +5,7 @@ import { getDevices, getCatalog } from "@/lib/query/device-query";
 import { ScoreRing } from "@/components/device/score-ring";
 import { ComparePicker } from "@/components/compare/compare-picker";
 import { SpecDiffTable } from "@/components/compare/spec-diff-table";
+import { WinnerBanner } from "@/components/compare/winner-banner";
 import { CameraComparator } from "@/components/compare/camera-comparator";
 import { GamingSimulator } from "@/components/compare/gaming-simulator";
 import { PriceHistoryChart } from "@/components/charts/price-history-chart";
@@ -104,6 +105,10 @@ export default async function ComparePage({ params }: Props) {
                   )}
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6">
+              <WinnerBanner devices={devices} />
             </div>
           </div>
         </div>

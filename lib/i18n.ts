@@ -34,9 +34,11 @@ export function getLocalizedHref(locale: Locale, path: string): string {
   return `/${locale}${path}`;
 }
 
-export default getRequestConfig(async ({ locale }) => {
-  if (!locales.includes(locale as Locale)) notFound();
+export default getRequestConfig(async ({ requestLocale }) => {
+  const locale = await requestLocale;
+  if (!locales.includes(locale as Locale)) return notFound();
   return {
+    locale,
     messages: (await import(`../messages/${locale}.json`)).default,
   };
 });

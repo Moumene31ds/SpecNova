@@ -150,7 +150,10 @@
     "aiSearch": "Recherche IA",
     "carrierBands": "Bandes fréquences",
     "noAccount": "Pas de compte ?",
-    "createAccount": "En créer un"
+    "createAccount": "En créer un",
+    "themeLight": "Clair",
+    "themeOled": "OLED sombre",
+    "themeNeon": "Néon"
   },
   "auth": {
     "signInTitle": "Bon retour",
@@ -202,7 +205,20 @@
     "recentSearches": "Recherches récentes",
     "clearHistory": "Effacer l'historique",
     "popularQueries": "Requêtes populaires",
-    "aiSearchPlaceholder": "Demandez un téléphone, pas une fiche technique…"
+    "aiSearchPlaceholder": "Demandez un téléphone, pas une fiche technique…",
+    "filters": "Filtres avancés",
+    "maxPrice": "Prix max",
+    "minBattery": "Batterie min",
+    "minCamera": "Appareil photo min",
+    "chipset": "Processeur",
+    "minYear": "Année de sortie",
+    "resetFilters": "Réinitialiser",
+    "apply": "Appliquer",
+    "resultsFound": "appareils trouvés",
+    "noMatches": "Aucun appareil ne correspond à ces filtres.",
+    "clearQuery": "Élargissez les filtres ou changez de recherche.",
+    "exploreAll": "Explorer tous les appareils",
+    "filterActive": "filtres actifs"
   },
   "compare": {
     "title": "Comparer les appareils",

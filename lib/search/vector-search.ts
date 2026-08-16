@@ -25,7 +25,6 @@ export async function vectorSearch(
   limit = 12,
 ): Promise<SearchHit[]> {
   const db = getAdminFirestore();
-  const embedding = await embedText(query);
 
   // Keyword leg relies only on auto-created single-field indexes, so it
   // runs first and never blocks on the vector index being deployed.
@@ -33,6 +32,7 @@ export async function vectorSearch(
 
   let vectorSnap: QuerySnapshot | null = null;
   try {
+    const embedding = await embedText(query);
     vectorSnap = await db
       .collection(COLLECTIONS.devices)
       .findNearest({
@@ -45,7 +45,7 @@ export async function vectorSearch(
       .get();
   } catch (err) {
     console.error(
-      "[specnova] Firestore vector search unavailable (vector index not deployed?); using keyword leg only.",
+      "[specnova] Semantic leg unavailable (missing GEMINI_API_KEY or vector index); using keyword leg only.",
       err,
     );
   }

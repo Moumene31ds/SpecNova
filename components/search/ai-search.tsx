@@ -64,8 +64,15 @@ export function AiSearch({
     try {
       const { aiSearch } = await import("@/actions/search");
       const res: AiSearchResult = await aiSearch(trimmed, 8);
-      setResults(res.hits.length ? res.hits : []);
-      setUsedFallback(false);
+      if (res.hits.length) {
+        setResults(res.hits);
+        setUsedFallback(false);
+      } else {
+        const { localSearch } = await import("@/lib/search/local-search");
+        const { getDevCatalog } = await import("@/lib/dev-data");
+        setResults(localSearch(trimmed, getDevCatalog(), 8));
+        setUsedFallback(true);
+      }
       setLatency(res.latencyMs);
       setOpen(true);
     } catch {

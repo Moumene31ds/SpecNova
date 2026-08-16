@@ -150,7 +150,10 @@
     "aiSearch": "AI Search",
     "carrierBands": "Carrier Bands",
     "noAccount": "Don't have an account?",
-    "createAccount": "Create one"
+    "createAccount": "Create one",
+    "themeLight": "Light",
+    "themeOled": "OLED Dark",
+    "themeNeon": "Neon"
   },
   "auth": {
     "signInTitle": "Welcome back",
@@ -202,7 +205,20 @@
     "recentSearches": "Recent searches",
     "clearHistory": "Clear history",
     "popularQueries": "Popular queries",
-    "aiSearchPlaceholder": "Ask for a phone, not a spec sheet…"
+    "aiSearchPlaceholder": "Ask for a phone, not a spec sheet…",
+    "filters": "Advanced filters",
+    "maxPrice": "Max price",
+    "minBattery": "Min battery",
+    "minCamera": "Min rear camera",
+    "chipset": "Chipset",
+    "minYear": "Release year from",
+    "resetFilters": "Reset",
+    "apply": "Apply",
+    "resultsFound": "devices found",
+    "noMatches": "No devices match these filters.",
+    "clearQuery": "Try widening the filters or a different query.",
+    "exploreAll": "Explore all devices",
+    "filterActive": "filters active"
   },
   "compare": {
     "title": "Compare Devices",
