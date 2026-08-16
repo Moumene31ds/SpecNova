@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Suspense, useState, useRef, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -507,8 +507,9 @@ const GlassCard = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivE
 
 GlassCard.displayName = "GlassCard";
 
-export default async function SignInPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+export default function SignInPage() {
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden">
       <ParticleField />
