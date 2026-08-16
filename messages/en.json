@@ -383,6 +383,86 @@
     "carrierBands": "Carrier Bands",
     "status": "Status"
   },
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "updated": "Last updated: {date}",
+      "intro": "This Privacy Policy explains how SpecNova handles information when you use our service.",
+      "sections": [
+        {
+          "heading": "Information we collect",
+          "body": "We collect the information you provide when creating an account (such as your name and email address), as well as usage data needed to operate the service, including search queries, device comparisons, and saved preferences."
+        },
+        {
+          "heading": "How we use your information",
+          "body": "We use your information to provide and improve the service, personalise content and recommendations, respond to your requests, and ensure the security and integrity of the platform."
+        },
+        {
+          "heading": "AI and data processing",
+          "body": "SpecNova uses AI models to structure device specifications, discover product catalogs, and assist with editorial content. Automated processing is used to enhance accuracy and coverage of our catalog."
+        },
+        {
+          "heading": "Cookies",
+          "body": "We use essential cookies to keep you signed in and to remember your preferences, such as language and theme. We do not sell your personal information."
+        },
+        {
+          "heading": "Data retention",
+          "body": "We retain your data only as long as necessary to provide the service and comply with legal obligations. You may request deletion of your account and associated data at any time."
+        },
+        {
+          "heading": "Your rights",
+          "body": "Depending on your jurisdiction, you may have rights to access, correct, export, or delete your personal data. Contact us to exercise these rights."
+        },
+        {
+          "heading": "Contact",
+          "body": "If you have any questions about this Privacy Policy, please contact us via the channels listed on the site."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "updated": "Last updated: {date}",
+      "intro": "These Terms of Service govern your use of the SpecNova service.",
+      "sections": [
+        {
+          "heading": "Acceptance of terms",
+          "body": "By accessing or using SpecNova, you agree to be bound by these Terms. If you do not agree, you may not use the service."
+        },
+        {
+          "heading": "The service",
+          "body": "SpecNova provides phone specifications, comparison tools, price tracking, and carrier compatibility information. The catalog is assembled from public sources and may contain inaccuracies."
+        },
+        {
+          "heading": "No warranty",
+          "body": "The service is provided on an 'as is' basis. While we strive for accuracy, we make no guarantees regarding the completeness or correctness of any information, including specifications, prices, and network compatibility."
+        },
+        {
+          "heading": "Acceptable use",
+          "body": "You agree not to misuse the service, attempt to disrupt it, scrape it at scale without permission, or use it for any unlawful purpose."
+        },
+        {
+          "heading": "Accounts",
+          "body": "You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. Admin and editor roles grant access to editorial tools and are subject to our internal policies."
+        },
+        {
+          "heading": "Intellectual property",
+          "body": "The SpecNova interface and editorial content are our property. Brand names, logos, and product names belong to their respective owners and are used for identification purposes only."
+        },
+        {
+          "heading": "Limitation of liability",
+          "body": "To the maximum extent permitted by law, SpecNova shall not be liable for any indirect, incidental, or consequential damages arising from your use of the service."
+        },
+        {
+          "heading": "Changes to these terms",
+          "body": "We may update these Terms from time to time. Continued use of the service after changes constitutes acceptance of the revised Terms."
+        },
+        {
+          "heading": "Contact",
+          "body": "For questions about these Terms, please contact us via the channels listed on the site."
+        }
+      ]
+    }
+  },
   "errors": {
     "404": {
       "title": "Page not found",
