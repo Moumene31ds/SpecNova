@@ -12,3 +12,5 @@ cloudflare-env.d.ts
 firebase-debug.log
 firestore-debug.log
 functions/.env
+.vercel
+.env*

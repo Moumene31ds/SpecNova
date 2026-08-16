@@ -1,5 +1,3 @@
-import type { ServiceAccount } from "./admin";
-
 /**
  * Shared authentication config consumed by both the Edge middleware and
  * server-side token helpers (`next-firebase-auth-edge`).
@@ -21,9 +19,20 @@ export const authConfig = {
     secure: process.env.NODE_ENV === "production",
     maxAge: 12 * 60 * 60, // 12h sliding session
   },
-  serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-    ? (JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) as ServiceAccount)
-    : undefined,
+  serviceAccount: (() => {
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    if (!raw) return undefined;
+    try {
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      return {
+        projectId: parsed.project_id,
+        clientEmail: parsed.client_email,
+        privateKey: parsed.private_key.replace(/\\n/g, "\n"),
+      };
+    } catch {
+      return undefined;
+    }
+  })(),
 };
 
 export function isAuthConfigValid() {
