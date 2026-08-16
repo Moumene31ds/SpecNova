@@ -94,14 +94,12 @@
     "rumored": "Rumored",
     "official": "Official",
     "unofficial": "Unofficial",
-    "specifications": "Specifications",
     "features": "Features",
     "pros": "Pros",
     "cons": "Cons",
     "verdict": "Verdict",
     "rating": "Rating",
     "review": "Review",
-    "reviews": "Reviews",
     "writeReview": "Write a review",
     "helpful": "Helpful",
     "notHelpful": "Not helpful",
@@ -148,7 +146,11 @@
     "fixed": "Fixed",
     "added": "Added",
     "removed": "Removed",
-    "changed": "Changed"
+    "changed": "Changed",
+    "aiSearch": "AI Search",
+    "carrierBands": "Carrier Bands",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create one"
   },
   "auth": {
     "signInTitle": "Welcome back",
@@ -171,7 +173,8 @@
     "mfaSubmit": "Verify",
     "sessionExpired": "Your session has expired. Please sign in again.",
     "accessDenied": "Access denied. Admin privileges required.",
-    "redirecting": "Redirecting…"
+    "redirecting": "Redirecting…",
+    "error": "Something went wrong."
   },
   "search": {
     "title": "AI Search",
@@ -342,7 +345,9 @@
     "discord": "Discord",
     "linkedin": "LinkedIn",
     "copyright": "© {year} SpecNova. All rights reserved.",
-    "madeWith": "Made with ❤️ for phone enthusiasts"
+    "madeWith": "Made with ❤️ for phone enthusiasts",
+    "carrierBands": "Carrier Bands",
+    "status": "Status"
   },
   "errors": {
     "404": {

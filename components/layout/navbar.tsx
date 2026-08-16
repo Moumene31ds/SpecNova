@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, Globe, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { locales, localeNames, defaultLocale } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/theme/theme-provider";
 import { Button } from "@/components/ui/button";
@@ -42,12 +43,13 @@ export function Navbar() {
   const pathname = usePathname();
   const currentLocale = getLocaleFromPathname(pathname);
   const pathWithoutLocale = getPathWithoutLocale(pathname);
+  const t = useTranslations("common");
 
   const navLinks = [
-    { href: "/", label: "common:home" },
-    { href: "/compare", label: "common:compare" },
-    { href: "/search", label: "common:aiSearch" },
-    { href: "/bands", label: "common:carrierBands" },
+    { href: "/", label: t("home") },
+    { href: "/compare", label: t("compare") },
+    { href: "/search", label: t("aiSearch") },
+    { href: "/bands", label: t("carrierBands") },
   ] as const;
 
   return (
@@ -89,7 +91,7 @@ export function Navbar() {
           <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
             <Link href={getLocalizedHref(currentLocale, "/search")}>
               <Sparkles className="text-neon-cyan" />
-              <span data-i18n="common:aiSearch">AI Search</span>
+              <span>{t("aiSearch")}</span>
             </Link>
           </Button>
 

@@ -94,14 +94,12 @@
     "rumored": "Rumeur",
     "official": "Officiel",
     "unofficial": "Non officiel",
-    "specifications": "Spécifications",
     "features": "Fonctionnalités",
     "pros": "Avantages",
     "cons": "Inconvénients",
     "verdict": "Verdict",
     "rating": "Note",
     "review": "Avis",
-    "reviews": "Avis",
     "writeReview": "Écrire un avis",
     "helpful": "Utile",
     "notHelpful": "Pas utile",
@@ -148,7 +146,11 @@
     "fixed": "Corrigé",
     "added": "Ajouté",
     "removed": "Supprimé",
-    "changed": "Modifié"
+    "changed": "Modifié",
+    "aiSearch": "Recherche IA",
+    "carrierBands": "Bandes fréquences",
+    "noAccount": "Pas de compte ?",
+    "createAccount": "En créer un"
   },
   "auth": {
     "signInTitle": "Bon retour",
@@ -171,7 +173,8 @@
     "mfaSubmit": "Vérifier",
     "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
     "accessDenied": "Accès refusé. Privilèges administrateur requis.",
-    "redirecting": "Redirection…"
+    "redirecting": "Redirection…",
+    "error": "Une erreur est survenue."
   },
   "search": {
     "title": "Recherche IA",
@@ -342,7 +345,9 @@
     "discord": "Discord",
     "linkedin": "LinkedIn",
     "copyright": "© {year} SpecNova. Tous droits réservés.",
-    "madeWith": "Fait avec ❤️ pour les passionnés de téléphones"
+    "madeWith": "Fait avec ❤️ pour les passionnés de téléphones",
+    "carrierBands": "Bandes fréquences",
+    "status": "Statut"
   },
   "errors": {
     "404": {

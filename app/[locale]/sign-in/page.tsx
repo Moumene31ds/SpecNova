@@ -123,6 +123,7 @@ const GlowingOrbs = () => {
 function SignInForm({ locale }: { locale: string }) {
   const t = useTranslations("auth");
   const commonT = useTranslations("common");
+  const validationT = useTranslations("validation");
   const router = useRouter();
   const params = useSearchParams();
   const redirectTo = params.get("redirect") ?? `/${locale}/admin`;
@@ -139,14 +140,14 @@ function SignInForm({ locale }: { locale: string }) {
   const formRef = useRef<HTMLFormElement>(null);
 
   const validateEmail = (value: string) => {
-    if (!value) return t("validation.required");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return t("validation.email");
+    if (!value) return validationT("required");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return validationT("email");
     return undefined;
   };
 
   const validatePassword = (value: string) => {
-    if (!value) return t("validation.required");
-    if (value.length < 8) return t("validation.minLength", { min: 8 });
+    if (!value) return validationT("required");
+    if (value.length < 8) return validationT("minLength", { min: 8 });
     return undefined;
   };
 
