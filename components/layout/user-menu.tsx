@@ -4,9 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, type User } from "firebase/auth";
-import { LogOut, Shield, UserCircle2, Loader2 } from "lucide-react";
+import { LogOut, Shield, UserCircle2, Loader2, LayoutDashboard } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { getFirebaseClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
+import { parseRoles } from "@/lib/firebase/roles";
 import { getLocaleFromPathname } from "@/lib/i18n";
 import {
   DropdownMenu,
@@ -32,6 +33,7 @@ export function UserMenu() {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [signingOut, setSigningOut] = React.useState(false);
+  const [isStaff, setIsStaff] = React.useState(false);
 
   React.useEffect(() => {
     if (!isFirebaseClientConfigured()) {
@@ -39,8 +41,18 @@ export function UserMenu() {
       return;
     }
     const { auth } = getFirebaseClient();
-    const unsubscribe = auth.onAuthStateChanged((next) => {
+    const unsubscribe = auth.onAuthStateChanged(async (next) => {
       setUser(next);
+      if (next) {
+        try {
+          const tokenResult = await next.getIdTokenResult(true);
+          setIsStaff(parseRoles(tokenResult.claims as Record<string, unknown>).isAdmin || parseRoles(tokenResult.claims as Record<string, unknown>).isEditor);
+        } catch {
+          setIsStaff(false);
+        }
+      } else {
+        setIsStaff(false);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -115,6 +127,16 @@ export function UserMenu() {
             {t("aiSearch")}
           </Link>
         </DropdownMenuItem>
+        {isStaff && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href={getLocalizedHref(locale, "/admin")} className="flex items-center gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                {t("adminDashboard")}
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={(e) => {

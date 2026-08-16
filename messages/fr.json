@@ -153,7 +153,8 @@
     "createAccount": "En créer un",
     "themeLight": "Clair",
     "themeOled": "OLED sombre",
-    "themeNeon": "Néon"
+    "themeNeon": "Néon",
+    "adminDashboard": "Tableau de bord"
   },
   "auth": {
     "signInTitle": "Bon retour",
