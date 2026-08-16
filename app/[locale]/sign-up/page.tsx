@@ -77,7 +77,10 @@ function SignUpForm({ locale }: { locale: string }) {
 
     const res = await fetch("/api/session", { method: "POST", headers, cache: "no-store" });
     const body = (await res.json().catch(() => ({}))) as { success?: boolean };
-    return res.ok && body.success === true;
+    if (!res.ok || !body.success) {
+      throw new Error(`${res.status}: session`);
+    }
+    return true;
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -129,9 +132,11 @@ function SignUpForm({ locale }: { locale: string }) {
           ? t("emailInUse")
           : code === "auth/weak-password"
             ? t("weakPassword")
-            : err instanceof Error
-              ? err.message
-              : t("error"),
+            : err instanceof Error && /^\d+: session$/.test(err.message)
+              ? t("sessionFailed")
+              : err instanceof Error
+                ? err.message
+                : t("error"),
       );
       formRef.current?.classList.add("animate-shake");
       setTimeout(() => formRef.current?.classList.remove("animate-shake"), 400);
