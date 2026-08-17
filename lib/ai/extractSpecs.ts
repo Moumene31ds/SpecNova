@@ -1,19 +1,14 @@
 import "server-only";
 
-import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
+import {
+  AI_MODEL,
+  geminiGenerateContent,
+  getCached,
+  setCache,
+} from "./gemini-client";
 
-/**
- * AI Magic Auto-Fill — structured spec extraction with live web grounding.
- *
- * Uses Google Search Grounding so Gemini searches the web in real-time
- * for the latest phone specifications — including devices released today.
- */
-
-export const AI_EXTRACTION_MODEL =
-  process.env.AI_EXTRACTION_MODEL ?? "gemini-2.5-flash";
-
-const geai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+export const AI_EXTRACTION_MODEL = AI_MODEL;
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -177,6 +172,7 @@ SEARCH STRATEGY:
 - ALWAYS search for "[device name] specifications" on GSMArena, official manufacturer pages, and tech review sites.
 - For very new phones (2025-2026), search multiple sources to cross-verify specs.
 - Search for "[device name] camera specs", "[device name] battery test", "[device name] benchmarks" for detailed data.
+- Search for "[device name] official image" and "[device name] press render" for photos.
 - Use the search results to fill in EVERY field with verified data.
 
 CRITICAL RULES:
@@ -290,18 +286,24 @@ function extractGroundingSources(
  * Extract a fully-typed spec sheet for a device query.
  * Uses Google Search Grounding so Gemini can access the LIVE web for
  * the latest phone specifications — even phones released today.
+ * Caches results for 1 hour to minimize API calls.
  * Retries up to 2 times on malformed JSON or schema validation failures.
  */
 export async function extractSpecs(query: string): Promise<{
   device: AiExtractedDevice;
   raw: string;
 }> {
+  const cacheKey = `extract:${query.toLowerCase().trim()}`;
+  const cached = getCached<{ device: AiExtractedDevice; raw: string }>(cacheKey);
+  if (cached) return cached;
+
   const MAX_RETRIES = 2;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
-    const response = await geai.models.generateContent({
-      model: AI_EXTRACTION_MODEL,
+
+    const response = await geminiGenerateContent({
+      systemInstruction: PROMPT,
       contents: [
         {
           role: "user",
@@ -313,17 +315,14 @@ export async function extractSpecs(query: string): Promise<{
           ],
         },
       ],
-      config: {
-        systemInstruction: PROMPT,
-        tools: [{ googleSearch: {} }],
-        temperature: isRetry ? 0 : 0.2,
-        topP: 0.95,
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-        responseMimeType: "application/json",
-      },
+      tools: [{ googleSearch: {} }],
+      temperature: isRetry ? 0 : 0.2,
+      topP: 0.95,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      responseMimeType: "application/json",
     });
 
-    const raw = response.text ?? "";
+    const raw = response.text;
     if (!raw.trim()) {
       if (attempt < MAX_RETRIES) continue;
       throw new Error("Gemini returned an empty extraction after all retries.");
@@ -334,10 +333,8 @@ export async function extractSpecs(query: string): Promise<{
       const device = AiExtractedDeviceSchema.parse(parsed);
 
       // Merge grounding metadata sources with AI-provided sources
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      const groundingSources = extractGroundingSources(
-        groundingChunks as Array<{ web?: { title?: string; uri?: string } }> | undefined,
-      );
+      const groundingChunks = (response.groundingMetadata as { groundingChunks?: Array<{ web?: { title?: string; uri?: string } }> } | undefined)?.groundingChunks;
+      const groundingSources = extractGroundingSources(groundingChunks);
 
       if (groundingSources.length > 0) {
         const existingUrls = new Set(device.sources.map((s) => s.url));
@@ -349,7 +346,9 @@ export async function extractSpecs(query: string): Promise<{
         }
       }
 
-      return { device, raw };
+      const result = { device, raw };
+      setCache(cacheKey, result);
+      return result;
     } catch (err) {
       if (attempt >= MAX_RETRIES) {
         const msg = err instanceof z.ZodError

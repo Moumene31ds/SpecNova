@@ -1,19 +1,21 @@
 import "server-only";
 
-import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
-import { AI_EXTRACTION_MODEL } from "./extractSpecs";
+import {
+  AI_MODEL,
+  geminiGenerateContent,
+  getCached,
+  setCache,
+} from "./gemini-client";
 
-export const AI_DISCOVERY_MODEL = AI_EXTRACTION_MODEL;
+export const AI_DISCOVERY_MODEL = AI_MODEL;
 
 /**
  * Brand catalog discovery with live web grounding.
- *
  * Uses Google Search Grounding so Gemini searches the web in real-time
  * for the very latest phone models — including devices announced today.
+ * Caches results for 1 hour to minimize API calls.
  */
-
-const geai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const BRAND_CATALOG_MAX_MODELS = 120;
 const DISCOVERY_MAX_OUTPUT_TOKENS = 16384;
@@ -89,12 +91,17 @@ export async function discoverBrand(brand: string): Promise<{
   catalog: BrandCatalog;
   raw: string;
 }> {
+  const cacheKey = `discover:${brand.toLowerCase().trim()}`;
+  const cached = getCached<{ catalog: BrandCatalog; raw: string }>(cacheKey);
+  if (cached) return cached;
+
   const MAX_RETRIES = 2;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
-    const response = await geai.models.generateContent({
-      model: AI_EXTRACTION_MODEL,
+
+    const response = await geminiGenerateContent({
+      systemInstruction: PROMPT,
       contents: [
         {
           role: "user",
@@ -106,17 +113,14 @@ export async function discoverBrand(brand: string): Promise<{
           ],
         },
       ],
-      config: {
-        systemInstruction: PROMPT,
-        tools: [{ googleSearch: {} }],
-        temperature: isRetry ? 0 : 0.1,
-        topP: 0.9,
-        maxOutputTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
-        responseMimeType: "application/json",
-      },
+      tools: [{ googleSearch: {} }],
+      temperature: isRetry ? 0 : 0.1,
+      topP: 0.9,
+      maxOutputTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
+      responseMimeType: "application/json",
     });
 
-    const raw = response.text ?? "";
+    const raw = response.text;
     if (!raw.trim()) {
       if (attempt < MAX_RETRIES) continue;
       throw new Error("Gemini returned an empty catalog after all retries.");
@@ -124,7 +128,9 @@ export async function discoverBrand(brand: string): Promise<{
 
     try {
       const parsed = parseJsonObject(raw);
-      return { catalog: BrandCatalogSchema.parse(parsed), raw };
+      const result = { catalog: BrandCatalogSchema.parse(parsed), raw };
+      setCache(cacheKey, result);
+      return result;
     } catch (err) {
       if (attempt >= MAX_RETRIES) {
         const msg = err instanceof z.ZodError
