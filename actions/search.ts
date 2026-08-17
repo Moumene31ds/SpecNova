@@ -39,26 +39,30 @@ export async function aiSearch(
   const trimmed = query.trim();
   if (!trimmed) return { hits: [], query: trimmed, latencyMs: 0 };
 
-  const hits = await vectorSearch(trimmed, limit);
+  try {
+    const hits = await vectorSearch(trimmed, limit);
 
-  return {
-    hits: hits.map(({ device, score }) => ({
-      device: {
-        id: String(device.id ?? ""),
-        slug: String(device.slug ?? ""),
-        brand: String(device.brand ?? ""),
-        name: String(device.name ?? ""),
-        status: String(device.status ?? "available"),
-        brandColor: String(device.brandColor ?? "#8A2BE2"),
-        priceSummary: device.priceSummary as AiSearchResult["hits"][number]["device"]["priceSummary"],
-        score: device.score as AiSearchResult["hits"][number]["device"]["score"],
-        media: device.media as AiSearchResult["hits"][number]["device"]["media"],
-      },
-      score,
-    })),
-    query: trimmed,
-    latencyMs: Math.round(performance.now() - started),
-  };
+    return {
+      hits: hits.map(({ device, score }) => ({
+        device: {
+          id: String(device.id ?? ""),
+          slug: String(device.slug ?? ""),
+          brand: String(device.brand ?? ""),
+          name: String(device.name ?? ""),
+          status: String(device.status ?? "available"),
+          brandColor: String(device.brandColor ?? "#8A2BE2"),
+          priceSummary: device.priceSummary as AiSearchResult["hits"][number]["device"]["priceSummary"],
+          score: device.score as AiSearchResult["hits"][number]["device"]["score"],
+          media: device.media as AiSearchResult["hits"][number]["device"]["media"],
+        },
+        score,
+      })),
+      query: trimmed,
+      latencyMs: Math.round(performance.now() - started),
+    };
+  } catch {
+    return { hits: [], query: trimmed, latencyMs: Math.round(performance.now() - started) };
+  }
 }
 
 /**
@@ -72,31 +76,35 @@ export async function triggerOnDemandScrape(query: string): Promise<{
   jobId?: string;
   error?: string;
 }> {
-  const user = await getServerUser();
-  if (!user) {
-    return { ok: false, error: "Sign in to request an unindexed device." };
+  try {
+    const user = await getServerUser();
+    if (!user) {
+      return { ok: false, error: "Sign in to request an unindexed device." };
+    }
+
+    const db = getAdminFirestore();
+    const jobRef = db.collection(COLLECTIONS.scrapeJobs).doc();
+
+    const job: ScrapeJob = {
+      id: jobRef.id,
+      type: "on-demand",
+      query: query.trim().slice(0, 120),
+      status: "queued",
+      requestedBy: user.uid,
+      attempts: 0,
+      deviceId: null,
+      createdAt: new Date() as never,
+      updatedAt: new Date() as never,
+      error: null,
+    };
+
+    await jobRef.set({ ...job, createdAt: new Date(), updatedAt: new Date() });
+
+    revalidatePath("/search");
+    return { ok: true, jobId: jobRef.id };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to create scrape job." };
   }
-
-  const db = getAdminFirestore();
-  const jobRef = db.collection(COLLECTIONS.scrapeJobs).doc();
-
-  const job: ScrapeJob = {
-    id: jobRef.id,
-    type: "on-demand",
-    query: query.trim().slice(0, 120),
-    status: "queued",
-    requestedBy: user.uid,
-    attempts: 0,
-    deviceId: null,
-    createdAt: new Date() as never,
-    updatedAt: new Date() as never,
-    error: null,
-  };
-
-  await jobRef.set({ ...job, createdAt: new Date(), updatedAt: new Date() });
-
-  revalidatePath("/search");
-  return { ok: true, jobId: jobRef.id };
 }
 
 /** Batch fetch for the /compare route. */

@@ -51,6 +51,7 @@ export function AiSearch({
   const [latency, setLatency] = React.useState<number | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(null);
+  const blurTimeoutRef = React.useRef<ReturnType<typeof setTimeout>>(null);
   const abortRef = React.useRef<AbortController | null>(null);
   const requestCountRef = React.useRef(0);
 
@@ -111,7 +112,10 @@ export function AiSearch({
 
   React.useEffect(() => {
     if (defaultQuery) setQuery(defaultQuery);
-    return () => abortRef.current?.abort();
+    return () => {
+      abortRef.current?.abort();
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    };
   }, [defaultQuery]);
 
   const navigate = React.useCallback((index: number) => {
@@ -154,8 +158,8 @@ export function AiSearch({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          onFocus={() => results.length > 0 && setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 160)}
+          onFocus={() => { if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current); if (results.length > 0) setOpen(true); }}
+          onBlur={() => { blurTimeoutRef.current = setTimeout(() => setOpen(false), 160); }}
           placeholder={placeholder}
           aria-label={t("aiSearchPlaceholder")}
           className="h-14 w-full rounded-2xl border border-border bg-card/80 pl-12 pr-4 font-mono text-sm text-foreground shadow-[0_0_40px_hsl(var(--glow-primary)/0.08)] outline-none backdrop-blur-xl transition-all placeholder:text-muted-foreground focus:border-ring focus:shadow-[0_0_48px_hsl(var(--glow-primary)/0.2)]"

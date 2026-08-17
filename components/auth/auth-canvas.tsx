@@ -85,14 +85,15 @@ export const ParticleField = () => {
     initParticles();
     animate();
 
-    window.addEventListener("resize", () => {
+    const handleResize = () => {
       resize();
       initParticles();
-    });
+    };
+    window.addEventListener("resize", handleResize);
 
     return () => {
       cancelAnimationFrame(animationRef.current!);
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 

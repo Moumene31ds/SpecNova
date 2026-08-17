@@ -13,10 +13,13 @@ const SUGGESTIONS = [
 ];
 
 export default async function SearchPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ q?: string }>;
 }) {
+  const { locale } = await params;
   const { q } = await searchParams;
 
   return (
@@ -42,7 +45,7 @@ export default async function SearchPage({
         {SUGGESTIONS.map((s) => (
           <a
             key={s}
-            href={`/search?q=${encodeURIComponent(s)}`}
+            href={`/${locale}/search?q=${encodeURIComponent(s)}`}
             className="rounded-full border border-border bg-card/40 px-3.5 py-2 text-xs text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground"
           >
             {s}
