@@ -59,14 +59,14 @@ export default async function HomePage() {
   return (
     <>
       {/* ------------------------------------------------ Hero */}
-      <section className="relative overflow-hidden pb-20 pt-24 md:pt-32">
+      <section className="relative overflow-hidden pb-12 pt-20 sm:pb-20 sm:pt-24 md:pt-32">
         <div className="container relative z-10 flex flex-col items-center text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-neon-cyan/30 bg-neon-cyan/10 px-4 py-1.5 text-xs font-medium text-neon-cyan">
             <Zap className="h-3.5 w-3.5" />
             Gemini-powered spec intelligence
           </div>
 
-          <h1 className="max-w-4xl text-balance font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl">
+          <h1 className="max-w-4xl text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-7xl">
             Every phone ever made.
             <span className="text-shimmer block">Compared. Tracked.</span>
           </h1>
@@ -99,7 +99,7 @@ export default async function HomePage() {
       {/* ------------------------------------------------ Featured devices */}
       <section className="pb-20">
         <div className="container">
-          <div className="mb-8 flex items-end justify-between">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-neon-cyan">
                 <Sparkles className="h-3.5 w-3.5" /> Trending now
@@ -123,7 +123,7 @@ export default async function HomePage() {
                 key={device.id}
                 span={i === 0 ? 2 : 1}
                 glowColor={device.brandColor}
-                className="min-h-[16rem]"
+                className="min-h-[12rem] md:min-h-[16rem]"
               >
                 <DeviceCard device={device} />
               </BentoCell>
@@ -150,7 +150,7 @@ export default async function HomePage() {
                 key={feature.title}
                 span={i === 0 ? 2 : 1}
                 glowColor={feature.accent}
-                className="min-h-[15rem]"
+                className="min-h-[12rem] md:min-h-[15rem]"
               >
                 <div className="mb-auto">
                   <div
@@ -190,16 +190,16 @@ export default async function HomePage() {
               If we don&apos;t have it, we scrape it live in seconds. Subscribe
               to a price and we&apos;ll notify you the moment it falls.
             </p>
-            <div className="mt-8 flex justify-center gap-3">
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
                 href="/compare"
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-8 text-base font-medium text-primary-foreground shadow-[0_0_36px_hsl(var(--glow-primary)/0.4)] transition-shadow hover:shadow-[0_0_52px_hsl(var(--glow-primary)/0.6)]"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-base font-medium text-primary-foreground shadow-[0_0_36px_hsl(var(--glow-primary)/0.4)] transition-shadow hover:shadow-[0_0_52px_hsl(var(--glow-primary)/0.6)] sm:px-8"
               >
                 Start comparing <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/search"
-                className="inline-flex h-12 items-center rounded-xl border border-border px-8 text-base font-medium transition-colors hover:border-ring/50"
+                className="inline-flex h-12 items-center rounded-xl border border-border px-6 text-base font-medium transition-colors hover:border-ring/50 sm:px-8"
               >
                 Try AI search
               </Link>

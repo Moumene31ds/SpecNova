@@ -64,7 +64,7 @@ export function WishlistButton({
         toggle(deviceId);
       }}
       className={cn(
-        "inline-flex h-9 w-9 items-center justify-center rounded-full transition-all",
+        "inline-flex h-10 w-10 items-center justify-center rounded-full transition-all",
         "border border-border/50 bg-background/60 backdrop-blur-sm",
         isSaved
           ? "text-red-500 hover:bg-red-500/10 hover:border-red-500/30"

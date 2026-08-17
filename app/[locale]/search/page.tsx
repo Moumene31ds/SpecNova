@@ -43,7 +43,7 @@ export default async function SearchPage({
           <a
             key={s}
             href={`/search?q=${encodeURIComponent(s)}`}
-            className="rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground"
+            className="rounded-full border border-border bg-card/40 px-3.5 py-2 text-xs text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground"
           >
             {s}
           </a>

@@ -48,7 +48,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device, className, co
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>
             {device.brand}
           </p>
-          <h3 className="mt-1 font-display text-lg font-semibold leading-tight">
+          <h3 className="mt-1 line-clamp-2 font-display text-lg font-semibold leading-tight">
             {device.name}
           </h3>
           <Badge variant={statusTone[device.status]} className="mt-2 capitalize">

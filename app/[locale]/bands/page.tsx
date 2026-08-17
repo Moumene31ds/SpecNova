@@ -51,7 +51,7 @@ export default function BandsPage() {
                           <Link
                             key={b.id}
                             href="/search"
-                            className="rounded-md bg-secondary/60 px-2 py-1 font-mono text-[11px] transition-colors hover:bg-primary/15 hover:text-primary"
+                            className="rounded-md bg-secondary/60 px-2 py-1.5 font-mono text-[11px] transition-colors hover:bg-primary/15 hover:text-primary"
                             title={`${b.technology} ${b.band} · ${b.frequency}`}
                           >
                             {b.technology}·{b.band}

@@ -88,7 +88,7 @@ export function SpecDiffTable({ devices }: SpecDiffTableProps) {
 
 const SpecRowLine = React.memo(function SpecRowLine({ row, devices }: { row: SpecRow; devices: Device[] }) {
   return (
-    <div className="grid grid-cols-[minmax(7rem,1fr)_1.5fr_1.5fr] items-center gap-2 border-t border-border/40 px-4 py-2 text-sm">
+    <div className="grid grid-cols-[minmax(5rem,1fr)_1fr_1fr] items-center gap-1.5 border-t border-border/40 px-3 py-2 text-sm sm:grid-cols-[minmax(7rem,1fr)_1.5fr_1.5fr] sm:gap-2 sm:px-4">
       <span className="truncate text-xs text-muted-foreground">{row.label}</span>
       {row.values.map((value, i) => {
         const isBetter = row.better.includes(i);

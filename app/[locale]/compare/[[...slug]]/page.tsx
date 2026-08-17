@@ -63,7 +63,7 @@ export default async function ComparePage({ params }: Props) {
         </Link>
 
         {/* ---------------------------------------------- Compare header */}
-        <div className="relative overflow-hidden rounded-3xl border border-border p-8">
+        <div className="relative overflow-hidden rounded-3xl border border-border p-5 sm:p-8">
           <div
             aria-hidden
             className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full opacity-25 blur-3xl"

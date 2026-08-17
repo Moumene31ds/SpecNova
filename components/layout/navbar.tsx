@@ -48,6 +48,19 @@ export function Navbar() {
   const t = useTranslations("common");
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  React.useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   const navLinks = [
     { href: "/", label: t("home") },
     { href: "/compare", label: t("compare") },
@@ -58,10 +71,10 @@ export function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/60 backdrop-blur-xl">
-        <div className="container flex h-16 items-center justify-between gap-6">
+        <div className="container flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-6">
           <Link
             href={getLocalizedHref(currentLocale, "/")}
-            className="group flex items-center gap-2.5"
+            className="group flex items-center gap-2"
           >
             <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan shadow-[0_0_24px_hsl(var(--glow-primary)/0.5)]">
               <Sparkles className="h-5 w-5 text-white" />
@@ -91,7 +104,7 @@ export function Navbar() {
             })}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
               <Link href={getLocalizedHref(currentLocale, "/search")}>
                 <Sparkles className="text-neon-cyan" />
@@ -101,7 +114,7 @@ export function Navbar() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button variant="ghost" size="icon" className="h-10 w-10">
                   <Globe className="h-4 w-4" />
                   <span className="sr-only">Select language</span>
                 </Button>
@@ -143,7 +156,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 md:hidden"
+              className="h-10 w-10 md:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
@@ -155,45 +168,55 @@ export function Navbar() {
 
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="fixed inset-x-0 top-16 z-50 border-b border-border/50 bg-background/95 backdrop-blur-xl md:hidden overflow-hidden"
-          >
-            <nav className="container flex flex-col gap-1 py-4">
-              {navLinks.map((link) => {
-                const active =
-                  pathWithoutLocale === link.href ||
-                  (link.href !== "/" && pathWithoutLocale.startsWith(link.href));
-                return (
-                  <Link
-                    key={link.href}
-                    href={getLocalizedHref(currentLocale, link.href)}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "rounded-xl px-4 py-3 text-sm font-medium transition-colors",
-                      active
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-              <div className="my-2 h-px bg-border/50" />
-              <Link
-                href={getLocalizedHref(currentLocale, "/search")}
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
-              >
-                <Sparkles className="h-4 w-4 text-neon-cyan" />
-                {t("aiSearch")}
-              </Link>
-            </nav>
-          </motion.div>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="fixed inset-x-0 top-14 z-50 max-h-[calc(100vh-3.5rem)] overflow-y-auto border-b border-border/50 bg-background/95 backdrop-blur-xl sm:top-16 md:hidden"
+            >
+              <nav className="container flex flex-col gap-1 py-3">
+                {navLinks.map((link) => {
+                  const active =
+                    pathWithoutLocale === link.href ||
+                    (link.href !== "/" && pathWithoutLocale.startsWith(link.href));
+                  return (
+                    <Link
+                      key={link.href}
+                      href={getLocalizedHref(currentLocale, link.href)}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "rounded-xl px-4 py-3.5 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+                <div className="my-2 h-px bg-border/50" />
+                <Link
+                  href={getLocalizedHref(currentLocale, "/search")}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 rounded-xl px-4 py-3.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  <Sparkles className="h-4 w-4 text-neon-cyan" />
+                  {t("aiSearch")}
+                </Link>
+              </nav>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

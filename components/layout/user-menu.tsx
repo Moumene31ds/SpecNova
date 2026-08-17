@@ -75,7 +75,7 @@ export function UserMenu() {
 
   if (loading) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9" disabled>
+      <Button variant="ghost" size="icon" className="h-10 w-10" disabled>
         <Loader2 className="h-4 w-4 animate-spin" />
       </Button>
     );
@@ -86,7 +86,7 @@ export function UserMenu() {
       <Link
         href={getLocalizedHref(locale, "/sign-in")}
         aria-label={t("signIn")}
-        className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-secondary/50 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-secondary/50 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
       >
         <UserCircle2 className="h-5 w-5" />
       </Link>
@@ -98,7 +98,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           aria-label={displayName ?? email ?? "Account"}
-          className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-gradient-to-br from-neon-violet to-neon-cyan text-sm font-bold text-white shadow-[0_0_16px_hsl(var(--glow-primary)/0.35)] transition-transform hover:scale-105"
+          className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-gradient-to-br from-neon-violet to-neon-cyan text-sm font-bold text-white shadow-[0_0_16px_hsl(var(--glow-primary)/0.35)] transition-transform hover:scale-105"
         >
           {initial}
         </button>

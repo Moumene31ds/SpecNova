@@ -89,7 +89,7 @@ export default async function PhonePage({ params }: Props) {
       {/* ---------------------------------------------- Hero header */}
       <section className="container">
         <div
-          className="relative overflow-hidden rounded-3xl border border-border p-8 md:p-12"
+          className="relative overflow-hidden rounded-3xl border border-border p-5 sm:p-8 md:p-12"
           style={{
             background: `radial-gradient(120% 160% at 85% -20%, ${accent}26 0%, transparent 55%), radial-gradient(90% 120% at -10% 120%, hsl(var(--glow-accent)/0.12) 0%, transparent 50%)`,
           }}

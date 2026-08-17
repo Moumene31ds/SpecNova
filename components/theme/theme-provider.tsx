@@ -81,7 +81,7 @@ export function ThemeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9"
+          className="h-10 w-10"
           aria-label={t("theme")}
         >
           <Icon className="h-4 w-4" />
