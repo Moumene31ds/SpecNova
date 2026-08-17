@@ -52,12 +52,15 @@ export function classNamesOfDevice(device: {
 }
 
 export function absoluteUrl(path: string): string {
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://spec-nova-dz31.vercel.app");
-  return new URL(path, base).toString();
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured && !configured.includes("localhost")) {
+    return new URL(path, configured).toString();
+  }
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) {
+    return new URL(path, `https://${vercelUrl}`).toString();
+  }
+  return new URL(path, "https://spec-nova-dz31.vercel.app").toString();
 }
 
 export function formatDate(date: Date | { seconds: number } | null | undefined) {
