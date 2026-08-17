@@ -4,18 +4,14 @@ import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 
 /**
- * AI Magic Auto-Fill — structured spec extraction.
+ * AI Magic Auto-Fill — structured spec extraction with live web grounding.
  *
- * The Admin Studio sends a human query ("Samsung Galaxy S25 Ultra") and this
- * module asks Gemini for a complete, typed spec sheet in a single
- * pass. The zod schema mirrors `DeviceSpecs` in lib/firebase/types.ts so the
- * editor can map results onto the draft device 1:1; unknown values are null
- * (never invented), and every field carries a confidence classification that
- * drives the UI badges.
+ * Uses Google Search Grounding so Gemini searches the web in real-time
+ * for the latest phone specifications — including devices released today.
  */
 
 export const AI_EXTRACTION_MODEL =
-  process.env.AI_EXTRACTION_MODEL ?? "gemini-3.5-flash";
+  process.env.AI_EXTRACTION_MODEL ?? "gemini-2.5-flash";
 
 const geai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -161,18 +157,26 @@ export const AiExtractedDeviceSchema = z.object({
 export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 
 // ---------------------------------------------------------------------------
-// Prompt
+// Prompt — grounded in live web search
 // ---------------------------------------------------------------------------
 
 const PROMPT = `You are SpecNova's world-class device-spec engineer — the single most accurate phone specification database on the planet.
 
-INPUT: a device name the user wants documented (e.g. "Samsung Galaxy S25 Ultra", "iPhone 17 Pro Max", "Xiaomi 15 Ultra").
+CRITICAL: You have Google Search access. USE IT. Search the web for the LATEST official specifications, especially for phones announced or released in 2025-2026. Your training data may be outdated — the web search results are your source of truth.
 
-YOUR MISSION: produce the most accurate, complete, and detailed spec sheet ever assembled for this device. You have encyclopedic knowledge of every phone ever manufactured. Use it.
+INPUT: a device name the user wants documented (e.g. "Samsung Galaxy S25 Ultra", "iPhone 17 Pro Max", "Xiaomi 15 Ultra", "OnePlus 14").
+
+YOUR MISSION: produce the most accurate, complete, and detailed spec sheet ever assembled for this device by searching the live web.
+
+SEARCH STRATEGY:
+- ALWAYS search for "[device name] specifications" on GSMArena, official manufacturer pages, and tech review sites.
+- For very new phones (2025-2026), search multiple sources to cross-verify specs.
+- Search for "[device name] camera specs", "[device name] battery test", "[device name] benchmarks" for detailed data.
+- Use the search results to fill in EVERY field with verified data.
 
 CRITICAL RULES:
 1. RETURN ONE strict JSON object matching the EXACT structure below.
-2. Fill EVERY field you can verify with precision. Use null ONLY when truly unknown.
+2. Fill EVERY field you can verify with precision from web search results. Use null ONLY when truly unknown.
 3. NEVER invent, guess, or hallucinate specs. If uncertain, use null and mark in confidence.unavailableFields.
 4. Preserve official marketing names exactly (e.g. "Snapdragon 8 Elite", "LTPO AMOLED", "Armor Aluminum").
 5. Numbers: strip units (mm, g, Hz, nits, mAh, W). Dates: ISO 8601 (YYYY-MM-DD).
@@ -180,11 +184,11 @@ CRITICAL RULES:
 7. Include ALL known cellular bands as individual strings (e.g. "n1", "n3", "B20", "B28").
 8. List ALL sensors, ALL connectivity features, ALL audio capabilities.
 9. For variants: include EVERY regional SKU you know about.
-10. For sources: use REAL, VERIFIED URLs only (gsmarena.com, phonearena.com, official manufacturer pages, tenaa.cn, fcc.gov).
+10. For sources: prefer URLs from your web search results (gsmarena.com, phonearena.com, official manufacturer pages, tenaa.cn, fcc.gov, nanoreview.net, antutu.com).
 
 CAMERA ENTRIES — for each lens include:
 - kind: "wide"|"ultrawide"|"telephoto"|"periscope"|"macro"|"depth"|"selfie"
-- megapixels, aperture (e.g. "f/1.7"), sensorSize (e.g. "1/1.3\""), pixelSize (e.g. "1.6μm")
+- megapixels, aperture (e.g. "f/1.7"), sensorSize (e.g. "1/1.3\\""), pixelSize (e.g. "1.6μm")
 - fieldOfViewDeg, opticalZoom, digitalZoom, stabilization ("OIS"|"OIS+EIS"|"EIS"|"none")
 - video capabilities array
 
@@ -225,9 +229,53 @@ Return ONLY the JSON object. No markdown fences, no commentary, no explanation.`
 /** Hard cap — increased to prevent truncation on complex devices. */
 const MAX_OUTPUT_TOKENS = 16384;
 
+// ---------------------------------------------------------------------------
+// Source extraction from grounding metadata
+// ---------------------------------------------------------------------------
+
+function extractGroundingSources(
+  groundingChunks?: Array<{ web?: { title?: string; uri?: string } }>,
+): { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] {
+  if (!groundingChunks?.length) return [];
+
+  const seen = new Set<string>();
+  const sources: { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] = [];
+
+  for (const chunk of groundingChunks) {
+    const web = chunk.web;
+    if (!web?.uri) continue;
+    if (seen.has(web.uri)) continue;
+    seen.add(web.uri);
+
+    const domain = web.uri.toLowerCase();
+    let kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" = "retailer";
+    if (domain.includes("gsmarena.com") || domain.includes("phonearena.com") || domain.includes("notebookcheck") || domain.includes("androidauthority.com") || domain.includes("xda-developers.com") || domain.includes("91mobiles.com") || domain.includes("smartprix.com")) {
+      kind = "retailer";
+    } else if (domain.includes("tenaa.cn")) {
+      kind = "tenaa";
+    } else if (domain.includes("fcc.gov") || domain.includes("fccid.io")) {
+      kind = "fcc";
+    } else if (domain.includes("antutu.com") || domain.includes("nanoreview.net") || domain.includes("geekbench")) {
+      kind = "benchmark";
+    } else if (domain.includes("samsung.com") || domain.includes("apple.com") || domain.includes("xiaomi.com") || domain.includes("oneplus.com") || domain.includes("google.com") || domain.includes("motorola.com") || domain.includes("sony.com") || domain.includes("huawei.com")) {
+      kind = "official";
+    }
+
+    sources.push({
+      title: web.title ?? new URL(web.uri).hostname,
+      url: web.uri,
+      kind,
+    });
+  }
+
+  return sources;
+}
+
 /**
- * Extract a fully-typed spec sheet for a device query. Retries up to 2 times
- * on malformed JSON or schema validation failures.
+ * Extract a fully-typed spec sheet for a device query.
+ * Uses Google Search Grounding so Gemini can access the LIVE web for
+ * the latest phone specifications — even phones released today.
+ * Retries up to 2 times on malformed JSON or schema validation failures.
  */
 export async function extractSpecs(query: string): Promise<{
   device: AiExtractedDevice;
@@ -252,6 +300,7 @@ export async function extractSpecs(query: string): Promise<{
       ],
       config: {
         systemInstruction: PROMPT,
+        tools: [{ googleSearch: {} }],
         temperature: isRetry ? 0 : 0.2,
         topP: 0.95,
         maxOutputTokens: MAX_OUTPUT_TOKENS,
@@ -267,7 +316,25 @@ export async function extractSpecs(query: string): Promise<{
 
     try {
       const parsed = parseJsonObject(raw);
-      return { device: AiExtractedDeviceSchema.parse(parsed), raw };
+      const device = AiExtractedDeviceSchema.parse(parsed);
+
+      // Merge grounding metadata sources with AI-provided sources
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      const groundingSources = extractGroundingSources(
+        groundingChunks as Array<{ web?: { title?: string; uri?: string } }> | undefined,
+      );
+
+      if (groundingSources.length > 0) {
+        const existingUrls = new Set(device.sources.map((s) => s.url));
+        for (const gs of groundingSources) {
+          if (!existingUrls.has(gs.url)) {
+            device.sources.push(gs);
+            existingUrls.add(gs.url);
+          }
+        }
+      }
+
+      return { device, raw };
     } catch (err) {
       if (attempt >= MAX_RETRIES) {
         const msg = err instanceof z.ZodError
@@ -362,14 +429,10 @@ function repairTruncatedJson(text: string): string {
   }
 
   // Remove trailing incomplete key-value (e.g. "someKey": "someVa")
-  // Find the last complete key-value pair
   const lastColon = result.lastIndexOf(":");
   if (lastColon > 0) {
     const afterColon = result.slice(lastColon + 1).trim();
-    // If after the last colon we have an incomplete value (no closing brace/bracket after it)
     if (afterColon && !afterColon.match(/^[\]}\d"true false null]/)) {
-      // Truncate to before this incomplete pair
-      // Find the last complete comma or opening brace
       const lastComma = result.lastIndexOf(",", lastColon);
       const lastOpenBrace = Math.max(result.lastIndexOf("{", lastColon), result.lastIndexOf("[", lastColon));
       if (lastComma > lastOpenBrace && lastComma > 0) {

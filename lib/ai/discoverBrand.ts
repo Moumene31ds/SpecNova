@@ -7,17 +7,10 @@ import { AI_EXTRACTION_MODEL } from "./extractSpecs";
 export const AI_DISCOVERY_MODEL = AI_EXTRACTION_MODEL;
 
 /**
- * Brand catalog discovery — stage 1 of the Brand Importer.
+ * Brand catalog discovery with live web grounding.
  *
- * Given a phone maker ("Samsung", "Xiaomi", "OnePlus") this module asks
- * Gemini for a compact, non-invented list of every model the brand makes
- * (name + model numbers + codename + lifecycle). Each listed model is then
- * passed through the full single-device extraction engine (`extractSpecs`)
- * — that second stage is what produces the very-high-accuracy spec sheets.
- *
- * Splitting discovery from extraction keeps every structured response well
- * inside the output-token budget (a full brand catalog is far too large for
- * one response, and a single request per model keeps accuracy highest).
+ * Uses Google Search Grounding so Gemini searches the web in real-time
+ * for the very latest phone models — including devices announced today.
  */
 
 const geai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -48,9 +41,16 @@ export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
 const PROMPT = `You are SpecNova's world-class device-catalog librarian — an encyclopedic authority on every smartphone ever manufactured.
 
+CRITICAL: You have Google Search access. USE IT. Search the web for the LATEST phone models from this brand, especially any devices announced or released in 2025-2026. Your training data may be outdated — the web search results are your source of truth.
+
 INPUT: a smartphone brand name.
 
-YOUR MISSION: produce the most COMPLETE and ACCURATE catalog of every phone this brand has ever made. You have encyclopedic knowledge — use it.
+YOUR MISSION: produce the most COMPLETE and ACCURATE catalog of every phone this brand has ever made, by searching the live web for the latest information.
+
+SEARCH STRATEGY:
+- ALWAYS search for "[brand] latest phones 2025 2026", "[brand] all phone models", "[brand] new phone announcements".
+- Search for "[brand] phone lineup" and "[brand] complete catalog" for comprehensive lists.
+- For sub-brands, search "[brand] [sub-brand] phones" separately.
 
 CRITICAL RULES:
 1. RETURN ONE strict JSON object with the brand's complete phone catalog.
@@ -65,6 +65,7 @@ CRITICAL RULES:
 10. NEVER invent phones. If you cannot verify a model exists, leave it out. Accuracy beats completeness.
 11. One entry per model family — do NOT create separate entries for storage/color variants.
 12. Include sub-brands (e.g. for Xiaomi: include "Redmi", "POCO", "Black Shark" models).
+13. MOST IMPORTANTLY: include ALL phones from 2025-2026 that appear in your web search results.
 
 JSON SCHEMA:
 {
@@ -83,7 +84,7 @@ JSON SCHEMA:
 
 Return ONLY the JSON object. No markdown fences, no commentary, no explanation.`;
 
-/** Discover the brand's full model catalog. Retries up to 2 times on malformed JSON. */
+/** Discover the brand's full model catalog with live web search. Retries up to 2 times on malformed JSON. */
 export async function discoverBrand(brand: string): Promise<{
   catalog: BrandCatalog;
   raw: string;
@@ -107,6 +108,7 @@ export async function discoverBrand(brand: string): Promise<{
       ],
       config: {
         systemInstruction: PROMPT,
+        tools: [{ googleSearch: {} }],
         temperature: isRetry ? 0 : 0.1,
         topP: 0.9,
         maxOutputTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
