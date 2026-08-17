@@ -13,6 +13,7 @@ import { getPriceHistorySafe } from "@/lib/pricing";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceCard } from "@/components/device/device-card";
+import { PhoneImageGallery } from "@/components/PhoneImageGallery";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
 
 interface Props {
@@ -136,11 +137,22 @@ export default async function PhonePage({ params }: Props) {
             </div>
 
             <div className="perspective-1200">
-              <DeviceViewer3D
-                brandColor={accent}
-                modelUrl={device.media.modelUrl}
-                deviceName={`${device.brand} ${device.name}`}
-              />
+              {(device.media.heroImage || device.media.gallery.length > 0) ? (
+                <PhoneImageGallery
+                  device={{
+                    brand: device.brand,
+                    name: device.name,
+                    brandColor: accent,
+                    media: device.media,
+                  }}
+                />
+              ) : (
+                <DeviceViewer3D
+                  brandColor={accent}
+                  modelUrl={device.media.modelUrl}
+                  deviceName={`${device.brand} ${device.name}`}
+                />
+              )}
             </div>
           </div>
         </div>

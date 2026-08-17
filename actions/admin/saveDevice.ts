@@ -93,9 +93,9 @@ export async function saveDeviceDraft(input: {
       brandColor: brandColor(draft.brand),
       specs: draft.specs,
       media: {
-        heroImage: null,
-        gallery: [],
-        renderImages: [],
+        heroImage: draft.images?.heroImage ?? null,
+        gallery: draft.images?.gallery ?? [],
+        renderImages: draft.images?.renderImages ?? [],
         modelUrl: null,
         cameraSamples: {},
       },

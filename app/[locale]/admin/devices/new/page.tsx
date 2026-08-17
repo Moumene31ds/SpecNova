@@ -284,6 +284,7 @@ function blankDraft(): AiExtractedDevice {
       },
     },
     variants: [],
+    images: { heroImage: null, gallery: [], renderImages: [] },
     confidence: { overall: 0, verifiedFields: [], estimatedFields: [], unavailableFields: [] },
     sources: [],
   };

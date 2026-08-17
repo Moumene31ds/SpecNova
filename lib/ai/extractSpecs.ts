@@ -137,6 +137,11 @@ export const AiExtractedDeviceSchema = z.object({
       }),
     )
     .default([]),
+  images: z.object({
+    heroImage: z.string().url().nullish(),
+    gallery: z.array(z.string().url()).default([]),
+    renderImages: z.array(z.string().url()).default([]),
+  }).default({}),
   confidence: z.object({
     overall: z.number().min(0).max(1),
     verifiedFields: z.array(z.string()).default([]),
@@ -186,6 +191,15 @@ CRITICAL RULES:
 9. For variants: include EVERY regional SKU you know about.
 10. For sources: prefer URLs from your web search results (gsmarena.com, phonearena.com, official manufacturer pages, tenaa.cn, fcc.gov, nanoreview.net, antutu.com).
 
+OFFICIAL IMAGES — CRITICAL:
+- Search for "[device name] official image", "[device name] press render", "[device name] GSMArena images".
+- Find the OFFICIAL product photo from the manufacturer or a trusted press kit.
+- "heroImage": the BEST official product photo URL (direct image link, not a page URL). Prefer manufacturer CDN or GSMArena device images.
+- "gallery": array of additional official photo URLs (different angles, color variants). Only include direct image URLs (ending in .jpg, .png, .webp or hosted on image CDNs).
+- "renderImages": official press renders or marketing images.
+- Image URLs must be DIRECT image links (e.g. "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-s25-ultra.jpg"), NOT page URLs.
+- If you cannot find a verified official image, leave heroImage as null. NEVER use placeholder or fake image URLs.
+
 CAMERA ENTRIES — for each lens include:
 - kind: "wide"|"ultrawide"|"telephoto"|"periscope"|"macro"|"depth"|"selfie"
 - megapixels, aperture (e.g. "f/1.7"), sensorSize (e.g. "1/1.3\\""), pixelSize (e.g. "1.6μm")
@@ -220,6 +234,7 @@ JSON SCHEMA:
     "extras": { "fingerprint": "under-display|side|rear|none|null", "faceUnlock": bool|null, "stylus": bool|null, "esim": bool|null, "uwb": bool|null, "satelliteSos": bool|null }
   },
   "variants": [ {"name": "string", "region": "string", "chipset": "string|null", "ramGb": num|null, "storageGb": num|null, "modem": "string|null", "note": "string|null"} ],
+  "images": { "heroImage": "string|null (direct image URL)", "gallery": ["string (direct image URLs)"], "renderImages": ["string (direct image URLs)"] },
   "confidence": { "overall": num, "verifiedFields": ["string"], "estimatedFields": ["string"], "unavailableFields": ["string"] },
   "sources": [ {"title": "string", "url": "string (real URL)", "kind": "official|tenaa|fcc|retailer|benchmark"} ]
 }
