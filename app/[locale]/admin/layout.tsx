@@ -12,20 +12,22 @@ import { SignOutButton } from "@/components/admin/sign-out";
  */
 export default async function AdminLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+  params,
+}: Readonly<{ children: React.ReactNode; params: Promise<{ locale: string }> }>) {
+  const { locale } = await params;
   const tokens = await getServerTokens();
   const claims = tokens?.decodedToken;
   const roles = parseRoles(claims as unknown as Record<string, unknown> | undefined);
 
-  if (!claims?.uid) redirect("/sign-in?redirect=/admin");
-  if (!roles.isAdmin && !roles.isEditor) redirect("/");
+  if (!claims?.uid) redirect(`/${locale}/sign-in?redirect=/${locale}/admin`);
+  if (!roles.isAdmin && !roles.isEditor) redirect(`/${locale}`);
 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/admin" className="font-display text-lg font-semibold tracking-tight">
+            <Link href={`/${locale}/admin`} className="font-display text-lg font-semibold tracking-tight">
               SpecNova <span className="text-primary">Admin</span>
             </Link>
             <Badge variant={roles.isAdmin ? "default" : "secondary"}>
@@ -33,16 +35,16 @@ export default async function AdminLayout({
             </Badge>
           </div>
           <nav className="flex items-center gap-1 text-sm">
-            <Link href="/admin" className="rounded-lg px-3 py-1.5 hover:bg-secondary/60">
+            <Link href={`/${locale}/admin`} className="rounded-lg px-3 py-1.5 hover:bg-secondary/60">
               Dashboard
             </Link>
-            <Link href="/admin/devices/new" className="rounded-lg px-3 py-1.5 hover:bg-secondary/60">
+            <Link href={`/${locale}/admin/devices/new`} className="rounded-lg px-3 py-1.5 hover:bg-secondary/60">
               New Device
             </Link>
-            <Link href="/admin/devices/brand" className="rounded-lg px-3 py-1.5 hover:bg-secondary/60">
+            <Link href={`/${locale}/admin/devices/brand`} className="rounded-lg px-3 py-1.5 hover:bg-secondary/60">
               Brand Import
             </Link>
-            <Link href="/" className="rounded-lg px-3 py-1.5 text-muted-foreground hover:bg-secondary/60">
+            <Link href={`/${locale}`} className="rounded-lg px-3 py-1.5 text-muted-foreground hover:bg-secondary/60">
               ← Back to site
             </Link>
             <SignOutButton />

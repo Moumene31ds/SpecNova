@@ -22,6 +22,10 @@ function isApiRoute(pathname: string): boolean {
   return pathname.startsWith("/api/");
 }
 
+function hasLocalePrefix(pathname: string): boolean {
+  return locales.some((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
+}
+
 function getLocaleFromRequest(request: NextRequest): string {
   const pathname = request.nextUrl.pathname;
   for (const locale of locales) {
@@ -36,6 +40,14 @@ function getLocaleFromRequest(request: NextRequest): string {
   return defaultLocale;
 }
 
+function ensureLocaleRedirect(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const locale = getLocaleFromRequest(request);
+  const url = new URL(`/${locale}${pathname === "/" ? "" : pathname}`, request.url);
+  url.search = request.nextUrl.search;
+  return NextResponse.redirect(url);
+}
+
 function signInRedirect(request: NextRequest) {
   const locale = getLocaleFromRequest(request);
   const url = new URL(`/${locale}/sign-in`, request.url);
@@ -46,7 +58,6 @@ function signInRedirect(request: NextRequest) {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Skip locale handling for API routes
   if (isApiRoute(pathname)) {
     if (!isAuthConfigValid()) return NextResponse.next();
 
@@ -70,8 +81,12 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  if (!hasLocalePrefix(pathname)) {
+    return ensureLocaleRedirect(request);
+  }
+
   if (!isAuthConfigValid()) {
-    return handleLocaleRedirect(request);
+    return NextResponse.next();
   }
 
   const requestPath = pathname;
@@ -116,34 +131,13 @@ export async function middleware(request: NextRequest) {
     },
     handleInvalidToken: async () => {
       if (isAdminPath(requestPath)) return signInRedirect(request);
-      return handleLocaleRedirect(request);
+      return NextResponse.next();
     },
     handleError: async () => {
       if (isAdminPath(requestPath)) return signInRedirect(request);
-      return handleLocaleRedirect(request);
+      return NextResponse.next();
     },
   });
-}
-
-function handleLocaleRedirect(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-
-  // Skip if already has locale or is root
-  const hasLocale = locales.some((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
-
-  if (pathname === "/") {
-    const locale = getLocaleFromRequest(request);
-    const url = new URL(`/${locale}`, request.url);
-    return NextResponse.redirect(url);
-  }
-
-  if (!hasLocale) {
-    const locale = getLocaleFromRequest(request);
-    const url = new URL(`/${locale}${pathname}`, request.url);
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
 }
 
 export const config = {

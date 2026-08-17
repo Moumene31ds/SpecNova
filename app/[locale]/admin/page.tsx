@@ -16,11 +16,14 @@ import {
  * Admin dashboard — catalog health, the missing-device scrape queue, and a
  * live slice of the immutable audit trail.
  */
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  params,
+}: Readonly<{ params: Promise<{ locale: string }> }>) {
+  const { locale } = await params;
   const tokens = await getServerTokens();
   const claims = tokens?.decodedToken;
   const roles = parseRoles(claims as unknown as Record<string, unknown> | undefined);
-  if (!roles.isAdmin && !roles.isEditor) redirect("/");
+  if (!roles.isAdmin && !roles.isEditor) redirect(`/${locale}`);
 
   if (!isFirebaseConfigured()) {
     return (
@@ -118,7 +121,7 @@ export default async function AdminDashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Missing-phone scrape queue</CardTitle>
               <Link
-                href="/admin/devices/new"
+                href={`/${locale}/admin/devices/new`}
                 className="text-sm font-medium text-primary hover:underline"
               >
                 Auto-fill a device →

@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
   Bot,
@@ -80,6 +81,8 @@ const STATUS_BADGE: Record<ExtractState, { label: string; cls: string }> = {
 };
 
 export default function BrandImporterPage() {
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   const [brand, setBrand] = useState("");
   const [phase, setPhase] = useState<"idle" | "discovering" | "error">("idle");
   const [discoverError, setDiscoverError] = useState<string | null>(null);
@@ -499,7 +502,7 @@ export default function BrandImporterPage() {
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Bot className="size-4" />
         Powered by Gemini — same engine and confidence model as{" "}
-        <Link href="/admin/devices/new" className="underline hover:text-foreground">
+        <Link href={`/${locale}/admin/devices/new`} className="underline hover:text-foreground">
           Magic Auto-Fill
         </Link>
         . Every extraction is audited.
