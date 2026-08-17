@@ -24,18 +24,41 @@ const verdictStyles = {
 
 const verdictLabels = { full: "Full coverage", partial: "Partial", none: "No support" } as const;
 
+const deviceBandSet = (bands: string[]) => new Set(bands.map((b) => b.toLowerCase()));
+
 export function BandChecker({ device }: BandCheckerProps) {
   const deviceBands = device.specs.connectivity.bands;
+  const bandSet = React.useMemo(() => deviceBandSet(deviceBands), [deviceBands]);
+
   const carriers = React.useMemo(() => {
     const set = new Set<string>();
     for (const b of STATIC_CARRIER_BANDS) set.add(b.carrier);
     return [...set].sort();
   }, []);
 
+  const carrierCountries = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of STATIC_CARRIER_BANDS) {
+      if (!map.has(b.carrier)) map.set(b.carrier, b.country);
+    }
+    return map;
+  }, []);
+
+  const carrierHasMatch = React.useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const carrier of carriers) {
+      map.set(carrier, bandsForCarrier(carrier).some((b) => bandSet.has(b.band.toLowerCase())));
+    }
+    return map;
+  }, [carriers, bandSet]);
+
   const [query, setQuery] = React.useState("");
   const [selected, setSelected] = React.useState<string | null>(null);
 
-  const filtered = carriers.filter((c) => c.toLowerCase().includes(query.toLowerCase()));
+  const filtered = React.useMemo(
+    () => query ? carriers.filter((c) => c.toLowerCase().includes(query.toLowerCase())) : carriers,
+    [carriers, query],
+  );
 
   const results: BandCompatibility[] = React.useMemo(
     () => (selected ? checkCarrierCompatibility(deviceBands, bandsForCarrier(selected)) : []),
@@ -64,37 +87,31 @@ export function BandChecker({ device }: BandCheckerProps) {
       </div>
 
       <div className="grid gap-4 p-4 md:grid-cols-[240px_1fr]">
-        <div className="max-h-64 overflow-y-auto rounded-xl border border-border/60">
+        <div className="max-h-64 overflow-y-auto rounded-xl border border-border/60" style={{ contain: "content" }}>
           {filtered.length === 0 && (
             <p className="p-4 text-xs text-muted-foreground">No carriers match.</p>
           )}
-          {filtered.map((carrier) => {
-            const country = STATIC_CARRIER_BANDS.find((b) => b.carrier === carrier)?.country;
-            const hasMatch = bandsForCarrier(carrier).some((b) =>
-              deviceBands.map((x) => x.toLowerCase()).includes(b.band.toLowerCase()),
-            );
-            return (
-              <button
-                key={carrier}
-                onClick={() => setSelected(selected === carrier ? null : carrier)}
+          {filtered.map((carrier) => (
+            <button
+              key={carrier}
+              onClick={() => setSelected(selected === carrier ? null : carrier)}
+              className={cn(
+                "flex w-full items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5 text-left transition-colors hover:bg-secondary/60 last:border-0",
+                selected === carrier && "bg-secondary",
+              )}
+            >
+              <span>
+                <span className="block text-sm font-medium">{carrier}</span>
+                <span className="block text-[11px] text-muted-foreground">{carrierCountries.get(carrier)}</span>
+              </span>
+              <span
                 className={cn(
-                  "flex w-full items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5 text-left transition-colors hover:bg-secondary/60 last:border-0",
-                  selected === carrier && "bg-secondary",
+                  "h-1.5 w-1.5 rounded-full",
+                  carrierHasMatch.get(carrier) ? "bg-success" : "bg-muted-foreground/40",
                 )}
-              >
-                <span>
-                  <span className="block text-sm font-medium">{carrier}</span>
-                  <span className="block text-[11px] text-muted-foreground">{country}</span>
-                </span>
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    hasMatch ? "bg-success" : "bg-muted-foreground/40",
-                  )}
-                />
-              </button>
-            );
-          })}
+              />
+            </button>
+          ))}
         </div>
 
         <div className="space-y-3">

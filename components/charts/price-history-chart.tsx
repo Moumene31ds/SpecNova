@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
 import {
   Area,
   AreaChart,
@@ -37,6 +36,15 @@ const trendMeta = {
   stable: { icon: Minus, label: "Stable", className: "text-warning" },
 } as const;
 
+const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "short" });
+const fullDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const DAYS_MAP = { "1M": 30, "3M": 90, "6M": 180, ALL: Infinity } as const;
+
 export function PriceHistoryChart({
   deviceId,
   deviceName,
@@ -47,11 +55,12 @@ export function PriceHistoryChart({
   const [range, setRange] = React.useState<"1M" | "3M" | "6M" | "ALL">("6M");
   const [modalOpen, setModalOpen] = React.useState(false);
 
-  const daysMap = { "1M": 30, "3M": 90, "6M": 180, ALL: Infinity } as const;
-  const cutoff = Date.now() - daysMap[range] * 86_400_000;
-
-  const visible = points.filter((p) => p.ts >= cutoff);
-  const data = visible.map((p) => ({ ...p, time: new Date(p.ts) }));
+  const data = React.useMemo(() => {
+    const cutoff = Date.now() - DAYS_MAP[range] * 86_400_000;
+    return points
+      .filter((p) => p.ts >= cutoff)
+      .map((p) => ({ ...p, time: new Date(p.ts) }));
+  }, [points, range]);
 
   const trend = React.useMemo(() => {
     if (data.length < 2) return "stable" as const;
@@ -75,10 +84,10 @@ export function PriceHistoryChart({
         </div>
 
         <div className="flex items-center gap-2">
-          {Object.keys(daysMap).map((r) => (
+          {(Object.keys(DAYS_MAP) as Array<keyof typeof DAYS_MAP>).map((r) => (
             <button
               key={r}
-              onClick={() => setRange(r as keyof typeof daysMap)}
+              onClick={() => setRange(r)}
               className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
                 range === r
                   ? "bg-primary/15 text-primary"
@@ -109,9 +118,7 @@ export function PriceHistoryChart({
             <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="time"
-              tickFormatter={(t: Date) =>
-                new Intl.DateTimeFormat("en-US", { month: "short" }).format(t)
-              }
+              tickFormatter={(t: Date) => monthFormatter.format(t)}
               stroke="hsl(var(--muted-foreground))"
               tick={{ fontSize: 11 }}
               minTickGap={24}
@@ -131,13 +138,7 @@ export function PriceHistoryChart({
                 fontSize: 12,
               }}
               formatter={(value) => formatCurrency(Number(value))}
-              labelFormatter={(t: Date) =>
-                new Intl.DateTimeFormat("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                }).format(t as Date)
-              }
+              labelFormatter={(t: Date) => fullDateFormatter.format(t)}
             />
             <ReferenceLine
               y={current?.priceUsd}
@@ -145,16 +146,15 @@ export function PriceHistoryChart({
               strokeDasharray="4 4"
               strokeOpacity={0.6}
             />
-            <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
-              <Area
-                type="monotone"
-                dataKey="priceUsd"
-                stroke="hsl(var(--neon-cyan))"
-                strokeWidth={2}
-                fill="url(#priceGradient)"
-                activeDot={{ r: 4, strokeWidth: 0, fill: "hsl(var(--neon-cyan))" }}
-              />
-            </motion.g>
+            <Area
+              type="monotone"
+              dataKey="priceUsd"
+              stroke="hsl(var(--neon-cyan))"
+              strokeWidth={2}
+              fill="url(#priceGradient)"
+              activeDot={{ r: 4, strokeWidth: 0, fill: "hsl(var(--neon-cyan))" }}
+              isAnimationActive={false}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>

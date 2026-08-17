@@ -24,7 +24,7 @@ const GENRES = {
  */
 export function GamingSimulator({ devices }: GamingSimulatorProps) {
   const [genre, setGenre] = React.useState<keyof typeof GENRES>("fps");
-  const profiles = devices.map(gamingProfile);
+  const profiles = React.useMemo(() => devices.map(gamingProfile), [devices]);
   const t = GENRES[genre];
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Battery, Camera, Calendar, Cpu, DollarSign, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { localSearch } from "@/lib/search/local-search";
@@ -26,28 +26,33 @@ const DEFAULT_FILTERS: Filters = {
   minYear: null,
 };
 
+const PAGE_SIZE = 24;
+
 function tsYear(ts: { seconds: number } | null): number | null {
   return ts && ts.seconds ? new Date(ts.seconds * 1000).getFullYear() : null;
 }
 
 function applyFilters(catalog: Device[], query: string, f: Filters): Device[] {
-  let list = catalog.filter((d) => {
-    if (f.maxPrice !== null) {
-      const price = d.priceSummary?.latest;
-      if (price === undefined || price > f.maxPrice) return false;
-    }
-    if (f.minBattery !== null && d.specs.battery.capacityMah < f.minBattery) return false;
-    if (f.minCamera !== null && (d.specs.cameras.rear[0]?.megapixels ?? 0) < f.minCamera) return false;
-    if (f.chipset.trim()) {
-      const chipset = `${d.specs.platform.chipset} ${d.specs.platform.os}`.toLowerCase();
-      if (!chipset.includes(f.chipset.trim().toLowerCase())) return false;
-    }
-    if (f.minYear !== null) {
-      const year = tsYear(d.releaseAt) ?? tsYear(d.announcedAt);
-      if (year === null || year < f.minYear) return false;
-    }
-    return true;
-  });
+  let list = catalog;
+  if (f.maxPrice !== null || f.minBattery !== null || f.minCamera !== null || f.chipset.trim() || f.minYear !== null) {
+    list = catalog.filter((d) => {
+      if (f.maxPrice !== null) {
+        const price = d.priceSummary?.latest;
+        if (price === undefined || price > f.maxPrice) return false;
+      }
+      if (f.minBattery !== null && d.specs.battery.capacityMah < f.minBattery) return false;
+      if (f.minCamera !== null && (d.specs.cameras.rear[0]?.megapixels ?? 0) < f.minCamera) return false;
+      if (f.chipset.trim()) {
+        const chipset = `${d.specs.platform.chipset} ${d.specs.platform.os}`.toLowerCase();
+        if (!chipset.includes(f.chipset.trim().toLowerCase())) return false;
+      }
+      if (f.minYear !== null) {
+        const year = tsYear(d.releaseAt) ?? tsYear(d.announcedAt);
+        if (year === null || year < f.minYear) return false;
+      }
+      return true;
+    });
+  }
 
   const q = query.trim();
   if (q) {
@@ -56,40 +61,58 @@ function applyFilters(catalog: Device[], query: string, f: Filters): Device[] {
   return list;
 }
 
-function isActive(f: Filters): boolean {
-  return (
-    f.maxPrice !== null ||
-    f.minBattery !== null ||
-    f.minCamera !== null ||
-    f.chipset.trim() !== "" ||
-    f.minYear !== null
-  );
-}
+const isActive = (f: Filters) =>
+  f.maxPrice !== null || f.minBattery !== null || f.minCamera !== null || f.chipset.trim() !== "" || f.minYear !== null;
 
 export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string }) {
   const t = useTranslations("search");
+  const catalogRef = React.useRef<Device[]>(getDevCatalog(200));
 
   const [query, setQuery] = React.useState(defaultQuery);
+  const [inputValue, setInputValue] = React.useState(defaultQuery);
   const [filters, setFilters] = React.useState<Filters>(DEFAULT_FILTERS);
   const [openFilters, setOpenFilters] = React.useState(false);
+  const [page, setPage] = React.useState(0);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(null);
+
+  React.useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setQuery(inputValue);
+      setPage(0);
+    }, 200);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [inputValue]);
 
   const results = React.useMemo(
-    () => applyFilters(getDevCatalog(200), query, filters),
+    () => applyFilters(catalogRef.current, query, filters),
     [query, filters],
   );
 
-  const set = <K extends keyof Filters>(key: K, value: Filters[K]) =>
-    setFilters((prev) => ({ ...prev, [key]: value }));
+  const visibleResults = React.useMemo(
+    () => results.slice(0, (page + 1) * PAGE_SIZE),
+    [results, page],
+  );
 
-  const reset = () => {
+  const hasMore = visibleResults.length < results.length;
+
+  const set = React.useCallback(<K extends keyof Filters>(key: K, value: Filters[K]) =>
+    setFilters((prev) => ({ ...prev, [key]: value })), []);
+
+  const reset = React.useCallback(() => {
     setFilters(DEFAULT_FILTERS);
+    setInputValue("");
     setQuery("");
-  };
+    setPage(0);
+  }, []);
 
-  const activeCount = isActive(filters)
-    ? (["maxPrice", "minBattery", "minCamera", "minYear"] as const).filter((k) => filters[k] !== null).length +
-      (filters.chipset.trim() ? 1 : 0)
-    : 0;
+  const activeCount = React.useMemo(() =>
+    isActive(filters)
+      ? (["maxPrice", "minBattery", "minCamera", "minYear"] as const).filter((k) => filters[k] !== null).length +
+        (filters.chipset.trim() ? 1 : 0)
+      : 0,
+    [filters],
+  );
 
   return (
     <div className="w-full">
@@ -98,8 +121,8 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
           <div className="relative flex-1">
             <DollarSign className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
               placeholder={t("aiSearchPlaceholder")}
               className="h-11 w-full rounded-xl border border-border bg-background/60 pl-10 pr-3 text-sm outline-none transition-colors focus:border-ring"
             />
@@ -126,104 +149,86 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
 
         <AnimatePresence initial={false}>
           {openFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="overflow-hidden"
-            >
-              <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                <label className="flex flex-col gap-1.5">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <DollarSign className="h-3.5 w-3.5" /> {t("maxPrice")}
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={filters.maxPrice ?? ""}
-                    onChange={(e) =>
-                      set("maxPrice", e.target.value ? Number(e.target.value) : null)
-                    }
-                    placeholder="$"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
-                  />
-                </label>
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <label className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <DollarSign className="h-3.5 w-3.5" /> {t("maxPrice")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={filters.maxPrice ?? ""}
+                  onChange={(e) => set("maxPrice", e.target.value ? Number(e.target.value) : null)}
+                  placeholder="$"
+                  className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
+                />
+              </label>
 
-                <label className="flex flex-col gap-1.5">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Battery className="h-3.5 w-3.5" /> {t("minBattery")}
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={100}
-                    value={filters.minBattery ?? ""}
-                    onChange={(e) =>
-                      set("minBattery", e.target.value ? Number(e.target.value) : null)
-                    }
-                    placeholder="mAh"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
-                  />
-                </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Battery className="h-3.5 w-3.5" /> {t("minBattery")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={filters.minBattery ?? ""}
+                  onChange={(e) => set("minBattery", e.target.value ? Number(e.target.value) : null)}
+                  placeholder="mAh"
+                  className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
+                />
+              </label>
 
-                <label className="flex flex-col gap-1.5">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Camera className="h-3.5 w-3.5" /> {t("minCamera")}
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={filters.minCamera ?? ""}
-                    onChange={(e) =>
-                      set("minCamera", e.target.value ? Number(e.target.value) : null)
-                    }
-                    placeholder="MP"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
-                  />
-                </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Camera className="h-3.5 w-3.5" /> {t("minCamera")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={filters.minCamera ?? ""}
+                  onChange={(e) => set("minCamera", e.target.value ? Number(e.target.value) : null)}
+                  placeholder="MP"
+                  className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
+                />
+              </label>
 
-                <label className="flex flex-col gap-1.5">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Cpu className="h-3.5 w-3.5" /> {t("chipset")}
-                  </span>
-                  <input
-                    value={filters.chipset}
-                    onChange={(e) => set("chipset", e.target.value)}
-                    placeholder="Snapdragon 8 Elite…"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
-                  />
-                </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Cpu className="h-3.5 w-3.5" /> {t("chipset")}
+                </span>
+                <input
+                  value={filters.chipset}
+                  onChange={(e) => set("chipset", e.target.value)}
+                  placeholder="Snapdragon 8 Elite…"
+                  className="h-10 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
+                />
+              </label>
 
-                <label className="col-span-2 flex flex-col gap-1.5 md:col-span-1">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Calendar className="h-3.5 w-3.5" /> {t("minYear")}
-                  </span>
-                  <select
-                    value={filters.minYear ?? ""}
-                    onChange={(e) =>
-                      set("minYear", e.target.value ? Number(e.target.value) : null)
-                    }
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
-                  >
-                    <option value="">Any</option>
-                    {[2020, 2021, 2022, 2023, 2024, 2025, 2026].map((y) => (
-                      <option key={y} value={y}>
-                        {y}+
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <button
-                  onClick={reset}
-                  className="col-span-2 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:col-span-1"
+              <label className="col-span-2 flex flex-col gap-1.5 md:col-span-1">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" /> {t("minYear")}
+                </span>
+                <select
+                  value={filters.minYear ?? ""}
+                  onChange={(e) => set("minYear", e.target.value ? Number(e.target.value) : null)}
+                  className="h-10 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
                 >
-                  <RotateCcw className="h-3.5 w-3.5" /> {t("resetFilters")}
-                </button>
-              </div>
-            </motion.div>
+                  <option value="">Any</option>
+                  {[2020, 2021, 2022, 2023, 2024, 2025, 2026].map((y) => (
+                    <option key={y} value={y}>{y}+</option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                onClick={reset}
+                className="col-span-2 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:col-span-1"
+              >
+                <RotateCcw className="h-3.5 w-3.5" /> {t("resetFilters")}
+              </button>
+            </div>
           )}
         </AnimatePresence>
 
@@ -235,15 +240,24 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
         </div>
       </div>
 
-      {results.length > 0 ? (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((device) => (
-            <DeviceCard
-              key={device.id}
-              device={device}
-            />
-          ))}
-        </div>
+      {visibleResults.length > 0 ? (
+        <>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleResults.map((device) => (
+              <DeviceCard key={device.id} device={device} />
+            ))}
+          </div>
+          {hasMore && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium transition-colors hover:border-ring/40 hover:bg-card/80"
+              >
+                Load more ({results.length - visibleResults.length} remaining)
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary">

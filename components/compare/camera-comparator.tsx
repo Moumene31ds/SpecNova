@@ -8,11 +8,6 @@ interface CameraComparatorProps {
   devices: Device[];
 }
 
-/**
- * Side-by-side camera comparison slider. When real sample shots exist in
- * `media.cameraSamples` they're used; otherwise a synthetic split render
- * tinted by each device's brand glow demonstrates the interaction.
- */
 export function CameraComparator({ devices }: CameraComparatorProps) {
   const [pos, setPos] = React.useState(50);
   const [a, b] = devices;
@@ -24,12 +19,10 @@ export function CameraComparator({ devices }: CameraComparatorProps) {
   return (
     <div className="relative select-none overflow-hidden rounded-2xl border border-border">
       <div className="relative aspect-[16/9] w-full">
-        {/* Layer B (right side) */}
         <div className="absolute inset-0">
           <Scene device={b} label="Night mode" />
         </div>
 
-        {/* Layer A clipped by the divider */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
@@ -40,15 +33,14 @@ export function CameraComparator({ devices }: CameraComparatorProps) {
         {sampleA && sampleB && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={sampleB} alt={`${b.brand} ${b.name} night sample`} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+            <img src={sampleB} alt={`${b.brand} ${b.name} night sample`} className="absolute inset-0 h-full w-full object-cover" draggable={false} loading="lazy" decoding="async" />
             <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={sampleA} alt={`${a.brand} ${a.name} day sample`} className="h-full w-full object-cover" draggable={false} />
+              <img src={sampleA} alt={`${a.brand} ${a.name} day sample`} className="h-full w-full object-cover" draggable={false} loading="lazy" decoding="async" />
             </div>
           </>
         )}
 
-        {/* Divider */}
         <div
           className="absolute top-0 h-full w-0.5 bg-white/90 shadow-[0_0_20px_rgba(0,0,0,0.5)]"
           style={{ left: `${pos}%` }}
@@ -86,19 +78,13 @@ export function CameraComparator({ devices }: CameraComparatorProps) {
   );
 }
 
-function Scene({
-  device,
-  label,
-}: {
-  device: Device;
-  label: string;
-}) {
+function Scene({ device, label }: { device: Device; label: string }) {
   const [x] = useSceneMovement();
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-background via-secondary to-background">
       <div
-        className="absolute h-[140%] w-[140%] transition-transform duration-700"
+        className="absolute h-[140%] w-[140%]"
         style={{
           background: `radial-gradient(circle at ${x}% 50%, ${device.brandColor}33 0%, transparent 45%)`,
           transform: "scale(1.1)",
@@ -113,11 +99,34 @@ function Scene({
 
 function useSceneMovement() {
   const [pos, setPos] = React.useState({ x: 40, y: 50 });
+  const ref = React.useRef<HTMLDivElement>(null);
+  const visibleRef = React.useRef(true);
+
   React.useEffect(() => {
-    const id = setInterval(() => {
-      setPos(({ x }) => ({ x: (x + 1.5) % 100, y: 50 + Math.sin(x / 9) * 18 }));
-    }, 400);
-    return () => clearInterval(id);
+    const el = ref.current?.closest("[data-radix-dialog-content]") ?? document.querySelector("main");
+    if (!el || !("IntersectionObserver" in window)) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => { visibleRef.current = entry.isIntersecting; },
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
+
+  React.useEffect(() => {
+    let animFrame: number;
+    let lastTime = performance.now();
+    const tick = (now: number) => {
+      if (visibleRef.current && now - lastTime > 400) {
+        lastTime = now;
+        setPos(({ x }) => ({ x: (x + 1.5) % 100, y: 50 + Math.sin(x / 9) * 18 }));
+      }
+      animFrame = requestAnimationFrame(tick);
+    };
+    animFrame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animFrame);
+  }, []);
+
   return [pos.x, pos.y] as const;
 }

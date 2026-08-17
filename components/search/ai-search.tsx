@@ -51,6 +51,8 @@ export function AiSearch({
   const [latency, setLatency] = React.useState<number | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(null);
+  const abortRef = React.useRef<AbortController | null>(null);
+  const requestCountRef = React.useRef(0);
 
   const runSearch = React.useCallback(async (q: string) => {
     const trimmed = q.trim();
@@ -59,23 +61,32 @@ export function AiSearch({
       setOpen(false);
       return;
     }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const requestId = ++requestCountRef.current;
+
     setLoading(true);
     const started = performance.now();
     try {
       const { aiSearch } = await import("@/actions/search");
       const res: AiSearchResult = await aiSearch(trimmed, 8);
+      if (controller.signal.aborted || requestId !== requestCountRef.current) return;
       if (res.hits.length) {
         setResults(res.hits);
         setUsedFallback(false);
       } else {
         const { localSearch } = await import("@/lib/search/local-search");
         const { getDevCatalog } = await import("@/lib/dev-data");
+        if (controller.signal.aborted) return;
         setResults(localSearch(trimmed, getDevCatalog(), 8));
         setUsedFallback(true);
       }
       setLatency(res.latencyMs);
       setOpen(true);
     } catch {
+      if (controller.signal.aborted) return;
       const { localSearch } = await import("@/lib/search/local-search");
       const { getDevCatalog } = await import("@/lib/dev-data");
       const hits = localSearch(trimmed, getDevCatalog(), 8);
@@ -84,13 +95,15 @@ export function AiSearch({
       setLatency(Math.round(performance.now() - started));
       setOpen(true);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted && requestId === requestCountRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   React.useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => runSearch(query), 240);
+    debounceRef.current = setTimeout(() => runSearch(query), 300);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -98,11 +111,13 @@ export function AiSearch({
 
   React.useEffect(() => {
     if (defaultQuery) setQuery(defaultQuery);
+    return () => abortRef.current?.abort();
   }, [defaultQuery]);
 
   const navigate = React.useCallback((index: number) => {
     const hit = results[index];
     if (!hit) return;
+    abortRef.current?.abort();
     setOpen(false);
     setQuery("");
     router.push(`/${locale}/phone/${hit.device.slug}`);
@@ -197,7 +212,7 @@ export function AiSearch({
                     </span>
                   )}
                 </div>
-                <ul className="max-h-80 overflow-y-auto p-1.5">
+                <ul className="max-h-80 overflow-y-auto p-1.5" style={{ contain: "content" }}>
                   {results.map((hit, i) => (
                     <li key={hit.device.id}>
                       <button

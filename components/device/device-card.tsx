@@ -1,3 +1,4 @@
+import * as React from "react";
 import Link from "next/link";
 import { Smartphone } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -23,7 +24,7 @@ const statusTone: Record<Device["status"], "success" | "warning" | "neon" | "sec
   discontinued: "secondary",
 };
 
-export function DeviceCard({ device, className, compact = false }: DeviceCardProps) {
+export const DeviceCard = React.memo(function DeviceCard({ device, className, compact = false }: DeviceCardProps) {
   const score = device.score?.total ?? 0;
   const price = device.priceSummary?.latest;
   const accent = device.brandColor ?? "#8A2BE2";
@@ -72,6 +73,7 @@ export function DeviceCard({ device, className, compact = false }: DeviceCardPro
               alt={`${device.brand} ${device.name}`}
               className="h-full w-full rounded-xl object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <Smartphone
@@ -92,4 +94,4 @@ export function DeviceCard({ device, className, compact = false }: DeviceCardPro
       </div>
     </Link>
   );
-}
+});
