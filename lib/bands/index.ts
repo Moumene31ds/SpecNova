@@ -137,12 +137,12 @@ export function checkCarrierCompatibility(
 export function listCarriers() {
   const map = new Map<string, { country: string; carriers: string[] }>();
   for (const band of STATIC_CARRIER_BANDS) {
-    const entry = map.get(band.carrier) ?? {
+    const entry = map.get(band.country) ?? {
       country: band.country,
       carriers: [],
     };
     if (!entry.carriers.includes(band.carrier)) entry.carriers.push(band.carrier);
-    map.set(band.carrier, entry);
+    map.set(band.country, entry);
   }
   return map;
 }

@@ -38,11 +38,10 @@ export interface AuditEntry {
 /** Recursively strip non-serializable values (undefined, bigint, functions). */
 export function toAuditValue(value: unknown): Record<string, unknown> | null {
   if (value == null) return null;
-  if (typeof value !== "object" || Array.isArray(value)) {
-    return { value } as Record<string, unknown>;
-  }
+  if (Array.isArray(value)) return { value };
+  if (typeof value !== "object") return null;
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(value)) {
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
     if (v === undefined) continue;
     if (typeof v === "bigint" || typeof v === "function") continue;
     out[k] = v;

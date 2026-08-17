@@ -3,6 +3,7 @@
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getServerUser } from "@/lib/firebase/auth";
 import { COLLECTIONS, type PriceAlert } from "@/lib/firebase/types";
+import { FieldValue } from "@/lib/firebase/firestore-rest";
 import { absoluteUrl } from "@/lib/utils";
 
 async function requireUser() {
@@ -33,7 +34,9 @@ export async function subscribePriceAlert(draft: AlertDraft) {
 
   const db = getAdminFirestore();
   const userRef = db.collection(COLLECTIONS.priceAlerts).doc(user.uid);
-  const alertId = db.collection(COLLECTIONS.priceAlerts).doc(user.uid).id;
+
+  const alertRef = db.collection(COLLECTIONS.priceAlerts).doc(user.uid).collection("alerts").doc();
+  const alertId = alertRef.id;
 
   const alert: PriceAlert = {
     id: alertId,
@@ -47,50 +50,61 @@ export async function subscribePriceAlert(draft: AlertDraft) {
     active: true,
   };
 
-  await userRef.set(
-    { [alertId]: { ...alert, createdAt: new Date() } },
-    { merge: true },
-  );
+  await alertRef.set({ ...alert, createdAt: new Date() });
   return { ok: true as const, alertId };
 }
 
 export async function unsubscribePriceAlert(alertId: string) {
   const user = await requireUser();
   const db = getAdminFirestore();
-  await db
+  const alertRef = db
     .collection(COLLECTIONS.priceAlerts)
     .doc(user.uid)
-    .update({ [alertId]: {} } as never);
+    .collection("alerts")
+    .doc(alertId);
+  await alertRef.update({ active: false });
+  return { ok: true as const };
+}
+
+export async function deletePriceAlert(alertId: string) {
+  const user = await requireUser();
+  const db = getAdminFirestore();
+  const alertRef = db
+    .collection(COLLECTIONS.priceAlerts)
+    .doc(user.uid)
+    .collection("alerts")
+    .doc(alertId);
+  await alertRef.delete();
   return { ok: true as const };
 }
 
 export async function listMyPriceAlerts(): Promise<PriceAlert[]> {
   const user = await requireUser();
   const db = getAdminFirestore();
-  const doc = await db.collection(COLLECTIONS.priceAlerts).doc(user.uid).get();
-  if (!doc.exists) return [];
-  const data = doc.data() as Record<string, unknown>;
-  return Object.values(data).filter((v): v is PriceAlert => {
-    return (
-      typeof v === "object" &&
-      v !== null &&
-      "targetPriceUsd" in v &&
-      Boolean((v as PriceAlert).active)
-    );
-  });
+  const snap = await db
+    .collection(COLLECTIONS.priceAlerts)
+    .doc(user.uid)
+    .collection("alerts")
+    .where("active", "==", true)
+    .get();
+  return snap.docs.map((doc) => doc.data() as PriceAlert);
 }
 
 /** Web-push / email unsubscribe endpoint used by FCM click-throughs. */
 export async function optOutViaLink(token: string) {
   const db = getAdminFirestore();
   if (!token) return { ok: false as const };
-  const snap = await db
-    .collection(COLLECTIONS.priceAlerts)
-    .where("id", "==", token)
-    .limit(1)
-    .get();
-  snap.docs.forEach((d) => d.ref.update({ active: false }));
-  return { ok: true as const };
+
+  const usersSnap = await db.collection(COLLECTIONS.priceAlerts).get();
+  for (const userDoc of usersSnap.docs) {
+    const alertRef = userDoc.ref.collection("alerts").doc(token);
+    const alertSnap = await alertRef.get();
+    if (alertSnap.exists) {
+      await alertRef.update({ active: false });
+      return { ok: true as const };
+    }
+  }
+  return { ok: false as const };
 }
 
 export async function buildUnsubscribeUrl(alertId: string) {

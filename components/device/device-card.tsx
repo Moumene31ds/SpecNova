@@ -4,6 +4,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import type { Device } from "@/lib/firebase/types";
 import { ScoreRing } from "@/components/device/score-ring";
 import { Badge } from "@/components/ui/badge";
+import { WishlistButton } from "@/components/wishlist/wishlist-provider";
 
 interface DeviceCardProps {
   device: Pick<
@@ -53,7 +54,10 @@ export function DeviceCard({ device, className, compact = false }: DeviceCardPro
             {device.status}
           </Badge>
         </div>
-        <ScoreRing value={score} size={56} stroke={4} />
+        <div className="flex flex-col items-center gap-2">
+          <ScoreRing value={score} size={56} stroke={4} />
+          <WishlistButton deviceId={device.slug} />
+        </div>
       </div>
 
       {!compact && (

@@ -20,7 +20,7 @@ export const BRAND_COLORS: Record<string, string> = {
 };
 
 export function brandColor(brand: string): string {
-  return BRAND_COLORS[brand.toLowerCase()] ?? "#8A2BE2";
+  return BRAND_COLORS[brand.toLowerCase()] ?? "#6B7280";
 }
 
 export const THEMES = ["oled", "neon", "light"] as const;

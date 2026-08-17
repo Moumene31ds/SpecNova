@@ -16,7 +16,6 @@ import { ParticleField, GlowingOrbs, GlassCard } from "@/components/auth/auth-ca
 
 function SignUpForm({ locale }: { locale: string }) {
   const t = useTranslations("auth");
-  const commonT = useTranslations("common");
   const validationT = useTranslations("validation");
   const router = useRouter();
   const params = useSearchParams();

@@ -30,12 +30,15 @@ function buildRow(
   const better: number[] = [];
   if (def.higherIsBetter !== undefined) {
     const vals = devices.map(def.compare);
-    const max = Math.max(...vals.filter((v): v is number => v !== null));
-    devices.forEach((_, i) => {
-      if (vals[i] !== null && vals[i] === max && vals.filter((v) => v === max).length === 1) {
-        better.push(i);
-      }
-    });
+    const valid = vals.filter((v): v is number => v !== null);
+    const max = valid.length > 0 ? Math.max(...valid) : null;
+    if (max !== null) {
+      devices.forEach((_, i) => {
+        if (vals[i] !== null && vals[i] === max && valid.filter((v) => v === max).length === 1) {
+          better.push(i);
+        }
+      });
+    }
   }
   return {
     key: def.key,
@@ -65,14 +68,14 @@ export function buildSpecRows(devices: Device[]): SpecRow[] {
     { key: "platform.os", group: "Performance", label: "OS", compare: () => 0, format: (d) => d.specs.platform.os },
     { key: "platform.antutu", group: "Performance", label: "AnTuTu v10", higherIsBetter: true, compare: (d) => d.specs.platform.antutuV10, format: (d) => d.specs.platform.antutuV10 ? d.specs.platform.antutuV10.toLocaleString() : "—" },
     { key: "platform.geekbench", group: "Performance", label: "Geekbench 6 (S/M)", higherIsBetter: true, compare: (d) => d.specs.platform.geekbench6?.single ?? null, format: (d) => d.specs.platform.geekbench6 ? `${d.specs.platform.geekbench6.single}/${d.specs.platform.geekbench6.multi}` : "—" },
-    { key: "memory.ram", group: "Performance", label: "RAM (max)", higherIsBetter: true, compare: (d) => Math.max(...d.specs.memory.ramOptions), format: (d) => `${Math.max(...d.specs.memory.ramOptions)} GB` },
-    { key: "memory.storage", group: "Performance", label: "Storage (max)", higherIsBetter: true, compare: (d) => Math.max(...d.specs.memory.storageOptions), format: (d) => `${Math.max(...d.specs.memory.storageOptions)} GB` },
+    { key: "memory.ram", group: "Performance", label: "RAM (max)", higherIsBetter: true, compare: (d) => d.specs.memory.ramOptions.length > 0 ? Math.max(...d.specs.memory.ramOptions) : null, format: (d) => d.specs.memory.ramOptions.length > 0 ? `${Math.max(...d.specs.memory.ramOptions)} GB` : "—" },
+    { key: "memory.storage", group: "Performance", label: "Storage (max)", higherIsBetter: true, compare: (d) => d.specs.memory.storageOptions.length > 0 ? Math.max(...d.specs.memory.storageOptions) : null, format: (d) => d.specs.memory.storageOptions.length > 0 ? `${Math.max(...d.specs.memory.storageOptions)} GB` : "—" },
     { key: "memory.card", group: "Performance", label: "Expandable", compare: (d) => (d.specs.memory.cardSlot ? 1 : 0), format: (d) => (d.specs.memory.cardSlot ? "microSD" : "No") },
 
     // ----- Camera -----
-    { key: "camera.main", group: "Camera", label: "Main sensor", higherIsBetter: true, compare: (d) => d.specs.cameras.rear[0]?.megapixels ?? 0, format: (d) => `${d.specs.cameras.rear[0]?.megapixels ?? "—"} MP` },
+    { key: "camera.main", group: "Camera", label: "Main sensor", higherIsBetter: true, compare: (d) => d.specs.cameras.rear[0]?.megapixels ?? null, format: (d) => d.specs.cameras.rear[0] ? `${d.specs.cameras.rear[0].megapixels} MP` : "—" },
     { key: "camera.mainAperture", group: "Camera", label: "Main aperture", compare: () => 0, format: (d) => d.specs.cameras.rear[0]?.aperture ?? "—" },
-    { key: "camera.zoom", group: "Camera", label: "Optical zoom", higherIsBetter: true, compare: (d) => Math.max(...d.specs.cameras.rear.map((c) => c.opticalZoom ?? 0)), format: (d) => `${Math.max(...d.specs.cameras.rear.map((c) => c.opticalZoom ?? 0))}x` },
+    { key: "camera.zoom", group: "Camera", label: "Optical zoom", higherIsBetter: true, compare: (d) => d.specs.cameras.rear.length > 0 ? Math.max(...d.specs.cameras.rear.map((c) => c.opticalZoom ?? 0)) : null, format: (d) => d.specs.cameras.rear.length > 0 ? `${Math.max(...d.specs.cameras.rear.map((c) => c.opticalZoom ?? 0))}x` : "—" },
     { key: "camera.count", group: "Camera", label: "Rear cameras", higherIsBetter: true, compare: (d) => d.specs.cameras.rear.length, format: (d) => String(d.specs.cameras.rear.length) },
     { key: "camera.video", group: "Camera", label: "Best video", compare: () => 0, format: (d) => d.specs.cameras.videoCapabilities[0] ?? "—" },
 

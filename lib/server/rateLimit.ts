@@ -20,16 +20,16 @@ const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? "";
 
 const memory = new Map<string, { count: number; resetAt: number }>();
 
-async function upstash(cmd: string[]): Promise<string[]> {
+async function upstashPipeline(commands: string[][]): Promise<unknown[]> {
   const res = await fetch(UPSTASH_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-    body: JSON.stringify(cmd),
+    body: JSON.stringify(commands),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Upstash ${res.status}: ${await res.text()}`);
   const data = (await res.json()) as unknown;
-  return Array.isArray(data) ? data.map((d) => String(d)) : [];
+  return Array.isArray(data) ? data : [];
 }
 
 export async function rateLimit(opts: {
@@ -43,17 +43,13 @@ export async function rateLimit(opts: {
 
   if (UPSTASH_URL && UPSTASH_TOKEN) {
     try {
-      const [countStr, ttlStr] = await upstash([
-        "INCR",
-        hashKey,
-        "EXPIRE",
-        hashKey,
-        String(windowSec),
-        "TTL",
-        hashKey,
+      const results = await upstashPipeline([
+        ["INCR", hashKey],
+        ["EXPIRE", hashKey, String(windowSec)],
+        ["TTL", hashKey],
       ]);
-      const count = Number(countStr ?? "0");
-      const ttl = Number(ttlStr ?? windowSec);
+      const count = Number(results[0] ?? "0");
+      const ttl = Number(results[2] ?? windowSec);
       return {
         ok: count <= limit,
         remaining: Math.max(0, limit - count),

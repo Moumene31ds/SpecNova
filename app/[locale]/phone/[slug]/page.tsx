@@ -54,8 +54,38 @@ export default async function PhonePage({ params }: Props) {
 
   const compareUrl = `/compare/${device.slug}/${related[0]?.slug ?? ""}`.replace(/\/$/, "");
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: `${device.brand} ${device.name}`,
+    brand: { "@type": "Brand", name: device.brand },
+    model: device.modelNumbers[0] ?? undefined,
+    description: device.content || `${device.brand} ${device.name} - Full specifications, live price tracking and carrier compatibility.`,
+    image: device.media.heroImage || undefined,
+    offers: device.priceSummary?.latest
+      ? {
+          "@type": "Offer",
+          price: device.priceSummary.latest,
+          priceCurrency: device.priceSummary.currency ?? "USD",
+          availability: device.status === "available" ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+        }
+      : undefined,
+    aggregateRating: device.score?.total
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: device.score.total,
+          bestRating: 100,
+          ratingCount: 1,
+        }
+      : undefined,
+  };
+
   return (
     <div className="pb-20 pt-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ---------------------------------------------- Hero header */}
       <section className="container">
         <div

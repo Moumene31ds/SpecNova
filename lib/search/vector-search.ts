@@ -128,11 +128,17 @@ export async function getDevicesBySlugs(slugs: string[]) {
   if (slugs.length === 0) return [];
   const db = getAdminFirestore();
   const unique = [...new Set(slugs)];
-  const snap = await db
-    .collection(COLLECTIONS.devices)
-    .where("slug", "in", unique)
-    .get();
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const BATCH_SIZE = 30;
+  const results: Record<string, unknown>[] = [];
+  for (let i = 0; i < unique.length; i += BATCH_SIZE) {
+    const batch = unique.slice(i, i + BATCH_SIZE);
+    const snap = await db
+      .collection(COLLECTIONS.devices)
+      .where("slug", "in", batch)
+      .get();
+    results.push(...snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+  }
+  return results;
 }
 
 export function deviceEmbeddingMustExist(): void {
