@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl } from "@/lib/utils";
+
+const PRODUCTION_URL = "https://spec-nova-dz31.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -10,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/_next/"],
       },
     ],
-    sitemap: absoluteUrl("/sitemap.xml"),
+    sitemap: `${PRODUCTION_URL}/sitemap.xml`,
   };
 }
