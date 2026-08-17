@@ -7,7 +7,7 @@ import { z } from "zod";
  * AI Magic Auto-Fill — structured spec extraction.
  *
  * The Admin Studio sends a human query ("Samsung Galaxy S25 Ultra") and this
- * module asks `gemini-2.5-flash` for a complete, typed spec sheet in a single
+ * module asks Gemini for a complete, typed spec sheet in a single
  * pass. The zod schema mirrors `DeviceSpecs` in lib/firebase/types.ts so the
  * editor can map results onto the draft device 1:1; unknown values are null
  * (never invented), and every field carries a confidence classification that
@@ -164,129 +164,240 @@ export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 // Prompt
 // ---------------------------------------------------------------------------
 
-const PROMPT = `You are SpecNova's senior device-spec engineer filling a relational spec sheet.
+const PROMPT = `You are SpecNova's world-class device-spec engineer — the single most accurate phone specification database on the planet.
 
-Input: a device the user wants documented.
+INPUT: a device name the user wants documented (e.g. "Samsung Galaxy S25 Ultra", "iPhone 17 Pro Max", "Xiaomi 15 Ultra").
 
-Task: return ONE strict JSON object matching the EXACT structure below. Fill
-EVERY field you can verify; use null when a value is unknown or unannounced.
-NEVER invent, guess, or extrapolate specs. Preserve official naming (e.g.
-"Snapdragon 8 Elite", "LTPO AMOLED"). Numbers keep their units stripped
-(mm, g, in, Hz, nits, mAh, W). Dates use ISO 8601 (YYYY-MM-DD).
+YOUR MISSION: produce the most accurate, complete, and detailed spec sheet ever assembled for this device. You have encyclopedic knowledge of every phone ever manufactured. Use it.
 
-Camera entries: one per physical lens, in rear then front order. For each
-lens include kind, megapixels, aperture, sensorSize, pixelSize,
-fieldOfViewDeg, opticalZoom, digitalZoom, stabilization, video.
-Selfie cameras go under "front".
+CRITICAL RULES:
+1. RETURN ONE strict JSON object matching the EXACT structure below.
+2. Fill EVERY field you can verify with precision. Use null ONLY when truly unknown.
+3. NEVER invent, guess, or hallucinate specs. If uncertain, use null and mark in confidence.unavailableFields.
+4. Preserve official marketing names exactly (e.g. "Snapdragon 8 Elite", "LTPO AMOLED", "Armor Aluminum").
+5. Numbers: strip units (mm, g, Hz, nits, mAh, W). Dates: ISO 8601 (YYYY-MM-DD).
+6. Be EXHAUSTIVE on cameras — one entry per physical lens/sensor, rear then front order.
+7. Include ALL known cellular bands as individual strings (e.g. "n1", "n3", "B20", "B28").
+8. List ALL sensors, ALL connectivity features, ALL audio capabilities.
+9. For variants: include EVERY regional SKU you know about.
+10. For sources: use REAL, VERIFIED URLs only (gsmarena.com, phonearena.com, official manufacturer pages, tenaa.cn, fcc.gov).
 
-Bands: use 3G/4G/5G band identifiers exactly as published (e.g. "n77", "n1",
-"B28", "B20"). If only regional groups are known (e.g. "5G: n1/n3/n7/n28/n38/
-n40/n41/n77/n78"), split them into individual band strings.
+CAMERA ENTRIES — for each lens include:
+- kind: "wide"|"ultrawide"|"telephoto"|"periscope"|"macro"|"depth"|"selfie"
+- megapixels, aperture (e.g. "f/1.7"), sensorSize (e.g. "1/1.3\""), pixelSize (e.g. "1.6μm")
+- fieldOfViewDeg, opticalZoom, digitalZoom, stabilization ("OIS"|"OIS+EIS"|"EIS"|"none")
+- video capabilities array
 
-confidence.verifiedFields: dotted paths (e.g. "specs.display.sizeIn",
-"specs.platform.chipset") for fields backed by official or cross-checked
-sources. confidence.estimatedFields: fields inferred or lower-confidence.
-confidence.unavailableFields: fields that are not publicly documented yet.
-overall is the fraction of filled fields the model is confident about (0-1).
+CONFIDENCE SCORING:
+- overall: fraction of fields you are confident about (0.0 to 1.0)
+- verifiedFields: dotted paths for fields backed by official/cross-checked sources
+- estimatedFields: fields inferred from reliable but not primary sources
+- unavailableFields: fields not publicly documented
 
-variants: list known regional SKU variants (name, region, chipset, ramGb,
-storageGb, modem, note). Leave empty when variants are not public.
-
-sources: 1-4 canonical URLs (official spec pages, gsmarena, tenaa, fcc)
-supporting the extraction.
-
-EXACT JSON SHAPE:
-${"/* see schema */"}
+JSON SCHEMA:
 {
-  "brand": string,
-  "name": string,
-  "modelNumbers": string[],
-  "codename": string|null,
-  "status": "rumored"|"announced"|"upcoming"|"available"|"discontinued",
-  "announcedAt": string|null,
-  "releaseAt": string|null,
+  "brand": "string",
+  "name": "string (without brand prefix)",
+  "modelNumbers": ["string"],
+  "codename": "string|null",
+  "status": "rumored|announced|upcoming|available|discontinued",
+  "announcedAt": "YYYY-MM-DD|null",
+  "releaseAt": "YYYY-MM-DD|null",
   "specs": {
-    "body": { "dimensions": {"widthMm": number|null,"heightMm": number|null,"depthMm": number|null}, "weightG": number|null, "build": string|null, "materials": string[], "protection": string|null, "ipRating": string|null, "colors": string[] },
-    "display": { "type": "OLED"|"AMOLED"|"LTPO AMOLED"|"LCD"|"Mini-LED"|null, "sizeIn": number|null, "resolution": string|null, "ppi": number|null, "refreshRateHz": number|null, "peakBrightnessNits": number|null, "hdrSupport": string[], "pwmHz": number|null, "glass": string|null, "colorDepth": string|null },
-    "platform": { "os": string|null, "ui": string|null, "chipset": string|null, "cpu": string|null, "gpu": string|null, "antutuV10": number|null, "geekbench6": {"single": number|null, "multi": number|null}|null },
-    "memory": { "ramOptions": number[], "storageOptions": number[], "storageType": "UFS 2.2"|"UFS 3.1"|"UFS 4.0"|"eMMC 5.1"|null, "cardSlot": boolean|null },
-    "cameras": { "rear": [ { "kind": string, "megapixels": number|null, "aperture": string|null, "sensorSize": string|null, "pixelSize": string|null, "fieldOfViewDeg": number|null, "opticalZoom": number|null, "digitalZoom": number|null, "stabilization": string|null, "video": string[] } ], "front": [ same ], "features": string[], "videoCapabilities": string[] },
-    "audio": { "speakers": string[], "headphoneJack": boolean|null, "codecs": string[], "microphone": string|null },
-    "battery": { "capacityMah": number|null, "type": string|null, "chargingWatts": number|null, "chargingTimeMin": number|null, "wirelessWatts": number|null, "reverseWirelessWatts": number|null, "enduranceHours": number|null },
-    "connectivity": { "wifi": string|null, "bluetooth": string|null, "nfc": boolean|null, "usb": string|null, "irBlaster": boolean|null, "gnss": string[], "bands": string[] },
-    "sensors": string[],
-    "extras": { "fingerprint": "under-display"|"side"|"rear"|"none"|null, "faceUnlock": boolean|null, "stylus": boolean|null, "esim": boolean|null, "uwb": boolean|null, "satelliteSos": boolean|null }
+    "body": { "dimensions": {"widthMm": num|null,"heightMm": num|null,"depthMm": num|null}, "weightG": num|null, "build": "string|null", "materials": ["string"], "protection": "string|null", "ipRating": "string|null", "colors": ["string"] },
+    "display": { "type": "OLED|AMOLED|LTPO AMOLED|LCD|Mini-LED|null", "sizeIn": num|null, "resolution": "string|null", "ppi": num|null, "refreshRateHz": num|null, "peakBrightnessNits": num|null, "hdrSupport": ["string"], "pwmHz": num|null, "glass": "string|null", "colorDepth": "string|null" },
+    "platform": { "os": "string|null", "ui": "string|null", "chipset": "string|null", "cpu": "string|null", "gpu": "string|null", "antutuV10": num|null, "geekbench6": {"single": num|null, "multi": num|null}|null },
+    "memory": { "ramOptions": [num], "storageOptions": [num], "storageType": "UFS 2.2|UFS 3.1|UFS 4.0|eMMC 5.1|null", "cardSlot": bool|null },
+    "cameras": { "rear": [CameraEntry], "front": [CameraEntry], "features": ["string"], "videoCapabilities": ["string"] },
+    "audio": { "speakers": ["string"], "headphoneJack": bool|null, "codecs": ["string"], "microphone": "string|null" },
+    "battery": { "capacityMah": num|null, "type": "string|null", "chargingWatts": num|null, "chargingTimeMin": num|null, "wirelessWatts": num|null, "reverseWirelessWatts": num|null, "enduranceHours": num|null },
+    "connectivity": { "wifi": "string|null", "bluetooth": "string|null", "nfc": bool|null, "usb": "string|null", "irBlaster": bool|null, "gnss": ["string"], "bands": ["string"] },
+    "sensors": ["string"],
+    "extras": { "fingerprint": "under-display|side|rear|none|null", "faceUnlock": bool|null, "stylus": bool|null, "esim": bool|null, "uwb": bool|null, "satelliteSos": bool|null }
   },
-  "variants": [ { "name": string, "region": string, "chipset": string|null, "ramGb": number|null, "storageGb": number|null, "modem": string|null, "note": string|null } ],
-  "confidence": { "overall": number, "verifiedFields": string[], "estimatedFields": string[], "unavailableFields": string[] },
-  "sources": [ { "title": string, "url": string, "kind": string } ]
+  "variants": [ {"name": "string", "region": "string", "chipset": "string|null", "ramGb": num|null, "storageGb": num|null, "modem": "string|null", "note": "string|null"} ],
+  "confidence": { "overall": num, "verifiedFields": ["string"], "estimatedFields": ["string"], "unavailableFields": ["string"] },
+  "sources": [ {"title": "string", "url": "string (real URL)", "kind": "official|tenaa|fcc|retailer|benchmark"} ]
 }
 
-Return ONLY the JSON object. No markdown fences, no commentary.`;
+Return ONLY the JSON object. No markdown fences, no commentary, no explanation.`;
 
-/** Hard cap so a runaway model can't blow the request budget. */
-const MAX_OUTPUT_TOKENS = 6144;
+/** Hard cap — increased to prevent truncation on complex devices. */
+const MAX_OUTPUT_TOKENS = 16384;
 
 /**
- * Extract a fully-typed spec sheet for a device query. Retries once with the
- * zod validation error when the model returns malformed JSON.
+ * Extract a fully-typed spec sheet for a device query. Retries up to 2 times
+ * on malformed JSON or schema validation failures.
  */
 export async function extractSpecs(query: string): Promise<{
   device: AiExtractedDevice;
   raw: string;
 }> {
-  const response = await geai.models.generateContent({
-    model: AI_EXTRACTION_MODEL,
-    contents: [{ role: "user", parts: [{ text: query }] }],
-    config: {
-      systemInstruction: PROMPT,
-      temperature: 0.2,
-      topP: 0.95,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-      responseMimeType: "application/json",
-    },
-  });
+  const MAX_RETRIES = 2;
 
-  const raw = response.text ?? "";
-  if (!raw.trim()) throw new Error("Gemini returned an empty extraction.");
-
-  const parsed = parseJsonObject(raw);
-  try {
-    return { device: AiExtractedDeviceSchema.parse(parsed), raw };
-  } catch (firstErr) {
-    // One corrective retry with the validation error as feedback.
-    const retryResponse = await geai.models.generateContent({
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const isRetry = attempt > 0;
+    const response = await geai.models.generateContent({
       model: AI_EXTRACTION_MODEL,
       contents: [
         {
           role: "user",
           parts: [
             { text: query },
-            {
-              text: `Your previous output failed schema validation:\n${
-                firstErr instanceof z.ZodError ? firstErr.message : String(firstErr)
-              }\n\nRe-issue the corrected JSON only.`,
-            },
+            ...(isRetry
+              ? [{ text: `ATTEMPT ${attempt + 1}/${MAX_RETRIES + 1}: Your previous response was malformed. Issues found:\n${attempt === 1 ? "JSON parse error — output was truncated or contained invalid syntax." : "Schema validation failed."}\n\nIMPORTANT: Output COMPLETE, VALID JSON only. Do not truncate. Do not add markdown fences. Do not add commentary. Output ONLY the raw JSON object, starting with { and ending with }.` }]
+              : []),
           ],
         },
       ],
       config: {
         systemInstruction: PROMPT,
-        temperature: 0,
+        temperature: isRetry ? 0 : 0.2,
+        topP: 0.95,
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         responseMimeType: "application/json",
       },
     });
-    const raw2 = retryResponse.text ?? "";
-    return { device: AiExtractedDeviceSchema.parse(parseJsonObject(raw2)), raw: raw2 };
+
+    const raw = response.text ?? "";
+    if (!raw.trim()) {
+      if (attempt < MAX_RETRIES) continue;
+      throw new Error("Gemini returned an empty extraction after all retries.");
+    }
+
+    try {
+      const parsed = parseJsonObject(raw);
+      return { device: AiExtractedDeviceSchema.parse(parsed), raw };
+    } catch (err) {
+      if (attempt >= MAX_RETRIES) {
+        const msg = err instanceof z.ZodError
+          ? `Schema validation failed after ${MAX_RETRIES + 1} attempts:\n${err.message.slice(0, 500)}`
+          : err instanceof SyntaxError
+            ? `JSON parse error after ${MAX_RETRIES + 1} attempts: ${err.message}`
+            : `Extraction failed: ${String(err).slice(0, 300)}`;
+        throw new Error(msg);
+      }
+    }
+  }
+
+  throw new Error("Extraction failed unexpectedly.");
+}
+
+// ---------------------------------------------------------------------------
+// JSON Parser with truncation repair
+// ---------------------------------------------------------------------------
+
+function parseJsonObject(text: string): unknown {
+  let cleaned = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
+
+  // Strip any leading/trailing non-JSON text (e.g. "Here is the JSON:")
+  const firstBrace = cleaned.indexOf("{");
+  const firstBracket = cleaned.indexOf("[");
+  if (firstBrace === -1 && firstBracket === -1) {
+    throw new SyntaxError("No JSON object or array found in response.");
+  }
+  const startIdx = firstBrace === -1
+    ? firstBracket
+    : firstBracket === -1
+      ? firstBrace
+      : Math.min(firstBrace, firstBracket);
+  if (startIdx > 0) {
+    cleaned = cleaned.slice(startIdx);
+  }
+
+  // Try direct parse first
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Attempt repair for truncated JSON
+    const repaired = repairTruncatedJson(cleaned);
+    return JSON.parse(repaired);
   }
 }
 
-function parseJsonObject(text: string): unknown {
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/, "")
-    .trim();
-  return JSON.parse(cleaned);
+/**
+ * Attempt to repair truncated JSON by closing unclosed strings, arrays,
+ * and objects in the correct order.
+ */
+function repairTruncatedJson(text: string): string {
+  let result = text;
+
+  // Remove any trailing comma before closing
+  result = result.replace(/,\s*$/, "");
+
+  // Count unclosed delimiters
+  let inString = false;
+  let escape = false;
+  let braces = 0;
+  let brackets = 0;
+
+  for (let i = 0; i < result.length; i++) {
+    const ch = result[i]!;
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === "\\") {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{") braces++;
+    if (ch === "}") braces--;
+    if (ch === "[") brackets++;
+    if (ch === "]") brackets--;
+  }
+
+  // If we're inside a string, close it
+  if (inString) {
+    result += '"';
+  }
+
+  // Remove trailing incomplete key-value (e.g. "someKey": "someVa")
+  // Find the last complete key-value pair
+  const lastColon = result.lastIndexOf(":");
+  if (lastColon > 0) {
+    const afterColon = result.slice(lastColon + 1).trim();
+    // If after the last colon we have an incomplete value (no closing brace/bracket after it)
+    if (afterColon && !afterColon.match(/^[\]}\d"true false null]/)) {
+      // Truncate to before this incomplete pair
+      // Find the last complete comma or opening brace
+      const lastComma = result.lastIndexOf(",", lastColon);
+      const lastOpenBrace = Math.max(result.lastIndexOf("{", lastColon), result.lastIndexOf("[", lastColon));
+      if (lastComma > lastOpenBrace && lastComma > 0) {
+        result = result.slice(0, lastComma);
+      } else if (lastOpenBrace >= 0) {
+        result = result.slice(0, lastOpenBrace + 1);
+        // Reset bracket counts since we truncated
+        braces = 0;
+        brackets = 0;
+        for (const ch of result) {
+          if (ch === "{") braces++;
+          if (ch === "}") braces--;
+          if (ch === "[") brackets++;
+          if (ch === "]") brackets--;
+        }
+      }
+    }
+  }
+
+  // Close remaining brackets/braces in reverse order
+  while (brackets > 0) {
+    result += "]";
+    brackets--;
+  }
+  while (braces > 0) {
+    result += "}";
+    braces--;
+  }
+
+  return result;
 }
