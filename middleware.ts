@@ -148,6 +148,6 @@ function handleLocaleRedirect(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|avif|woff2?|ico|mp4)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap\\.xml|.*\\.(?:png|jpg|jpeg|svg|webp|avif|woff2?|ico|mp4)$).*)",
   ],
 };
