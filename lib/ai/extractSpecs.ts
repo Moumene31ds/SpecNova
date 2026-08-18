@@ -98,6 +98,7 @@ export const AiExtractedDeviceSchema = z.object({
           single: z.number().nullish(),
           multi: z.number().nullish(),
         })
+        .nullish()
         .default({}),
     }),
     memory: z.object({
