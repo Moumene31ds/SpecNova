@@ -96,15 +96,15 @@ export default async function PhonePage({ params }: Props) {
             background: `radial-gradient(120% 160% at 85% -20%, ${accent}26 0%, transparent 55%), radial-gradient(90% 120% at -10% 120%, hsl(var(--glow-accent)/0.12) 0%, transparent 50%)`,
           }}
         >
-          <div className="grid items-center gap-10 md:grid-cols-2">
+          <div className="grid items-center gap-6 sm:gap-10 md:grid-cols-2">
             <div>
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="font-mono">
                   {device.modelNumbers[0] ?? "—"}
                 </Badge>
                 <Badge className="capitalize">{device.status}</Badge>
               </div>
-              <h1 className="font-display text-4xl font-bold tracking-tight md:text-6xl">
+              <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl md:text-6xl">
                 <span style={{ color: accent }}>{device.brand}</span>{" "}
                 {device.name}
               </h1>
@@ -115,10 +115,10 @@ export default async function PhonePage({ params }: Props) {
                 {device.releaseAt ? ` · Released ${formatDate(device.releaseAt)}` : ""}
               </p>
 
-              <div className="mt-6 flex flex-wrap items-center gap-6">
-                <ScoreRing value={device.score.total} size={92} stroke={7} label="iToPhone" />
+              <div className="mt-6 flex flex-wrap items-center gap-3 sm:gap-6">
+                <ScoreRing value={device.score.total} size={80} stroke={6} label="iToPhone" />
                 <div className="space-y-1">
-                  <p className="font-display text-3xl font-bold">
+                  <p className="font-display text-2xl font-bold sm:text-3xl">
                     {formatCurrency(device.priceSummary.latest, device.priceSummary.currency)}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -128,13 +128,15 @@ export default async function PhonePage({ params }: Props) {
                     </span>
                   </p>
                 </div>
-                <Link
-                  href={compareUrl}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-border px-5 text-sm font-medium transition-colors hover:border-ring/50 active:scale-[0.97]"
-                >
-                  Compare <ArrowRight className="h-4 w-4" />
-                </Link>
-                <ShareButton title={`${device.brand} ${device.name} Specs`} />
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={compareUrl}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-border px-5 text-sm font-medium transition-colors hover:border-ring/50 active:scale-[0.97]"
+                  >
+                    Compare <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <ShareButton title={`${device.brand} ${device.name} Specs`} />
+                </div>
               </div>
             </div>
 
@@ -162,15 +164,15 @@ export default async function PhonePage({ params }: Props) {
 
       {/* ---------------------------------------------- Score strip */}
       <section className="container mt-4">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
           {scoreMeta.map(({ key, label, icon: Icon }) => (
-            <div key={key} className="flex items-center gap-3 rounded-2xl border border-border bg-card/40 px-5 py-4 backdrop-blur">
-              <Icon className="h-4 w-4 text-neon-cyan" />
+            <div key={key} className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-border bg-card/40 px-3 py-3 sm:px-5 sm:py-4 backdrop-blur">
+              <Icon className="h-4 w-4 shrink-0 text-neon-cyan" />
               <div>
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="font-mono text-lg font-semibold">
+                <p className="text-[11px] text-muted-foreground">{label}</p>
+                <p className="font-mono text-base font-semibold sm:text-lg">
                   {device.score[key]}
-                  <span className="text-xs text-muted-foreground">/100</span>
+                  <span className="text-[10px] text-muted-foreground">/100</span>
                 </p>
               </div>
             </div>
@@ -181,11 +183,11 @@ export default async function PhonePage({ params }: Props) {
       {/* ---------------------------------------------- Detail tabs */}
       <section className="container mt-6">
         <Tabs defaultValue="specs" className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto md:w-auto">
-            <TabsTrigger value="specs">Full specs</TabsTrigger>
-            <TabsTrigger value="price">Price history</TabsTrigger>
-            <TabsTrigger value="bands">Carrier bands</TabsTrigger>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsList className="w-full justify-start overflow-x-auto gap-1 md:w-auto">
+            <TabsTrigger value="specs" className="text-xs sm:text-sm">Full specs</TabsTrigger>
+            <TabsTrigger value="price" className="text-xs sm:text-sm">Price history</TabsTrigger>
+            <TabsTrigger value="bands" className="text-xs sm:text-sm">Carrier bands</TabsTrigger>
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
           </TabsList>
 
           <TabsContent value="specs">
