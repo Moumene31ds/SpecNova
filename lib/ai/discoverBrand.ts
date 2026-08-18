@@ -19,7 +19,7 @@ export const AI_DISCOVERY_MODEL = AI_MODEL;
  */
 
 export const BRAND_CATALOG_MAX_MODELS = 120;
-const DISCOVERY_MAX_OUTPUT_TOKENS = 4096;
+const DISCOVERY_MAX_OUTPUT_TOKENS = 8192;
 
 export const BrandCatalogSchema = z.object({
   brand: z.string().min(1),
@@ -35,7 +35,7 @@ export const BrandCatalogSchema = z.object({
         releaseAt: z.string().nullish(),
       }),
     )
-    .min(1)
+    .min(0)
     .max(BRAND_CATALOG_MAX_MODELS),
 });
 
@@ -148,7 +148,12 @@ export async function discoverBrand(brand: string): Promise<{
 
     try {
       const parsed = parseJsonObject(raw);
-      const result = { catalog: BrandCatalogSchema.parse(parsed), raw };
+      const catalog = BrandCatalogSchema.parse(parsed);
+      if (catalog.models.length === 0 && attempt < MAX_RETRIES) {
+        retryHint = `\n\nATTEMPT ${attempt + 1}: You returned an EMPTY models array. You MUST include at least 5 phone models. Search the web data again and include ALL phones from this brand.`;
+        continue;
+      }
+      const result = { catalog, raw };
       setCache(cacheKey, result);
       return result;
     } catch (err) {
