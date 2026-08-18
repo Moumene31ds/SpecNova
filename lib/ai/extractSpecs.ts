@@ -377,15 +377,30 @@ IMAGES:
 - heroImage: URL to OFFICIAL high-resolution product image (minimum 1000x1000px preferred)
   - Search for: "[phone name] official press image high resolution"
   - Search for: "[phone name] product image png"
-  - Prefer official manufacturer CDN URLs (e.g., samsung.com, apple.com, oneplus.com)
+  - Search for: "[brand] [name] official product photo"
+  - Search for: "[brand] [name] press kit images"
+  - Prefer official manufacturer CDN URLs (e.g., samsung.com, apple.com, oneplus.com, xiaomi.com, oppo.com, vivo.com, realme.com, motorola.com, nothing.tech, google.com/store)
   - Avoid thumbnails, crops, or low-res preview images
   - If URL contains "thumb", "small", "preview", "crop", "200x", "300x" — find a better URL
 - gallery: array of high-res image URLs (official renders, press photos, color variants)
   - Search for: "[phone name] press images gallery"
   - Search for: "[phone name] official renders high resolution"
+  - Search for: "[brand] [name] color variants press images"
+  - Search for: "[brand] [name] product gallery official"
 - renderImages: array of high-res render URLs (3D renders, product shots)
   - Search for: "[phone name] official renders png"
   - Search for: "[phone name] product renders high quality"
+  - Search for: "[brand] [name] 3d render official"
+  - Search for: "[brand] [name] product shot transparent background"
+
+IMAGE SEARCH PRIORITY (execute ALL searches):
+1. Official manufacturer website press kit / media gallery
+2. GSMArena "pictures" tab for the device
+3. PhoneArena review images
+4. Official social media (Twitter/X, Instagram) announcement posts
+5. Retailer press assets (if manufacturer CDN unavailable)
+
+If NO official images found after ALL searches, set to null — do NOT use placeholder/stock images.
 
 CONFIDENCE:
 - overall: 0.0 to 1.0 (how confident you are in the data)
