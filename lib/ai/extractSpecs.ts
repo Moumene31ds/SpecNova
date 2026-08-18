@@ -2,11 +2,11 @@ import "server-only";
 
 import { z } from "zod";
 import {
-  groqGenerateContent,
+  geminiGenerateContent,
   getCached,
   setCache,
   AI_MODEL,
-} from "./groq-client";
+} from "./gemini-client";
 
 export const AI_EXTRACTION_MODEL = AI_MODEL;
 
@@ -206,13 +206,13 @@ export async function extractSpecs(query: string): Promise<{
       userMessage += `\nRetry: Valid JSON only.`;
     }
 
-    const response = await groqGenerateContent({
-      systemPrompt: PROMPT,
+    const response = await geminiGenerateContent({
+      systemInstruction: PROMPT,
       userMessage,
       temperature: isRetry ? 0 : 0.2,
       topP: 0.95,
       maxTokens: MAX_OUTPUT_TOKENS,
-      responseFormat: { type: "json_object" },
+      responseMimeType: "application/json",
     });
 
     const raw = response.text;

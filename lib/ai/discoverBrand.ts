@@ -2,11 +2,11 @@ import "server-only";
 
 import { z } from "zod";
 import {
-  groqGenerateContent,
+  geminiGenerateContent,
   getCached,
   setCache,
   AI_MODEL,
-} from "./groq-client";
+} from "./gemini-client";
 
 export const AI_DISCOVERY_MODEL = AI_MODEL;
 
@@ -65,13 +65,13 @@ export async function discoverBrand(brand: string): Promise<{
 
     const userMessage = isRetry ? `${brand}\nRetry: Valid JSON only.` : brand;
 
-    const response = await groqGenerateContent({
-      systemPrompt: PROMPT,
+    const response = await geminiGenerateContent({
+      systemInstruction: PROMPT,
       userMessage,
       temperature: isRetry ? 0 : 0.1,
       topP: 0.9,
       maxTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
-      responseFormat: { type: "json_object" },
+      responseMimeType: "application/json",
     });
 
     const raw = response.text;
