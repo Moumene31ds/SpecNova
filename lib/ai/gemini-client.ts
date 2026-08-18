@@ -8,7 +8,7 @@ import { GoogleGenAI } from "@google/genai";
  */
 
 export const AI_MODEL =
-  process.env.AI_EXTRACTION_MODEL ?? "gemini-2.0-flash";
+  process.env.AI_EXTRACTION_MODEL ?? "gemini-3.6-flash";
 
 let geaiClient: InstanceType<typeof GoogleGenAI> | null = null;
 
