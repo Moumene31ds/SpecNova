@@ -169,12 +169,22 @@ export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 // Prompt — compact for Groq free tier (8000 TPM limit)
 // ---------------------------------------------------------------------------
 
-const PROMPT = `You have Google Search. Search the web for the LATEST specs of this phone. Use real web data, not training memory.
+const PROMPT = `You are a phone spec expert. Search the web using Google Search for the EXACT official specs of this phone. Use ONLY verified data from official sources (GSMArena, manufacturer website, PhoneArena, Kimovil).
+
+RULES:
+1. Search the web FIRST — never guess from memory
+2. Use REAL numbers only (no placeholders like 0)
+3. If a spec is unknown, set it to null — never fabricate
+4. Fill EVERY field with real data
+5. Include model numbers (SM-XXXX, etc.)
+6. Camera specs must be EXACT: megapixels, aperture (f/1.8), sensor size (1/1.3")
+7. Sources MUST have valid URLs starting with https://
+8. Status must be one of: rumored, announced, upcoming, available, discontinued
 
 JSON:
-{"brand":"","name":"","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null,"specs":{"body":{"dimensions":{"widthMm":0,"heightMm":0,"depthMm":0},"weightG":0,"build":"","materials":[],"protection":"","ipRating":"","colors":[]},"display":{"type":"","sizeIn":0,"resolution":"","ppi":0,"refreshRateHz":0,"peakBrightnessNits":0,"hdrSupport":[],"pwmHz":0,"glass":"","colorDepth":""},"platform":{"os":"","ui":"","chipset":"","cpu":"","gpu":"","antutuV10":0,"geekbench6":{"single":0,"multi":0}},"memory":{"ramOptions":[],"storageOptions":[],"storageType":"","cardSlot":false},"cameras":{"rear":[{"kind":"wide","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"OIS","video":[]}],"front":[{"kind":"selfie","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"EIS","video":[]}],"features":[],"videoCapabilities":[]},"audio":{"speakers":[],"headphoneJack":false,"codecs":[],"microphone":""},"battery":{"capacityMah":0,"type":"","chargingWatts":0,"chargingTimeMin":0,"wirelessWatts":0,"reverseWirelessWatts":0,"enduranceHours":0},"connectivity":{"wifi":"","bluetooth":"","nfc":false,"usb":"","irBlaster":false,"gnss":[],"bands":[]},"sensors":[],"extras":{"fingerprint":"","faceUnlock":false,"stylus":false,"esim":false,"uwb":false,"satelliteSos":false}},"variants":[],"images":{"heroImage":null,"gallery":[],"renderImages":[]},"confidence":{"overall":0.9,"verifiedFields":[],"estimatedFields":[],"unavailableFields":[]},"sources":[{"title":"","url":"","kind":"retailer"}]}
+{"brand":"","name":"","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null,"specs":{"body":{"dimensions":{"widthMm":0,"heightMm":0,"depthMm":0},"weightG":0,"build":"","materials":[],"protection":"","ipRating":"","colors":[]},"display":{"type":"","sizeIn":0,"resolution":"","ppi":0,"refreshRateHz":0,"peakBrightnessNits":0,"hdrSupport":[],"pwmHz":null,"glass":null,"colorDepth":""},"platform":{"os":"","ui":"","chipset":"","cpu":"","gpu":"","antutuV10":null,"geekbench6":{"single":0,"multi":0}},"memory":{"ramOptions":[],"storageOptions":[],"storageType":"","cardSlot":false},"cameras":{"rear":[{"kind":"wide","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"OIS","video":[]}],"front":[{"kind":"selfie","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"EIS","video":[]}],"features":[],"videoCapabilities":[]},"audio":{"speakers":[],"headphoneJack":false,"codecs":[],"microphone":""},"battery":{"capacityMah":0,"type":"","chargingWatts":0,"chargingTimeMin":null,"wirelessWatts":0,"reverseWirelessWatts":0,"enduranceHours":null},"connectivity":{"wifi":"","bluetooth":"","nfc":false,"usb":"","irBlaster":false,"gnss":[],"bands":[]},"sensors":[],"extras":{"fingerprint":"under-display","faceUnlock":false,"stylus":false,"esim":false,"uwb":false,"satelliteSos":false}},"variants":[],"images":{"heroImage":null,"gallery":[],"renderImages":[]},"confidence":{"overall":0.9,"verifiedFields":[],"estimatedFields":[],"unavailableFields":[]},"sources":[{"title":"Source Name","url":"https://example.com","kind":"official"}]}
 
-null=unknown. Numbers only. ONLY output JSON.`;
+ONLY output valid JSON. No markdown, no explanation.`;
 
 /** Max output tokens. */
 const MAX_OUTPUT_TOKENS = 4096;

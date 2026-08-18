@@ -738,8 +738,7 @@ export class WriteBatch {
   constructor(private readonly db: FirestoreRest) {}
 
   private docName(ref: DocumentReference): string {
-    const docResourcePrefix = this.db.root.replace("https://firestore.googleapis.com/v1/", "");
-    return `${docResourcePrefix}/${ref.path}`;
+    return `${this.db.docRoot}/${ref.path}`;
   }
 
   set(ref: DocumentReference, data: object, options?: QueryOptions): WriteBatch {
@@ -810,10 +809,13 @@ function relativeDocPath(name: string): string {
 export class FirestoreRest {
   readonly projectId: string;
   readonly root: string;
+  /** Document resource prefix: "projects/{id}/databases/(default)/documents" */
+  readonly docRoot: string;
 
   constructor(private readonly opts: FirestoreRestOptions) {
     this.projectId = opts.projectId;
-    this.root = `https://firestore.googleapis.com/v1/projects/${opts.projectId}/databases/(default)/documents`;
+    this.docRoot = `projects/${opts.projectId}/databases/(default)/documents`;
+    this.root = `https://firestore.googleapis.com/v1/${this.docRoot}`;
   }
 
   collection(id: string): CollectionReference {
