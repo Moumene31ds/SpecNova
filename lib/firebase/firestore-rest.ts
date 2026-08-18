@@ -737,9 +737,13 @@ export class WriteBatch {
 
   constructor(private readonly db: FirestoreRest) {}
 
+  private docName(ref: DocumentReference): string {
+    return `${this.db.root}/${ref.path}`;
+  }
+
   set(ref: DocumentReference, data: object, options?: QueryOptions): WriteBatch {
     const serialized = serializeDocument(data);
-    const update: Record<string, unknown> = { name: ref.path, fields: serialized.fields };
+    const update: Record<string, unknown> = { name: this.docName(ref), fields: serialized.fields };
     if (options?.merge || serialized.transforms.length > 0) {
       update.updateMask = { fieldPaths: serialized.fieldPaths };
     }
@@ -755,7 +759,7 @@ export class WriteBatch {
     const serialized = serializeDocument(data);
     const write: Record<string, unknown> = {
       update: {
-        name: ref.path,
+        name: this.docName(ref),
         fields: serialized.fields,
         updateMask: { fieldPaths: serialized.fieldPaths },
         currentDocument: { exists: true },
@@ -769,7 +773,7 @@ export class WriteBatch {
   }
 
   delete(ref: DocumentReference): WriteBatch {
-    this.writes.push({ delete: ref.path });
+    this.writes.push({ delete: this.docName(ref) });
     return this;
   }
 
