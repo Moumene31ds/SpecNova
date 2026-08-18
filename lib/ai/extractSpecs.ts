@@ -197,75 +197,30 @@ async function fetchGSMArenaSpecs(query: string): Promise<string> {
  * Gather web context from multiple sources for grounding.
  */
 async function gatherWebContext(query: string): Promise<string> {
-  const [gsmarena, google1, google2] = await Promise.all([
+  const [gsmarena, google1] = await Promise.all([
     fetchGSMArenaSpecs(query),
     fetchGoogleSearch(`${query} full specifications`),
-    fetchGoogleSearch(`${query} benchmarks antutu geekbench score battery endurance`),
   ]);
 
   const parts: string[] = [];
-  if (gsmarena) parts.push(`=== GSMArena Specs ===\n${gsmarena}`);
-  if (google1) parts.push(`=== Specs Search ===\n${google1}`);
-  if (google2) parts.push(`=== Benchmarks & Battery ===\n${google2}`);
+  if (gsmarena) parts.push(gsmarena);
+  if (google1) parts.push(google1);
 
-  const combined = parts.join("\n\n");
-  // Hard cap at 8000 chars to stay under Groq TPM limits
-  return combined.length > 8000 ? combined.slice(0, 8000) : combined;
+  const combined = parts.join("\n");
+  // Hard cap at 3000 chars to stay under Groq 8000 TPM limit
+  return combined.length > 3000 ? combined.slice(0, 3000) : combined;
 }
 
 // ---------------------------------------------------------------------------
-// Prompt — adapted for Groq (no built-in web search, uses fetched context)
+// Prompt — compact for Groq free tier (8000 TPM limit)
 // ---------------------------------------------------------------------------
 
-const PROMPT = `You are the world's most thorough phone specification engineer. You receive pre-fetched web data from GSMArena, Google, and other sources. USE THIS DATA to fill in every field accurately.
+const PROMPT = `Extract phone specs into JSON. Use web data below. null = unknown. Numbers only (no units). Dates = YYYY-MM-DD.
 
-INPUT: A device name (e.g. "Samsung Galaxy S25 Ultra") + pre-fetched web search data containing specs.
+JSON:
+{"brand":"","name":"","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null,"specs":{"body":{"dimensions":{"widthMm":0,"heightMm":0,"depthMm":0},"weightG":0,"build":"","materials":[],"protection":"","ipRating":"","colors":[]},"display":{"type":"","sizeIn":0,"resolution":"","ppi":0,"refreshRateHz":0,"peakBrightnessNits":0,"hdrSupport":[],"pwmHz":0,"glass":"","colorDepth":""},"platform":{"os":"","ui":"","chipset":"","cpu":"","gpu":"","antutuV10":0,"geekbench6":{"single":0,"multi":0}},"memory":{"ramOptions":[],"storageOptions":[],"storageType":"","cardSlot":false},"cameras":{"rear":[{"kind":"wide","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"OIS","video":[]}],"front":[{"kind":"selfie","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"EIS","video":[]}],"features":[],"videoCapabilities":[]},"audio":{"speakers":[],"headphoneJack":false,"codecs":[],"microphone":""},"battery":{"capacityMah":0,"type":"","chargingWatts":0,"chargingTimeMin":0,"wirelessWatts":0,"reverseWirelessWatts":0,"enduranceHours":0},"connectivity":{"wifi":"","bluetooth":"","nfc":false,"usb":"","irBlaster":false,"gnss":[],"bands":[]},"sensors":[],"extras":{"fingerprint":"","faceUnlock":false,"stylus":false,"esim":false,"uwb":false,"satelliteSos":false}},"variants":[],"images":{"heroImage":null,"gallery":[],"renderImages":[]},"confidence":{"overall":0.9,"verifiedFields":[],"estimatedFields":[],"unavailableFields":[]},"sources":[{"title":"","url":"","kind":"retailer"}]}
 
-YOUR JOB: Fill in EVERY SINGLE FIELD below with real, verified data from the provided web context. Null is ONLY acceptable for truly non-existent or unpublished data.
-
-RULES:
-1. Fill EVERY field with real data. null ONLY when truly impossible to find.
-2. NEVER invent or hallucinate. Use only the provided web search data.
-3. Preserve official marketing names exactly.
-4. Numbers only — strip units (mm, g, Hz, nits, mAh, W).
-5. Dates: ISO 8601 (YYYY-MM-DD).
-6. If benchmark scores appear in the web data, use them. If not found, set to null.
-7. If battery endurance hours appear in the web data, use them. If not, null.
-8. If camera sensor sizes appear, use them. If not, null.
-9. confidence.overall should reflect how complete the data is: 0.90+ if most fields found, 0.70-0.89 if partial, 0.50-0.69 if limited.
-10. For images.heroImage: find any direct image URL from the web data (e.g. gsmarena.com/vv/bigpic/...). If none found, leave null.
-11. For images.gallery: extract multiple image URLs if available.
-12. For images.renderImages: extract official press render URLs if available.
-13. For sources: list the URLs you actually used from the web data.
-
-JSON SCHEMA (match EXACTLY):
-{
-  "brand": "string",
-  "name": "string (without brand)",
-  "modelNumbers": ["SM-XXXX", "etc"],
-  "codename": "string|null",
-  "status": "rumored|announced|upcoming|available|discontinued",
-  "announcedAt": "YYYY-MM-DD|null",
-  "releaseAt": "YYYY-MM-DD|null",
-  "specs": {
-    "body": { "dimensions": {"widthMm": num, "heightMm": num, "depthMm": num}, "weightG": num, "build": "string", "materials": ["string"], "protection": "string", "ipRating": "IP68", "colors": ["string"] },
-    "display": { "type": "LTPO AMOLED", "sizeIn": num, "resolution": "3120x1440", "ppi": num, "refreshRateHz": 120, "peakBrightnessNits": num, "hdrSupport": ["string"], "pwmHz": num, "glass": "string", "colorDepth": "string" },
-    "platform": { "os": "Android 15", "ui": "One UI 7", "chipset": "Snapdragon 8 Elite", "cpu": "string", "gpu": "string", "antutuV10": num, "geekbench6": {"single": num, "multi": num} },
-    "memory": { "ramOptions": [12, 16], "storageOptions": [256, 512, 1024], "storageType": "UFS 4.0", "cardSlot": false },
-    "cameras": { "rear": [{"kind":"wide","megapixels":200,"aperture":"f/1.7","sensorSize":"1/1.3\\"","pixelSize":"0.6μm","fieldOfViewDeg":85,"opticalZoom":null,"digitalZoom":100,"stabilization":"OIS","video":["8K@30fps","4K@60fps"]}],"front": [{"kind":"selfie","megapixels":12,"aperture":"f/2.2","sensorSize":"1/3.2\\"","pixelSize":"1.12μm","fieldOfViewDeg":80,"opticalZoom":null,"digitalZoom":null,"stabilization":"EIS","video":["4K@30fps"]}],"features": ["Night Mode","Pro Mode"], "videoCapabilities": ["8K@30fps","4K@120fps"] },
-    "audio": { "speakers": ["stereo speakers"], "headphoneJack": false, "codecs": ["LDAC","aptX HD","AAC"], "microphone": "3 mics with noise cancellation" },
-    "battery": { "capacityMah": 5000, "type": "Li-Po", "chargingWatts": 45, "chargingTimeMin": 65, "wirelessWatts": 15, "reverseWirelessWatts": 4.5, "enduranceHours": 142 },
-    "connectivity": { "wifi": "Wi-Fi 7", "bluetooth": "5.4", "nfc": true, "usb": "USB-C 3.2 Gen 2", "irBlaster": false, "gnss": ["GPS","GLONASS","BeiDou","Galileo"], "bands": ["n1","n3","n5","n7","n8","n20","n28","n38","n40","n41","n77","n78","n79"] },
-    "sensors": ["accelerometer","gyroscope","proximity","compass","barometer"],
-    "extras": { "fingerprint": "under-display", "faceUnlock": true, "stylus": false, "esim": true, "uwb": true, "satelliteSos": false }
-  },
-  "variants": [{"name":"Global","region":"Global","chipset":"Snapdragon 8 Elite","ramGb":12,"storageGb":256,"modem":null,"note":null}],
-  "images": { "heroImage": "https://...", "gallery": ["https://..."], "renderImages": ["https://..."] },
-  "confidence": { "overall": 0.97, "verifiedFields": ["specs.body","specs.display","specs.platform"], "estimatedFields": [], "unavailableFields": [] },
-  "sources": [{"title":"GSMArena","url":"https://gsmarena.com/...","kind":"retailer"}]
-}
-
-Return ONLY the JSON object. No markdown, no explanation, no commentary.`;
+Rules: ONLY output the JSON object. No markdown. No explanation.`;
 
 /** Hard cap — limited for Groq free tier TPM. */
 const MAX_OUTPUT_TOKENS = 4096;
@@ -297,12 +252,12 @@ export async function extractSpecs(query: string): Promise<{
     let retryHint = "";
     if (isRetry && attempt === 1 && lastDevice) {
       const missing = findMissingFields(lastDevice);
-      retryHint = `\n\nPREVIOUS ATTEMPT was valid but INCOMPLETE. You LEFT THESE FIELDS EMPTY/NULL:\n${missing}\n\nLook through the web context data again and FILL THEM ALL. Do not leave any of them null.`;
+      retryHint = `\n\nPREVIOUS incomplete. Missing: ${missing}. Fill ALL of them.`;
     } else if (isRetry) {
-      retryHint = `\n\nFINAL RETRY: Output COMPLETE, VALID JSON only. Do not truncate. Start with { and end with }. No markdown fences.`;
+      retryHint = `\n\nFINAL RETRY: Valid JSON only. Start with { end with }.`;
     }
 
-    const userMessage = `Device: ${query}\n\n${webContext ? `=== WEB SEARCH DATA ===\n${webContext}\n\n=== END WEB DATA ===\n\nExtract ALL specs from the data above into the JSON schema below.${retryHint}` : `No web search data available. Use your training knowledge to fill in as much as possible.${retryHint}`}`;
+    const userMessage = `Device: ${query}\n${webContext ? `Web data:\n${webContext}\n` : ""}${retryHint}`;
 
     const response = await groqGenerateContent({
       systemPrompt: PROMPT,

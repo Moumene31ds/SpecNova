@@ -60,7 +60,7 @@ const SEARCH_HEADERS = {
 /**
  * Fetch a web page and return text content (for grounding).
  */
-export async function fetchPageText(url: string, maxChars = 6000): Promise<string> {
+export async function fetchPageText(url: string, maxChars = 3000): Promise<string> {
   try {
     const res = await fetch(url, { headers: SEARCH_HEADERS, signal: AbortSignal.timeout(10000) });
     if (!res.ok) return "";

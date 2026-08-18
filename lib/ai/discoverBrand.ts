@@ -43,69 +43,25 @@ export type BrandCatalogModel = z.infer<typeof BrandCatalogSchema>["models"][num
 export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
 async function fetchBrandWebContext(brand: string): Promise<string> {
-  const queries = [
-    `${brand} latest phones 2025 2026`,
-    `${brand} all phone models complete catalog`,
-    `${brand} new phone announcements`,
-  ];
+  const url = `https://www.google.com/search?q=${encodeURIComponent(brand + " all phone models 2024 2025 2026")}&num=8&hl=en`;
+  const text = await fetchPageText(url, 3000);
 
-  const results = await Promise.all(
-    queries.map(async (q) => {
-      const url = `https://www.google.com/search?q=${encodeURIComponent(q)}&num=8&hl=en`;
-      return fetchPageText(url, 3000);
-    }),
-  );
-
-  // Also fetch GSMArena brand page
   const gsmarenaUrl = `https://www.gsmarena.com/${brand.toLowerCase().replace(/\s+/g, "-")}-phones-f-35-0-p1.php`;
-  const gsmarenaText = await fetchPageText(gsmarenaUrl, 4000);
+  const gsmarenaText = await fetchPageText(gsmarenaUrl, 3000);
 
   const parts: string[] = [];
-  if (gsmarenaText) parts.push(`=== GSMArena ${brand} Phones ===\n${gsmarenaText}`);
-  results.forEach((r, i) => {
-    if (r) parts.push(`=== Search ${i + 1}: ${queries[i]} ===\n${r}`);
-  });
+  if (gsmarenaText) parts.push(gsmarenaText);
+  if (text) parts.push(text);
 
-  return parts.join("\n\n---\n\n");
+  const combined = parts.join("\n");
+  return combined.length > 5000 ? combined.slice(0, 5000) : combined;
 }
 
-const PROMPT = `You are SpecNova's world-class device-catalog librarian — an encyclopedic authority on every smartphone ever manufactured.
+const PROMPT = `List all phones from this brand into JSON. Include flagships, mid-range, budget from last 8-10 years. Cap at 120 models.
 
-INPUT: a smartphone brand name + pre-fetched web data containing the brand's phone catalog info.
+JSON: {"brand":"","models":[{"name":"without brand","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null}]}
 
-YOUR MISSION: produce the most COMPLETE and ACCURATE catalog of every phone this brand has ever made, using the provided web data.
-
-CRITICAL RULES:
-1. RETURN ONE strict JSON object with the brand's complete phone catalog.
-2. Include EVERY phone the brand has shipped in the last 8-10 years, PLUS all announced/upcoming models.
-3. Include iconic older devices that are still relevant (flagships, foldables, gaming phones).
-4. Cap the list at ${BRAND_CATALOG_MAX_MODELS} entries — prioritize flagships and best-sellers.
-5. "name" is the official product name WITHOUT the brand prefix (e.g. "Galaxy S25 Ultra", not "Samsung Galaxy S25 Ultra").
-6. "modelNumbers": real SKU / market numbers when known (e.g. "SM-S938U1", "CPH2573"). Use null if unknown.
-7. "codename": internal codename only when publicly known, else null.
-8. "status": current lifecycle status. Be accurate — don't mark discontinued phones as "available".
-9. "announcedAt"/"releaseAt": ISO dates (YYYY-MM-DD) when known, else null.
-10. NEVER invent phones. If you cannot verify a model exists, leave it out. Accuracy beats completeness.
-11. One entry per model family — do NOT create separate entries for storage/color variants.
-12. Include sub-brands (e.g. for Xiaomi: include "Redmi", "POCO", "Black Shark" models).
-13. MOST IMPORTANTLY: include ALL phones from 2025-2026 that appear in your web data.
-
-JSON SCHEMA:
-{
-  "brand": "string",
-  "models": [
-    {
-      "name": "string (without brand prefix)",
-      "modelNumbers": ["string"],
-      "codename": "string|null",
-      "status": "rumored|announced|upcoming|available|discontinued",
-      "announcedAt": "YYYY-MM-DD|null",
-      "releaseAt": "YYYY-MM-DD|null"
-    }
-  ]
-}
-
-Return ONLY the JSON object. No markdown fences, no commentary, no explanation.`;
+Rules: status = rumored|announced|upcoming|available|discontinued. ONLY output JSON. No markdown.`;
 
 /** Discover the brand's full model catalog with web fetch grounding. Retries up to 2 times on malformed JSON. */
 export async function discoverBrand(brand: string): Promise<{
@@ -126,10 +82,10 @@ export async function discoverBrand(brand: string): Promise<{
 
     let retryHint = "";
     if (isRetry) {
-      retryHint = `\n\nATTEMPT ${attempt + 1}/${MAX_RETRIES + 1}: Your previous response was malformed. Issues found:\n${attempt === 1 ? "JSON parse error — output was truncated or contained invalid syntax." : "Schema validation failed."}\n\nIMPORTANT: Output COMPLETE, VALID JSON only. Do not truncate. Do not add markdown fences. Output ONLY the raw JSON object.`;
+      retryHint = `\n\nRetry: Valid JSON only. No markdown.`;
     }
 
-    const userMessage = `Brand: ${brand}\n\n${webContext ? `=== WEB SEARCH DATA ===\n${webContext}\n\n=== END WEB DATA ===\n\nExtract the complete phone catalog from the data above.${retryHint}` : `No web search data available. Use your training knowledge to list all phones from this brand.${retryHint}`}`;
+    const userMessage = `Brand: ${brand}\n${webContext ? `Web data:\n${webContext}\n` : ""}${retryHint}`;
 
     const response = await groqGenerateContent({
       systemPrompt: PROMPT,
@@ -150,7 +106,7 @@ export async function discoverBrand(brand: string): Promise<{
       const parsed = parseJsonObject(raw);
       const catalog = BrandCatalogSchema.parse(parsed);
       if (catalog.models.length === 0 && attempt < MAX_RETRIES) {
-        retryHint = `\n\nATTEMPT ${attempt + 1}: You returned an EMPTY models array. You MUST include at least 5 phone models. Search the web data again and include ALL phones from this brand.`;
+        retryHint = `\n\nEmpty models. Add phones for ${brand}.`;
         continue;
       }
       const result = { catalog, raw };
