@@ -10,21 +10,19 @@ import {
 export const AI_DISCOVERY_MODEL = "gemini-3.6-flash (rotating)";
 
 /**
- * Brand catalog discovery with web fetch grounding.
- * Fetches GSMArena + Google search results for the brand's latest phones,
- * then uses Groq LLM to extract the complete catalog.
- * Caches results for 1 hour to minimize API calls.
+ * Brand catalog discovery — fetches the COMPLETE model lineup.
+ * Uses a 2-phase approach: first discovers flagships + recent models,
+ * then asks for mid-range, budget, foldables, and older models.
  */
 
 export const BRAND_CATALOG_MAX_MODELS = 120;
-const DISCOVERY_MAX_OUTPUT_TOKENS = 8192;
+const DISCOVERY_MAX_OUTPUT_TOKENS = 16384;
 
 export const BrandCatalogSchema = z.object({
   brand: z.string().min(1),
   models: z
     .array(
       z.object({
-        /** Official product name WITHOUT the brand prefix, e.g. "Galaxy S25 Ultra". */
         name: z.string().min(1),
         modelNumbers: z.array(z.string()).default([]),
         codename: z.string().nullish(),
@@ -40,15 +38,50 @@ export const BrandCatalogSchema = z.object({
 export type BrandCatalogModel = z.infer<typeof BrandCatalogSchema>["models"][number];
 export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
-// No web fetch — training knowledge is sufficient for brand catalogs.
+// Phase 1: Flagships + 2024-2026 models
+const PROMPT_PHASE1 = `You are a phone catalog expert. Search the web for ALL phones made by this brand. Use Google Search to find the COMPLETE list.
 
-const PROMPT = `List phones from this brand into JSON. PRIORITIZE 2024-2026 models first, then older. Include flagships, mid-range, budget. Cap at 120.
+List EVERY phone model this brand has released. Include:
+- Flagship series (Pro, Ultra, Max, Plus variants)
+- Sub-flagship / premium mid-range
+- Mid-range series
+- Budget / entry-level
+- Foldable / flip phones
+- Gaming phones
+- Tablets if they make phones too (only phone models)
 
-JSON: {"brand":"","models":[{"name":"without brand","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null}]}
+Output JSON array. Include modelNumbers if known (SM-XXXX, etc).
+Status: rumored|announced|upcoming|available|discontinued
 
-Rules: status=rumored|announced|upcoming|available|discontinued. Put NEWEST phones first. ONLY output JSON.`;
+Output: {"brand":"","models":[{"name":"Model Name","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null}]}
 
-/** Discover the brand's full model catalog with web fetch grounding. Retries up to 2 times on malformed JSON. */
+RULES:
+- Include ALL variants: base, Pro, Ultra, Max, Plus, Lite, SE, Mini, FE, etc.
+- Include ALL series, not just flagships
+- Name = official product name without brand prefix (e.g. "Galaxy S25 Ultra")
+- Newest phones first
+- Status = available for released phones
+- ONLY valid JSON. No markdown.`;
+
+// Phase 2: Ask for more if the first response seems incomplete
+const PROMPT_PHASE2 = `You are a phone catalog expert. The previous search returned these models. Now search the web again and add ANY MISSING models.
+
+Focus on finding models from these categories that may be missing:
+- Older models (2020-2023)
+- Budget and entry-level series
+- Regional variants
+- Foldable and flip phones
+- Gaming phones
+- Special editions
+- All sub-variants (Pro, Ultra, Max, Plus, Lite, FE, SE, Mini)
+
+Return ONLY the NEW models not in the existing list. If no new models, return {"brand":"","models":[]}
+
+Output: {"brand":"","models":[{"name":"Model Name","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null}]}
+
+ONLY valid JSON. No markdown.`;
+
+/** Discover the brand's full model catalog. Phase 1 + Phase 2 for completeness. */
 export async function discoverBrand(brand: string): Promise<{
   catalog: BrandCatalog;
   raw: string;
@@ -57,15 +90,54 @@ export async function discoverBrand(brand: string): Promise<{
   const cached = getCached<{ catalog: BrandCatalog; raw: string }>(cacheKey);
   if (cached) return cached;
 
+  // Phase 1: Main discovery
+  const phase1 = await discoverPhase(brand, PROMPT_PHASE1);
+  let allModels = [...phase1.catalog.models];
+  let rawLog = `=== Phase 1: ${allModels.length} models ===\n${phase1.raw}\n`;
+
+  // Phase 2: Fill gaps if we got fewer than 60 models (brands usually have 50-120)
+  if (allModels.length < 60) {
+    try {
+      const existingNames = allModels.map((m) => m.name).join(", ");
+      const phase2 = await discoverPhase(
+        brand,
+        `${PROMPT_PHASE2}\n\nExisting models already found: ${existingNames}`,
+      );
+      const newModels = phase2.catalog.models.filter(
+        (m) => !allModels.some((e) => e.name.toLowerCase() === m.name.toLowerCase()),
+      );
+      allModels = [...allModels, ...newModels];
+      rawLog += `\n=== Phase 2: +${newModels.length} new models ===\n${phase2.raw}`;
+    } catch {
+      // Phase 2 failure is non-fatal — use Phase 1 results
+      rawLog += "\n=== Phase 2: skipped (error) ===";
+    }
+  }
+
+  const catalog: BrandCatalog = {
+    brand: phase1.catalog.brand || brand,
+    models: allModels.slice(0, BRAND_CATALOG_MAX_MODELS),
+  };
+
+  const result = { catalog, raw: rawLog };
+  setCache(cacheKey, result);
+  return result;
+}
+
+/** Single discovery phase with retry logic. */
+async function discoverPhase(
+  brand: string,
+  prompt: string,
+): Promise<{ catalog: BrandCatalog; raw: string }> {
   const MAX_RETRIES = 2;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
 
-    const userMessage = isRetry ? `${brand}\nRetry: Valid JSON only.` : brand;
+    const userMessage = isRetry ? `${brand}\nRetry: Return valid JSON only.` : brand;
 
     const response = await geminiGenerateContent({
-      systemInstruction: PROMPT,
+      systemInstruction: prompt,
       userMessage,
       temperature: isRetry ? 0 : 0.1,
       topP: 0.9,
@@ -77,7 +149,7 @@ export async function discoverBrand(brand: string): Promise<{
     const raw = response.text;
     if (!raw.trim()) {
       if (attempt < MAX_RETRIES) continue;
-      throw new Error("Groq returned an empty catalog after all retries.");
+      throw new Error("Gemini returned an empty catalog after all retries.");
     }
 
     try {
@@ -86,15 +158,13 @@ export async function discoverBrand(brand: string): Promise<{
       if (catalog.models.length === 0 && attempt < MAX_RETRIES) {
         continue;
       }
-      const result = { catalog, raw };
-      setCache(cacheKey, result);
-      return result;
+      return { catalog, raw };
     } catch (err) {
       if (attempt >= MAX_RETRIES) {
         const msg = err instanceof z.ZodError
-          ? `Schema validation failed after ${MAX_RETRIES + 1} attempts:\n${err.message.slice(0, 500)}`
+          ? `Schema validation failed:\n${err.message.slice(0, 500)}`
           : err instanceof SyntaxError
-            ? `JSON parse error after ${MAX_RETRIES + 1} attempts: ${err.message}`
+            ? `JSON parse error: ${err.message}`
             : `Discovery failed: ${String(err).slice(0, 300)}`;
         throw new Error(msg);
       }
@@ -105,7 +175,7 @@ export async function discoverBrand(brand: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
-// JSON Parser with truncation repair (shared logic)
+// JSON Parser with truncation repair
 // ---------------------------------------------------------------------------
 
 function parseJsonObject(text: string): unknown {
