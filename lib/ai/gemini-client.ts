@@ -131,15 +131,16 @@ export async function geminiGenerateContent(
       return { text, groundingMetadata: gm };
     } catch (err: unknown) {
       const status = getErrorStatus(err);
-      const isRetryable = status === 429 || status === 503;
+      const isRetryable = status === 429 || status === 502 || status === 503 || status === 504 || status === 500;
 
       if (isRetryable) {
         markExhausted(model);
         console.warn(`[gemini] ${status} on ${model}, rotating to next model`);
 
-        // If all models exhausted, wait before retrying
+        // Exponential backoff with longer delays for server errors
+        const delay = status === 429 ? BASE_DELAY_MS * 2 : BASE_DELAY_MS * 4;
         if (triedModels.size >= MODELS.length) {
-          await sleep(BASE_DELAY_MS * 2);
+          await sleep(delay);
           triedModels.clear();
         }
         continue;
@@ -158,7 +159,11 @@ function getErrorStatus(err: unknown): number {
   }
   const msg = String(err);
   if (msg.includes("429")) return 429;
+  if (msg.includes("502")) return 502;
   if (msg.includes("503")) return 503;
+  if (msg.includes("504")) return 504;
+  if (msg.includes("500")) return 500;
+  if (msg.includes("Server Error")) return 502;
   return 0;
 }
 
