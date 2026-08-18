@@ -10,6 +10,30 @@ import {
 export const AI_EXTRACTION_MODEL = "gemini-3.6-flash (rotating)";
 
 // ---------------------------------------------------------------------------
+// Lenient helpers — AI often returns wrong types
+// ---------------------------------------------------------------------------
+
+const lenientArray = z
+  .union([z.array(z.any()), z.boolean(), z.string(), z.number(), z.null()])
+  .transform((val) => {
+    if (Array.isArray(val)) return val.map(String);
+    if (val === true) return ["yes"];
+    if (val === false || val === null) return [];
+    return [String(val)];
+  })
+  .default([]);
+
+const lenientBool = z
+  .union([z.boolean(), z.string(), z.number(), z.null()])
+  .transform((val) => {
+    if (typeof val === "boolean") return val;
+    if (typeof val === "string") return val === "true" || val === "yes" || val === "1";
+    if (typeof val === "number") return val !== 0;
+    return false;
+  })
+  .default(false);
+
+// ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
@@ -23,13 +47,13 @@ const CameraSchema = z.object({
   opticalZoom: z.number().nullish(),
   digitalZoom: z.number().nullish(),
   stabilization: z.string().nullish(),
-  video: z.array(z.string()).default([]),
+  video: lenientArray,
 });
 
 export const AiExtractedDeviceSchema = z.object({
   brand: z.string().min(1),
   name: z.string().min(1),
-  modelNumbers: z.array(z.string()).default([]),
+  modelNumbers: lenientArray,
   codename: z.string().nullish(),
   status: z.string().default("available"),
   announcedAt: z.string().nullish(),
@@ -45,10 +69,10 @@ export const AiExtractedDeviceSchema = z.object({
         .default({}),
       weightG: z.number().nullish(),
       build: z.string().nullish(),
-      materials: z.array(z.string()).default([]),
+      materials: lenientArray,
       protection: z.string().nullish(),
       ipRating: z.string().nullish(),
-      colors: z.array(z.string()).default([]),
+      colors: lenientArray,
     }),
     display: z.object({
       type: z.string().nullish(),
@@ -57,7 +81,7 @@ export const AiExtractedDeviceSchema = z.object({
       ppi: z.number().nullish(),
       refreshRateHz: z.number().nullish(),
       peakBrightnessNits: z.number().nullish(),
-      hdrSupport: z.array(z.string()).default([]),
+      hdrSupport: lenientArray,
       pwmHz: z.number().nullish(),
       glass: z.string().nullish(),
       colorDepth: z.string().nullish(),
@@ -77,21 +101,43 @@ export const AiExtractedDeviceSchema = z.object({
         .default({}),
     }),
     memory: z.object({
-      ramOptions: z.array(z.number()).default([]),
-      storageOptions: z.array(z.number()).default([]),
+      ramOptions: z
+        .union([z.array(z.number()), z.array(z.string()), z.number(), z.string(), z.null()])
+        .transform((v) => {
+          if (Array.isArray(v)) return v.map(Number).filter((n) => !isNaN(n));
+          if (typeof v === "number") return [v];
+          if (typeof v === "string") {
+            const nums = v.match(/\d+/g);
+            return nums ? nums.map(Number) : [];
+          }
+          return [];
+        })
+        .default([]),
+      storageOptions: z
+        .union([z.array(z.number()), z.array(z.string()), z.number(), z.string(), z.null()])
+        .transform((v) => {
+          if (Array.isArray(v)) return v.map(Number).filter((n) => !isNaN(n));
+          if (typeof v === "number") return [v];
+          if (typeof v === "string") {
+            const nums = v.match(/\d+/g);
+            return nums ? nums.map(Number) : [];
+          }
+          return [];
+        })
+        .default([]),
       storageType: z.string().nullish(),
       cardSlot: z.boolean().nullish(),
     }),
     cameras: z.object({
       rear: z.array(CameraSchema).default([]),
       front: z.array(CameraSchema).default([]),
-      features: z.array(z.string()).default([]),
-      videoCapabilities: z.array(z.string()).default([]),
+      features: lenientArray,
+      videoCapabilities: lenientArray,
     }),
     audio: z.object({
-      speakers: z.array(z.string()).default([]),
-      headphoneJack: z.boolean().nullish(),
-      codecs: z.array(z.string()).default([]),
+      speakers: lenientArray,
+      headphoneJack: lenientBool,
+      codecs: lenientArray,
       microphone: z.string().nullish(),
     }),
     battery: z.object({
@@ -106,20 +152,20 @@ export const AiExtractedDeviceSchema = z.object({
     connectivity: z.object({
       wifi: z.string().nullish(),
       bluetooth: z.string().nullish(),
-      nfc: z.boolean().nullish(),
+      nfc: lenientBool,
       usb: z.string().nullish(),
-      irBlaster: z.boolean().nullish(),
-      gnss: z.array(z.string()).default([]),
-      bands: z.array(z.string()).default([]),
+      irBlaster: lenientBool,
+      gnss: lenientArray,
+      bands: lenientArray,
     }),
-    sensors: z.array(z.string()).default([]),
+    sensors: lenientArray,
     extras: z.object({
       fingerprint: z.string().nullish(),
-      faceUnlock: z.boolean().nullish(),
-      stylus: z.boolean().nullish(),
-      esim: z.boolean().nullish(),
-      uwb: z.boolean().nullish(),
-      satelliteSos: z.boolean().nullish(),
+      faceUnlock: lenientBool,
+      stylus: lenientBool,
+      esim: lenientBool,
+      uwb: lenientBool,
+      satelliteSos: lenientBool,
     }),
   }),
   variants: z
@@ -162,11 +208,6 @@ export const AiExtractedDeviceSchema = z.object({
 
 export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 
-// No web fetch — training knowledge is sufficient for 99% of phones.
-// This keeps requests under Groq's 8000 TPM free tier limit.
-
-// ---------------------------------------------------------------------------
-// Prompt — compact for Groq free tier (8000 TPM limit)
 // ---------------------------------------------------------------------------
 
 const PROMPT = `You are a phone spec expert. Search the web using Google Search for the EXACT official specs of this phone. Use ONLY verified data from official sources (GSMArena, manufacturer website, PhoneArena, Kimovil).
