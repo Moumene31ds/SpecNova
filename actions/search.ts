@@ -112,3 +112,9 @@ export async function fetchCompareDevices(slugs: string[]) {
   const devices = await getDevicesBySlugs(slugs);
   return devices.map((d) => ({ ...d, id: d.id, embedding: undefined }));
 }
+
+/** Fetch catalog for client-side search fallback. */
+export async function fetchCatalogForSearch(limit = 200) {
+  const { getCatalog } = await import("@/lib/query/device-query");
+  return getCatalog(limit);
+}

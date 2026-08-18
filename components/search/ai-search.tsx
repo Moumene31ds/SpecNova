@@ -79,8 +79,8 @@ export function AiSearch({
         setUsedFallback(false);
       } else {
         const { localSearch } = await import("@/lib/search/local-search");
-        const { getCatalog } = await import("@/lib/query/device-query");
-        const fallbackCatalog = await getCatalog(200);
+        const { fetchCatalogForSearch } = await import("@/actions/search");
+        const fallbackCatalog = await fetchCatalogForSearch(200);
         if (controller.signal.aborted) return;
         setResults(localSearch(trimmed, fallbackCatalog, 8));
         setUsedFallback(true);
@@ -90,8 +90,8 @@ export function AiSearch({
     } catch {
       if (controller.signal.aborted) return;
       const { localSearch } = await import("@/lib/search/local-search");
-      const { getCatalog } = await import("@/lib/query/device-query");
-      const fallbackCatalog = await getCatalog(200);
+      const { fetchCatalogForSearch } = await import("@/actions/search");
+      const fallbackCatalog = await fetchCatalogForSearch(200);
       const hits = localSearch(trimmed, fallbackCatalog, 8);
       setResults(hits);
       setUsedFallback(true);
