@@ -738,7 +738,8 @@ export class WriteBatch {
   constructor(private readonly db: FirestoreRest) {}
 
   private docName(ref: DocumentReference): string {
-    return `${this.db.root}/${ref.path}`;
+    const docResourcePrefix = this.db.root.replace("https://firestore.googleapis.com/v1/", "");
+    return `${docResourcePrefix}/${ref.path}`;
   }
 
   set(ref: DocumentReference, data: object, options?: QueryOptions): WriteBatch {
