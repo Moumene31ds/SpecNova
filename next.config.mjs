@@ -15,6 +15,10 @@ const nextConfig = {
       "lucide-react",
       "recharts",
       "@react-three/fiber",
+      "firebase",
+      "firebase/auth",
+      "next-intl",
+      "react-hot-toast",
     ],
   },
   images: {

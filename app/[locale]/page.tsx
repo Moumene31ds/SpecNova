@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { ArrowRight, Box, RadioTower, Sparkles, TrendingDown, WandSparkles, Zap, ShieldCheck, Globe2, Search } from "lucide-react";
-import { AiSearch } from "@/components/search/ai-search";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
 import { DeviceCard } from "@/components/device/device-card";
 import { getCatalog } from "@/lib/query/device-query";
-
-// PPR-ready: this route is a static shell with client islands (AiSearch).
-// Re-enable when PPR lands in stable Next: `export const experimental_ppr = true;`
+import { DeviceCardSkeleton } from "@/components/device/device-card-skeleton";
 
 export const metadata: Metadata = {
   title: "Every phone. Compared. Tracked.",
   description:
     "iToPhone — AI-powered device comparison with 100% global coverage and real-time price tracking.",
 };
+
+const HeroSearch = dynamic(
+  () => import("@/components/search/ai-search").then((m) => m.AiSearch),
+  { ssr: false, loading: () => <div className="h-12 w-full max-w-xl animate-pulse rounded-2xl bg-card/50" /> },
+);
 
 const STATS = [
   { value: "100%", label: "Device coverage" },
@@ -47,15 +51,31 @@ const FEATURES = [
   {
     icon: WandSparkles,
     title: "Semantic Search",
-    body: "“Best low-light camera under $400” — described in English, answered with vectors.",
+    body: "\"Best low-light camera under $400\" — described in English, answered with vectors.",
     accent: "hsl(330 100% 60%)",
     href: "/search",
   },
 ];
 
-export default async function HomePage() {
+async function FeaturedDevices() {
   const catalog = await getCatalog(6);
+  return (
+    <BentoGrid columns={3}>
+      {catalog.slice(0, 6).map((device, i) => (
+        <BentoCell
+          key={device.id}
+          span={i === 0 ? 2 : 1}
+          glowColor={device.brandColor}
+          className="min-h-[12rem] md:min-h-[16rem]"
+        >
+          <DeviceCard device={device} />
+        </BentoCell>
+      ))}
+    </BentoGrid>
+  );
+}
 
+export default async function HomePage() {
   return (
     <>
       {/* ------------------------------------------------ Hero */}
@@ -78,7 +98,9 @@ export default async function HomePage() {
           </p>
 
           <div className="mt-10 flex w-full justify-center">
-            <AiSearch />
+            <Suspense fallback={<div className="h-12 w-full max-w-xl animate-pulse rounded-2xl bg-card/50" />}>
+              <HeroSearch />
+            </Suspense>
           </div>
 
           <dl className="mt-12 grid w-full max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-4">
@@ -117,18 +139,19 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <BentoGrid columns={3}>
-            {catalog.slice(0, 6).map((device, i) => (
-              <BentoCell
-                key={device.id}
-                span={i === 0 ? 2 : 1}
-                glowColor={device.brandColor}
-                className="min-h-[12rem] md:min-h-[16rem]"
-              >
-                <DeviceCard device={device} />
-              </BentoCell>
-            ))}
-          </BentoGrid>
+          <Suspense
+            fallback={
+              <BentoGrid columns={3}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <BentoCell key={i} span={i === 0 ? 2 : 1}>
+                    <DeviceCardSkeleton />
+                  </BentoCell>
+                ))}
+              </BentoGrid>
+            }
+          >
+            <FeaturedDevices />
+          </Suspense>
         </div>
       </section>
 

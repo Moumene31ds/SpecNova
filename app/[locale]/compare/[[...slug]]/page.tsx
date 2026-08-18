@@ -1,19 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import dynamicImport from "next/dynamic";
 import { ArrowLeft, Gamepad2, RadioTower, Sparkles, TrendingDown } from "lucide-react";
 import { getDevices, getCatalog } from "@/lib/query/device-query";
 import { ScoreRing } from "@/components/device/score-ring";
 import { ComparePicker } from "@/components/compare/compare-picker";
 import { SpecDiffTable } from "@/components/compare/spec-diff-table";
-import { WinnerBanner } from "@/components/compare/winner-banner";
-import { CameraComparator } from "@/components/compare/camera-comparator";
-import { GamingSimulator } from "@/components/compare/gaming-simulator";
-import { PriceHistoryChart } from "@/components/charts/price-history-chart";
-import { BandChecker } from "@/components/bands/band-checker";
-import { getPriceHistorySafe } from "@/lib/pricing";
 import { ShareButton } from "@/components/compare/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const LazyWinnerBanner = dynamicImport(
+  () => import("@/components/compare/winner-banner").then((m) => m.WinnerBanner),
+  { ssr: false, loading: () => <div className="h-12 animate-pulse rounded-xl bg-card/50" /> },
+);
+
+const LazyCameraComparator = dynamicImport(
+  () => import("@/components/compare/camera-comparator").then((m) => m.CameraComparator),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-card/50" /> },
+);
+
+const LazyGamingSimulator = dynamicImport(
+  () => import("@/components/compare/gaming-simulator").then((m) => m.GamingSimulator),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-card/50" /> },
+);
+
+const LazyPriceHistoryChart = dynamicImport(
+  () => import("@/components/charts/price-history-chart").then((m) => m.PriceHistoryChart),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-card/50" /> },
+);
+
+const LazyBandChecker = dynamicImport(
+  () => import("@/components/bands/band-checker").then((m) => m.BandChecker),
+  { ssr: false, loading: () => <div className="h-48 animate-pulse rounded-2xl bg-card/50" /> },
+);
 
 interface Props {
   params: Promise<{ slug?: string[] }>;
@@ -78,7 +99,7 @@ export default async function ComparePage({ params }: Props) {
   }
 
   const histories = await Promise.all(
-    devices.map((d) => getPriceHistorySafe(d.id)),
+    devices.map((d) => import("@/lib/pricing").then((m) => m.getPriceHistorySafe(d.id))),
   );
 
   return (
@@ -143,7 +164,9 @@ export default async function ComparePage({ params }: Props) {
             </div>
 
             <div className="mt-6">
-              <WinnerBanner devices={devices} />
+              <Suspense fallback={<div className="h-12 animate-pulse rounded-xl bg-card/50" />}>
+                <LazyWinnerBanner devices={devices} />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -169,24 +192,29 @@ export default async function ComparePage({ params }: Props) {
           </TabsContent>
 
           <TabsContent value="cameras" className="mt-4">
-            <CameraComparator devices={devices} />
+            <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-card/50" />}>
+              <LazyCameraComparator devices={devices} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="gaming" className="mt-4">
-            <GamingSimulator devices={devices} />
+            <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-card/50" />}>
+              <LazyGamingSimulator devices={devices} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="price" className="mt-4">
             <div className="grid gap-4 xl:grid-cols-2">
               {devices.map((device, i) => (
-                <PriceHistoryChart
-                  key={device.id}
-                  deviceId={device.id}
-                  deviceName={`${device.brand} ${device.name}`}
-                  variantId={histories[i]?.variantId || device.id}
-                  points={histories[i]?.points ?? []}
-                  current={histories[i]?.current as never}
-                />
+                <Suspense key={device.id} fallback={<div className="h-64 animate-pulse rounded-2xl bg-card/50" />}>
+                  <LazyPriceHistoryChart
+                    deviceId={device.id}
+                    deviceName={`${device.brand} ${device.name}`}
+                    variantId={histories[i]?.variantId || device.id}
+                    points={histories[i]?.points ?? []}
+                    current={histories[i]?.current as never}
+                  />
+                </Suspense>
               ))}
             </div>
           </TabsContent>
@@ -194,7 +222,9 @@ export default async function ComparePage({ params }: Props) {
           <TabsContent value="bands" className="mt-4">
             <div className="grid gap-4 xl:grid-cols-2">
               {devices.map((device) => (
-                <BandChecker key={device.id} device={device} />
+                <Suspense key={device.id} fallback={<div className="h-48 animate-pulse rounded-2xl bg-card/50" />}>
+                  <LazyBandChecker device={device} />
+                </Suspense>
               ))}
             </div>
           </TabsContent>
