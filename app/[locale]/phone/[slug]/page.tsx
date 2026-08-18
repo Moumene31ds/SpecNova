@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceCard } from "@/components/device/device-card";
 import { PhoneImageGallery } from "@/components/PhoneImageGallery";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
+import { ShareButton } from "@/components/device/share-button";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -129,10 +130,11 @@ export default async function PhonePage({ params }: Props) {
                 </div>
                 <Link
                   href={compareUrl}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-border px-5 text-sm font-medium transition-colors hover:border-ring/50"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-border px-5 text-sm font-medium transition-colors hover:border-ring/50 active:scale-[0.97]"
                 >
                   Compare <ArrowRight className="h-4 w-4" />
                 </Link>
+                <ShareButton title={`${device.brand} ${device.name} Specs`} />
               </div>
             </div>
 
