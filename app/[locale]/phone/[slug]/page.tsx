@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { ArrowRight, Cpu, Battery, Camera, Disc, Gauge, Smartphone, Zap } from "lucide-react";
 import { getDevice, getCatalog } from "@/lib/query/device-query";
@@ -13,26 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceCard } from "@/components/device/device-card";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
 import { ShareButton } from "@/components/device/share-button";
-
-const PriceHistoryChart = dynamic(
-  () => import("@/components/charts/price-history-chart").then((m) => m.PriceHistoryChart),
-  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-card/50" /> },
-);
-
-const BandChecker = dynamic(
-  () => import("@/components/bands/band-checker").then((m) => m.BandChecker),
-  { ssr: false, loading: () => <div className="h-48 animate-pulse rounded-2xl bg-card/50" /> },
-);
-
-const PhoneImageGallery = dynamic(
-  () => import("@/components/PhoneImageGallery").then((m) => m.PhoneImageGallery),
-  { ssr: false, loading: () => <div className="aspect-square animate-pulse rounded-2xl bg-card/50" /> },
-);
-
-const DeviceViewer3D = dynamic(
-  () => import("@/components/device/device-viewer-3d").then((m) => m.DeviceViewer3D),
-  { ssr: false, loading: () => <div className="aspect-square animate-pulse rounded-2xl bg-card/50" /> },
-);
+import {
+  LazyPriceHistoryChart,
+  LazyBandChecker,
+  LazyPhoneImageGallery,
+  LazyDeviceViewer3D,
+} from "@/components/device/lazy-components";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -159,7 +144,7 @@ export default async function PhonePage({ params }: Props) {
 
             <div className="perspective-1200">
               {(device.media.heroImage || device.media.gallery.length > 0) ? (
-                <PhoneImageGallery
+                <LazyPhoneImageGallery
                   device={{
                     brand: device.brand,
                     name: device.name,
@@ -168,7 +153,7 @@ export default async function PhonePage({ params }: Props) {
                   }}
                 />
               ) : (
-                <DeviceViewer3D
+                <LazyDeviceViewer3D
                   brandColor={accent}
                   modelUrl={device.media.modelUrl}
                   deviceName={`${device.brand} ${device.name}`}
@@ -212,7 +197,7 @@ export default async function PhonePage({ params }: Props) {
           </TabsContent>
           <TabsContent value="price">
             <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-card/50" />}>
-              <PriceHistoryChart
+              <LazyPriceHistoryChart
                 deviceId={device.id}
                 deviceName={`${device.brand} ${device.name}`}
                 variantId={priceHistory.variantId || device.id}
@@ -223,7 +208,7 @@ export default async function PhonePage({ params }: Props) {
           </TabsContent>
           <TabsContent value="bands">
             <Suspense fallback={<div className="h-48 animate-pulse rounded-2xl bg-card/50" />}>
-              <BandChecker device={device} />
+              <LazyBandChecker device={device} />
             </Suspense>
           </TabsContent>
           <TabsContent value="overview">

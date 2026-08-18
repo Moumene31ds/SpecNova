@@ -1,23 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import { ArrowRight, Box, RadioTower, Sparkles, TrendingDown, WandSparkles, Zap, ShieldCheck, Globe2, Search } from "lucide-react";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
 import { DeviceCard } from "@/components/device/device-card";
 import { getCatalog } from "@/lib/query/device-query";
 import { DeviceCardSkeleton } from "@/components/device/device-card-skeleton";
+import { LazyHeroSearch } from "@/components/search/lazy-components";
 
 export const metadata: Metadata = {
   title: "Every phone. Compared. Tracked.",
   description:
     "iToPhone — AI-powered device comparison with 100% global coverage and real-time price tracking.",
 };
-
-const HeroSearch = dynamic(
-  () => import("@/components/search/ai-search").then((m) => m.AiSearch),
-  { ssr: false, loading: () => <div className="h-12 w-full max-w-xl animate-pulse rounded-2xl bg-card/50" /> },
-);
 
 const STATS = [
   { value: "100%", label: "Device coverage" },
@@ -99,7 +94,7 @@ export default async function HomePage() {
 
           <div className="mt-10 flex w-full justify-center">
             <Suspense fallback={<div className="h-12 w-full max-w-xl animate-pulse rounded-2xl bg-card/50" />}>
-              <HeroSearch />
+              <LazyHeroSearch />
             </Suspense>
           </div>
 

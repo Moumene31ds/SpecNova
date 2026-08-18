@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import dynamicImport from "next/dynamic";
 import { ArrowLeft, Gamepad2, RadioTower, Sparkles, TrendingDown } from "lucide-react";
 import { getDevices, getCatalog } from "@/lib/query/device-query";
 import { ScoreRing } from "@/components/device/score-ring";
@@ -10,31 +9,13 @@ import { SpecDiffTable } from "@/components/compare/spec-diff-table";
 import { ShareButton } from "@/components/compare/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const LazyWinnerBanner = dynamicImport(
-  () => import("@/components/compare/winner-banner").then((m) => m.WinnerBanner),
-  { ssr: false, loading: () => <div className="h-12 animate-pulse rounded-xl bg-card/50" /> },
-);
-
-const LazyCameraComparator = dynamicImport(
-  () => import("@/components/compare/camera-comparator").then((m) => m.CameraComparator),
-  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-card/50" /> },
-);
-
-const LazyGamingSimulator = dynamicImport(
-  () => import("@/components/compare/gaming-simulator").then((m) => m.GamingSimulator),
-  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-card/50" /> },
-);
-
-const LazyPriceHistoryChart = dynamicImport(
-  () => import("@/components/charts/price-history-chart").then((m) => m.PriceHistoryChart),
-  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-card/50" /> },
-);
-
-const LazyBandChecker = dynamicImport(
-  () => import("@/components/bands/band-checker").then((m) => m.BandChecker),
-  { ssr: false, loading: () => <div className="h-48 animate-pulse rounded-2xl bg-card/50" /> },
-);
+import {
+  LazyWinnerBanner,
+  LazyCameraComparator,
+  LazyGamingSimulator,
+  LazyPriceHistoryChart,
+  LazyBandChecker,
+} from "@/components/compare/lazy-components";
 
 interface Props {
   params: Promise<{ slug?: string[] }>;
