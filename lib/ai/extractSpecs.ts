@@ -3,7 +3,6 @@ import "server-only";
 import { z } from "zod";
 import {
   groqGenerateContent,
-  fetchPageText,
   getCached,
   setCache,
   AI_MODEL,
@@ -161,55 +160,8 @@ export const AiExtractedDeviceSchema = z.object({
 
 export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 
-// ---------------------------------------------------------------------------
-// Web search grounding — fetch real specs pages before calling LLM
-// ---------------------------------------------------------------------------
-
-function gsmarenaUrl(query: string): string {
-  const encoded = encodeURIComponent(query.replace(/\s+/g, "+"));
-  return `https://www.gsmarena.com/results.php3?sQuickSearch=yes&sName=${encoded}`;
-}
-
-async function fetchGoogleSearch(query: string): Promise<string> {
-  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
-  const text = await fetchPageText(url, 3000);
-  return text;
-}
-
-async function fetchGSMArenaSpecs(query: string): Promise<string> {
-  // Step 1: search GSMArena
-  const searchUrl = gsmarenaUrl(query);
-  const searchText = await fetchPageText(searchUrl, 2000);
-
-  // Extract the first phone page link from search results
-  const phoneLinkMatch = searchText.match(/([a-z0-9_-]+)\.php/i);
-  let specsText = "";
-
-  if (phoneLinkMatch) {
-    const phoneUrl = `https://www.gsmarena.com/${phoneLinkMatch[0]}`;
-    specsText = await fetchPageText(phoneUrl, 5000);
-  }
-
-  return specsText;
-}
-
-/**
- * Gather web context from multiple sources for grounding.
- */
-async function gatherWebContext(query: string): Promise<string> {
-  const [gsmarena, google1] = await Promise.all([
-    fetchGSMArenaSpecs(query),
-    fetchGoogleSearch(`${query} full specifications`),
-  ]);
-
-  const parts: string[] = [];
-  if (gsmarena) parts.push(gsmarena);
-  if (google1) parts.push(google1);
-
-  const combined = parts.join("\n");
-  // Hard cap at 3000 chars to stay under Groq 8000 TPM limit
-  return combined.length > 3000 ? combined.slice(0, 3000) : combined;
-}
+// No web fetch — training knowledge is sufficient for 99% of phones.
+// This keeps requests under Groq's 8000 TPM free tier limit.
 
 // ---------------------------------------------------------------------------
 // Prompt — compact for Groq free tier (8000 TPM limit)
@@ -243,21 +195,16 @@ export async function extractSpecs(query: string): Promise<{
   const MAX_RETRIES = 2;
   let lastDevice: AiExtractedDevice | null = null;
 
-  // Gather web context once (shared across retries)
-  const webContext = await gatherWebContext(query);
-
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
 
-    let retryHint = "";
+    let userMessage = query;
     if (isRetry && attempt === 1 && lastDevice) {
       const missing = findMissingFields(lastDevice);
-      retryHint = `\n\nPREVIOUS incomplete. Missing: ${missing}. Fill ALL of them.`;
+      userMessage += `\nMissing: ${missing}`;
     } else if (isRetry) {
-      retryHint = `\n\nFINAL RETRY: Valid JSON only. Start with { end with }.`;
+      userMessage += `\nRetry: Valid JSON only.`;
     }
-
-    const userMessage = `Device: ${query}\n${webContext ? `Web data:\n${webContext}\n` : ""}${retryHint}`;
 
     const response = await groqGenerateContent({
       systemPrompt: PROMPT,
@@ -278,14 +225,6 @@ export async function extractSpecs(query: string): Promise<{
       const parsed = parseJsonObject(raw);
       const device = AiExtractedDeviceSchema.parse(parsed);
       lastDevice = device;
-
-      // Build source list from web data URLs
-      if (device.sources.length === 0) {
-        const inferredSources = inferSourcesFromWebData(webContext);
-        if (inferredSources.length > 0) {
-          device.sources = inferredSources;
-        }
-      }
 
       // If this is attempt 1+ and we got valid data, check if it's complete enough
       if (isRetry) {
@@ -316,54 +255,6 @@ export async function extractSpecs(query: string): Promise<{
 // ---------------------------------------------------------------------------
 // Source inference from web data
 // ---------------------------------------------------------------------------
-
-function inferSourcesFromWebData(
-  webData: string,
-): { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] {
-  const sources: { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] = [];
-  const seen = new Set<string>();
-
-  // Extract URLs from the web data
-  const urlRegex = /https?:\/\/[^\s<>"')\]]+/g;
-  const urls = webData.match(urlRegex) ?? [];
-
-  for (const url of urls) {
-    if (seen.has(url)) continue;
-    seen.add(url);
-
-    const domain = url.toLowerCase();
-    let kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" = "retailer";
-    let title = "";
-
-    if (domain.includes("gsmarena.com")) {
-      kind = "retailer"; title = "GSMArena";
-    } else if (domain.includes("phonearena.com")) {
-      kind = "retailer"; title = "PhoneArena";
-    } else if (domain.includes("notebookcheck")) {
-      kind = "retailer"; title = "Notebookcheck";
-    } else if (domain.includes("androidauthority.com")) {
-      kind = "retailer"; title = "Android Authority";
-    } else if (domain.includes("xda-developers.com")) {
-      kind = "retailer"; title = "XDA Developers";
-    } else if (domain.includes("91mobiles.com")) {
-      kind = "retailer"; title = "91Mobiles";
-    } else if (domain.includes("tenaa.cn")) {
-      kind = "tenaa"; title = "TENAA";
-    } else if (domain.includes("fcc.gov") || domain.includes("fccid.io")) {
-      kind = "fcc"; title = "FCC";
-    } else if (domain.includes("antutu.com") || domain.includes("nanoreview.net") || domain.includes("geekbench")) {
-      kind = "benchmark"; title = "Benchmark";
-    } else if (domain.includes("samsung.com") || domain.includes("apple.com") || domain.includes("xiaomi.com") || domain.includes("oneplus.com") || domain.includes("google.com") || domain.includes("motorola.com") || domain.includes("sony.com") || domain.includes("huawei.com")) {
-      kind = "official"; title = "Official";
-    } else {
-      try { title = new URL(url).hostname; } catch { continue; }
-    }
-
-    sources.push({ title, url, kind });
-  }
-
-  return sources.slice(0, 10);
-}
 
 // ---------------------------------------------------------------------------
 // Missing field detection for smart retries

@@ -3,7 +3,6 @@ import "server-only";
 import { z } from "zod";
 import {
   groqGenerateContent,
-  fetchPageText,
   getCached,
   setCache,
   AI_MODEL,
@@ -42,20 +41,7 @@ export const BrandCatalogSchema = z.object({
 export type BrandCatalogModel = z.infer<typeof BrandCatalogSchema>["models"][number];
 export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
-async function fetchBrandWebContext(brand: string): Promise<string> {
-  const url = `https://www.google.com/search?q=${encodeURIComponent(brand + " all phone models 2024 2025 2026")}&num=8&hl=en`;
-  const text = await fetchPageText(url, 3000);
-
-  const gsmarenaUrl = `https://www.gsmarena.com/${brand.toLowerCase().replace(/\s+/g, "-")}-phones-f-35-0-p1.php`;
-  const gsmarenaText = await fetchPageText(gsmarenaUrl, 3000);
-
-  const parts: string[] = [];
-  if (gsmarenaText) parts.push(gsmarenaText);
-  if (text) parts.push(text);
-
-  const combined = parts.join("\n");
-  return combined.length > 5000 ? combined.slice(0, 5000) : combined;
-}
+// No web fetch — training knowledge is sufficient for brand catalogs.
 
 const PROMPT = `List all phones from this brand into JSON. Include flagships, mid-range, budget from last 8-10 years. Cap at 120 models.
 
@@ -74,18 +60,10 @@ export async function discoverBrand(brand: string): Promise<{
 
   const MAX_RETRIES = 2;
 
-  // Gather web context once
-  const webContext = await fetchBrandWebContext(brand);
-
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
 
-    let retryHint = "";
-    if (isRetry) {
-      retryHint = `\n\nRetry: Valid JSON only. No markdown.`;
-    }
-
-    const userMessage = `Brand: ${brand}\n${webContext ? `Web data:\n${webContext}\n` : ""}${retryHint}`;
+    const userMessage = isRetry ? `${brand}\nRetry: Valid JSON only.` : brand;
 
     const response = await groqGenerateContent({
       systemPrompt: PROMPT,
@@ -106,7 +84,6 @@ export async function discoverBrand(brand: string): Promise<{
       const parsed = parseJsonObject(raw);
       const catalog = BrandCatalogSchema.parse(parsed);
       if (catalog.models.length === 0 && attempt < MAX_RETRIES) {
-        retryHint = `\n\nEmpty models. Add phones for ${brand}.`;
         continue;
       }
       const result = { catalog, raw };
