@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const PRODUCTION_URL = "https://spec-nova-dz31.vercel.app";
+const PRODUCTION_URL = "https://phone-steel-beta.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -1,7 +1,7 @@
 import type { Timestamp } from "firebase-admin/firestore";
 
 // ============================================================================
-// SpecNova Firestore Data Model
+// iToPhone Firestore Data Model
 // ----------------------------------------------------------------------------
 // Collection layout (all top-level collections):
 //
@@ -46,7 +46,7 @@ export interface Device {
   /** Semantic embedding of `content` (gemini-embedding-001, dim 768). */
   embedding: number[];
 
-  score: SpecNovaScore;
+  score: iToPhoneScore;
   priceSummary: PriceSummary;
 
   /** Network group ids (see carrier_bands). */
@@ -184,7 +184,7 @@ export interface DeviceMedia {
 // Scoring, Pricing, Reviews
 // ---------------------------------------------------------------------------
 
-export interface SpecNovaScore {
+export interface iToPhoneScore {
   total: number;
   hardware: number;
   display: number;

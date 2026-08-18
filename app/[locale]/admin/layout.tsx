@@ -28,7 +28,7 @@ export default async function AdminLayout({
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
             <Link href={`/${locale}/admin`} className="font-display text-lg font-semibold tracking-tight">
-              SpecNova <span className="text-primary">Admin</span>
+              iToPhone <span className="text-primary">Admin</span>
             </Link>
             <Badge variant={roles.isAdmin ? "default" : "secondary"}>
               {roles.isAdmin ? "Admin" : "Editor"}

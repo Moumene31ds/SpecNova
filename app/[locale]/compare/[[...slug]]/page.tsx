@@ -28,14 +28,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (devices.length < 2) {
     return {
       title: "Compare devices",
-      description: "Side-by-side SpecNova comparison with AI spec diffing.",
+      description: "Side-by-side iToPhone comparison with AI spec diffing.",
     };
   }
 
   const names = devices.map((d) => `${d.brand} ${d.name}`);
-  const title = `Compare ${names.join(" vs ")} — SpecNova`;
+  const title = `Compare ${names.join(" vs ")} — iToPhone`;
   const chipsets = devices.map((d) => d.specs.platform.chipset).join(" vs ");
-  const description = `${names.join(" vs ")} compared side-by-side: chipsets (${chipsets}), cameras, battery, display, and more on SpecNova.`;
+  const description = `${names.join(" vs ")} compared side-by-side: chipsets (${chipsets}), cameras, battery, display, and more on iToPhone.`;
 
   const ogImages = devices.map(
     (d) => d.media.heroImage ?? d.media.gallery?.[0],
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       type: "website",
-      siteName: "SpecNova",
+      siteName: "iToPhone",
       url: `/en/compare/${slug.join("/")}`,
       ...(ogImages.length >= 2 ? { images: ogImages } : {}),
     },

@@ -1,5 +1,5 @@
 // ============================================================================
-// SpecNova shared device types (web + pipeline)
+// iToPhone shared device types (web + pipeline)
 // ----------------------------------------------------------------------------
 // Superset / extension module built on top of `lib/firebase/types.ts`.
 // Everything here is serialization-safe (no firebase-admin runtime imports)

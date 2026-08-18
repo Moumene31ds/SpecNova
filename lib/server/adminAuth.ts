@@ -6,7 +6,7 @@ import { parseRoles, type AdminRoles } from "@/lib/firebase/roles";
 import { AppError } from "./errors";
 
 /**
- * SpecNova Admin RBAC — enforced on every privileged server action / route.
+ * iToPhone Admin RBAC — enforced on every privileged server action / route.
  *
  * Custom claims are provisioned via `app/api/admin/bootstrap/route.ts`
  * (or the Firebase console) into the ID token and mirrored into the session

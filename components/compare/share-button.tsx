@@ -25,7 +25,7 @@ export function ShareButton({ deviceNames, slugs, className }: ShareButtonProps)
     return `${base}${path}`;
   }, [slugs]);
 
-  const title = `Compare ${deviceNames.join(" vs ")} — SpecNova`;
+  const title = `Compare ${deviceNames.join(" vs ")} — iToPhone`;
 
   const handleShare = React.useCallback(async () => {
     if (supported && navigator.share) {

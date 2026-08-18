@@ -158,7 +158,7 @@
   },
   "auth": {
     "signInTitle": "Welcome back",
-    "signInSubtitle": "Sign in to your SpecNova admin account",
+    "signInSubtitle": "Sign in to your iToPhone admin account",
     "email": "Email address",
     "emailPlaceholder": "you@specnova.app",
     "password": "Password",
@@ -180,7 +180,7 @@
     "redirecting": "Redirecting…",
     "error": "Something went wrong.",
     "signUpTitle": "Create your account",
-    "signUpSubtitle": "Join SpecNova and never miss a price drop",
+    "signUpSubtitle": "Join iToPhone and never miss a price drop",
     "name": "Full name",
     "namePlaceholder": "John Doe",
     "confirmPassword": "Confirm password",
@@ -199,7 +199,7 @@
   "search": {
     "title": "AI Search",
     "subtitle": "Ask for a phone, not a spec sheet",
-    "description": "Describe your ideal device in plain English. SpecNova embeds your intent and returns ranked matches in under 50ms.",
+    "description": "Describe your ideal device in plain English. iToPhone embeds your intent and returns ranked matches in under 50ms.",
     "hybridEngine": "Hybrid semantic engine · Gemini embeddings · Firestore Vector Search",
     "suggestions": [
       "Best phone under $400 with great low-light camera",
@@ -352,7 +352,7 @@
     "info": "Info"
   },
   "footer": {
-    "description": "SpecNova — AI Phone Comparison & Price Tracking",
+    "description": "iToPhone — AI Phone Comparison & Price Tracking",
     "product": "Product",
     "features": "Features",
     "pricing": "Pricing",
@@ -378,7 +378,7 @@
     "github": "GitHub",
     "discord": "Discord",
     "linkedin": "LinkedIn",
-    "copyright": "© {year} SpecNova. All rights reserved.",
+    "copyright": "© {year} iToPhone. All rights reserved.",
     "madeWith": "Made with ❤️ for phone enthusiasts",
     "carrierBands": "Carrier Bands",
     "status": "Status"
@@ -387,7 +387,7 @@
     "privacy": {
       "title": "Privacy Policy",
       "updated": "Last updated: {date}",
-      "intro": "This Privacy Policy explains how SpecNova handles information when you use our service.",
+      "intro": "This Privacy Policy explains how iToPhone handles information when you use our service.",
       "sections": [
         {
           "heading": "Information we collect",
@@ -399,7 +399,7 @@
         },
         {
           "heading": "AI and data processing",
-          "body": "SpecNova uses AI models to structure device specifications, discover product catalogs, and assist with editorial content. Automated processing is used to enhance accuracy and coverage of our catalog."
+          "body": "iToPhone uses AI models to structure device specifications, discover product catalogs, and assist with editorial content. Automated processing is used to enhance accuracy and coverage of our catalog."
         },
         {
           "heading": "Cookies",
@@ -422,15 +422,15 @@
     "terms": {
       "title": "Terms of Service",
       "updated": "Last updated: {date}",
-      "intro": "These Terms of Service govern your use of the SpecNova service.",
+      "intro": "These Terms of Service govern your use of the iToPhone service.",
       "sections": [
         {
           "heading": "Acceptance of terms",
-          "body": "By accessing or using SpecNova, you agree to be bound by these Terms. If you do not agree, you may not use the service."
+          "body": "By accessing or using iToPhone, you agree to be bound by these Terms. If you do not agree, you may not use the service."
         },
         {
           "heading": "The service",
-          "body": "SpecNova provides phone specifications, comparison tools, price tracking, and carrier compatibility information. The catalog is assembled from public sources and may contain inaccuracies."
+          "body": "iToPhone provides phone specifications, comparison tools, price tracking, and carrier compatibility information. The catalog is assembled from public sources and may contain inaccuracies."
         },
         {
           "heading": "No warranty",
@@ -446,11 +446,11 @@
         },
         {
           "heading": "Intellectual property",
-          "body": "The SpecNova interface and editorial content are our property. Brand names, logos, and product names belong to their respective owners and are used for identification purposes only."
+          "body": "The iToPhone interface and editorial content are our property. Brand names, logos, and product names belong to their respective owners and are used for identification purposes only."
         },
         {
           "heading": "Limitation of liability",
-          "body": "To the maximum extent permitted by law, SpecNova shall not be liable for any indirect, incidental, or consequential damages arising from your use of the service."
+          "body": "To the maximum extent permitted by law, iToPhone shall not be liable for any indirect, incidental, or consequential damages arising from your use of the service."
         },
         {
           "heading": "Changes to these terms",

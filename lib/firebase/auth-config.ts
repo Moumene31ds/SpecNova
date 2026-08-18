@@ -8,7 +8,7 @@
  */
 export const authConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
-  cookieName: "SpecNovaAuthToken",
+  cookieName: "ITOPhoneAuthToken",
   cookieSignatureKeys: [
     process.env.COOKIE_SIGNATURE_KEY_CURRENT ?? process.env.COOKIE_SIGNATURE_KEY ?? "",
   ],

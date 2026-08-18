@@ -21,7 +21,7 @@ export default async function TermsPage({
     <div className="container mx-auto max-w-3xl pb-20 pt-12">
       <div className="mb-10">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          SpecNova
+          iToPhone
         </p>
         <h1 className="mt-2 font-display text-3xl font-bold tracking-tight md:text-4xl">
           {t("title")}

@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 
-const BASE_URL = "https://spec-nova-dz31.vercel.app";
+const BASE_URL = "https://phone-steel-beta.vercel.app";
 const LOCALES = ["en", "fr"];
 const PAGES = ["", "/search", "/compare", "/bands", "/privacy", "/terms"];
 

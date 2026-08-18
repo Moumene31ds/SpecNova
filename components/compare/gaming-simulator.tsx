@@ -20,7 +20,7 @@ const GENRES = {
 /**
  * Interactive FPS & thermal-throttle simulator. Modeled on the device's
  * synthetic benchmark score, per-genre GPU load, and body-mass-derived
- * heat dissipation — the same curve the SpecNova score consumes.
+ * heat dissipation — the same curve the iToPhone score consumes.
  */
 export function GamingSimulator({ devices }: GamingSimulatorProps) {
   const [genre, setGenre] = React.useState<keyof typeof GENRES>("fps");

@@ -3,7 +3,7 @@ import { googleAI, gemini15Pro, geminiEmbedding001 } from "@genkit-ai/googleai";
 import { GEMINI_API_KEY, EMBEDDING_DIMENSION } from "./config";
 
 /**
- * Firebase Genkit runtime: Google AI plugin wired for the SpecNova
+ * Firebase Genkit runtime: Google AI plugin wired for the iToPhone
  * pipeline. `gemini15Pro` normalizes raw scraped specs into typed JSON;
  * `geminiEmbedding001` produces the vectors stored alongside every device
  * for Firestore Native Vector Search. We pin `outputDimensionality` to

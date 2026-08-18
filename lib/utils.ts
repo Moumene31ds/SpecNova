@@ -60,7 +60,7 @@ export function absoluteUrl(path: string): string {
   if (vercelUrl) {
     return new URL(path, `https://${vercelUrl}`).toString();
   }
-  return new URL(path, "https://spec-nova-dz31.vercel.app").toString();
+  return new URL(path, "https://phone-steel-beta.vercel.app").toString();
 }
 
 export function formatDate(date: Date | { seconds: number } | null | undefined) {

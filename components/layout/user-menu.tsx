@@ -106,7 +106,7 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex flex-col gap-0.5">
           <span className="truncate text-sm font-medium">
-            {displayName ?? "SpecNova user"}
+            {displayName ?? "iToPhone user"}
           </span>
           {email && (
             <span className="truncate text-xs font-normal text-muted-foreground">

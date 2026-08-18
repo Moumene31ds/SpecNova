@@ -8,7 +8,7 @@ import { BrandsList } from "./brands-list";
 export const metadata: Metadata = {
   title: "Brands",
   description:
-    "Browse every smartphone brand tracked by SpecNova — compare specs, track prices, and discover devices from Samsung, Apple, Xiaomi, and more.",
+    "Browse every smartphone brand tracked by iToPhone — compare specs, track prices, and discover devices from Samsung, Apple, Xiaomi, and more.",
 };
 
 export function generateStaticParams() {

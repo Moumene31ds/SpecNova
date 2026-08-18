@@ -12,7 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[SpecNova] Global error:", error);
+    console.error("[iToPhone] Global error:", error);
   }, [error]);
 
   return (

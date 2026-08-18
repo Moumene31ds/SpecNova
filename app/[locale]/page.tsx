@@ -12,7 +12,7 @@ import { getCatalog } from "@/lib/query/device-query";
 export const metadata: Metadata = {
   title: "Every phone. Compared. Tracked.",
   description:
-    "SpecNova — AI-powered device comparison with 100% global coverage and real-time price tracking.",
+    "iToPhone — AI-powered device comparison with 100% global coverage and real-time price tracking.",
 };
 
 const STATS = [
@@ -72,7 +72,7 @@ export default async function HomePage() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-balance text-base text-muted-foreground md:text-lg">
-            SpecNova indexes 100% of the world&apos;s devices — historical,
+            iToPhone indexes 100% of the world&apos;s devices — historical,
             vintage, regional, and upcoming — then answers in milliseconds.
             Ask it anything.
           </p>

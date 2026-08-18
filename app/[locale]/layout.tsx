@@ -31,8 +31,8 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://specnova.app"),
   title: {
-    default: "SpecNova — AI Phone Comparison & Price Tracking",
-    template: "%s · SpecNova",
+    default: "iToPhone — AI Phone Comparison & Price Tracking",
+    template: "%s · iToPhone",
   },
   description:
     "The 100%-coverage phone intelligence engine. Compare every device ever made, track real-time prices, and check carrier compatibility — powered by Gemini and real-time scraping.",
@@ -41,12 +41,12 @@ export const metadata: Metadata = {
     "smartphone specs",
     "price tracker",
     "5G bands",
-    "SpecNova",
+    "iToPhone",
   ],
   openGraph: {
     type: "website",
-    siteName: "SpecNova",
-    title: "SpecNova — AI Phone Comparison & Price Tracking",
+    siteName: "iToPhone",
+    title: "iToPhone — AI Phone Comparison & Price Tracking",
     description:
       "Compare every device ever made, track real-time prices, and check carrier compatibility.",
   },

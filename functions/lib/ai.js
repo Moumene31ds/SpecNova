@@ -6,7 +6,7 @@ const genkit_1 = require("genkit");
 const googleai_1 = require("@genkit-ai/googleai");
 const config_1 = require("./config");
 /**
- * Firebase Genkit runtime: Google AI plugin wired for the SpecNova
+ * Firebase Genkit runtime: Google AI plugin wired for the iToPhone
  * pipeline. `gemini15Pro` normalizes raw scraped specs into typed JSON;
  * `geminiEmbedding001` produces the vectors stored alongside every device
  * for Firestore Native Vector Search. We pin `outputDimensionality` to

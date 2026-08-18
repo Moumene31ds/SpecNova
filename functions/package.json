@@ -2,7 +2,7 @@
   "name": "specnova-functions",
   "version": "1.0.0",
   "private": true,
-  "description": "SpecNova background pipeline: scraping, Gemini normalization, price ingestion, embeddings, FCM.",
+  "description": "iToPhone background pipeline: scraping, Gemini normalization, price ingestion, embeddings, FCM.",
   "main": "lib/index.js",
   "engines": {
     "node": "22"

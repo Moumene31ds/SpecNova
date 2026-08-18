@@ -158,7 +158,7 @@
   },
   "auth": {
     "signInTitle": "Bon retour",
-    "signInSubtitle": "Connectez-vous à votre compte admin SpecNova",
+    "signInSubtitle": "Connectez-vous à votre compte admin iToPhone",
     "email": "Adresse e-mail",
     "emailPlaceholder": "vous@specnova.app",
     "password": "Mot de passe",
@@ -180,7 +180,7 @@
     "redirecting": "Redirection…",
     "error": "Une erreur est survenue.",
     "signUpTitle": "Créez votre compte",
-    "signUpSubtitle": "Rejoignez SpecNova et ne manquez plus aucune baisse de prix",
+    "signUpSubtitle": "Rejoignez iToPhone et ne manquez plus aucune baisse de prix",
     "name": "Nom complet",
     "namePlaceholder": "Jean Dupont",
     "confirmPassword": "Confirmer le mot de passe",
@@ -199,7 +199,7 @@
   "search": {
     "title": "Recherche IA",
     "subtitle": "Demandez un téléphone, pas une fiche technique",
-    "description": "Décrivez votre appareil idéal en langage naturel. SpecNova intègre votre intention et retourne les correspondances classées en moins de 50 ms.",
+    "description": "Décrivez votre appareil idéal en langage naturel. iToPhone intègre votre intention et retourne les correspondances classées en moins de 50 ms.",
     "hybridEngine": "Moteur sémantique hybride · Embeddings Gemini · Recherche vectorielle Firestore",
     "suggestions": [
       "Meilleur téléphone sous 400€ avec excellent appareil photo en faible lumière",
@@ -352,7 +352,7 @@
     "info": "Information"
   },
   "footer": {
-    "description": "SpecNova — Comparaison IA de téléphones & Suivi des prix",
+    "description": "iToPhone — Comparaison IA de téléphones & Suivi des prix",
     "product": "Produit",
     "features": "Fonctionnalités",
     "pricing": "Tarifs",
@@ -378,7 +378,7 @@
     "github": "GitHub",
     "discord": "Discord",
     "linkedin": "LinkedIn",
-    "copyright": "© {year} SpecNova. Tous droits réservés.",
+    "copyright": "© {year} iToPhone. Tous droits réservés.",
     "madeWith": "Fait avec ❤️ pour les passionnés de téléphones",
     "carrierBands": "Bandes fréquences",
     "status": "Statut"
@@ -387,7 +387,7 @@
     "privacy": {
       "title": "Politique de confidentialité",
       "updated": "Dernière mise à jour : {date}",
-      "intro": "Cette politique de confidentialité explique comment SpecNova gère vos informations lorsque vous utilisez notre service.",
+      "intro": "Cette politique de confidentialité explique comment iToPhone gère vos informations lorsque vous utilisez notre service.",
       "sections": [
         {
           "heading": "Informations que nous collectons",
@@ -399,7 +399,7 @@
         },
         {
           "heading": "IA et traitement des données",
-          "body": "SpecNova utilise des modèles d'IA pour structurer les caractéristiques des appareils, découvrir les catalogues de produits et aider à la rédaction éditoriale. Un traitement automatisé est utilisé pour améliorer la précision et la couverture de notre catalogue."
+          "body": "iToPhone utilise des modèles d'IA pour structurer les caractéristiques des appareils, découvrir les catalogues de produits et aider à la rédaction éditoriale. Un traitement automatisé est utilisé pour améliorer la précision et la couverture de notre catalogue."
         },
         {
           "heading": "Cookies",
@@ -422,15 +422,15 @@
     "terms": {
       "title": "Conditions d'utilisation",
       "updated": "Dernière mise à jour : {date}",
-      "intro": "Ces conditions d'utilisation régissent votre utilisation du service SpecNova.",
+      "intro": "Ces conditions d'utilisation régissent votre utilisation du service iToPhone.",
       "sections": [
         {
           "heading": "Acceptation des conditions",
-          "body": "En accédant à SpecNova ou en l'utilisant, vous acceptez d'être lié par ces conditions. Si vous n'êtes pas d'accord, vous ne pouvez pas utiliser le service."
+          "body": "En accédant à iToPhone ou en l'utilisant, vous acceptez d'être lié par ces conditions. Si vous n'êtes pas d'accord, vous ne pouvez pas utiliser le service."
         },
         {
           "heading": "Le service",
-          "body": "SpecNova fournit des caractéristiques techniques de téléphones, des outils de comparaison, un suivi des prix et des informations de compatibilité réseau. Le catalogue est assemblé à partir de sources publiques et peut contenir des inexactitudes."
+          "body": "iToPhone fournit des caractéristiques techniques de téléphones, des outils de comparaison, un suivi des prix et des informations de compatibilité réseau. Le catalogue est assemblé à partir de sources publiques et peut contenir des inexactitudes."
         },
         {
           "heading": "Absence de garantie",
@@ -446,11 +446,11 @@
         },
         {
           "heading": "Propriété intellectuelle",
-          "body": "L'interface et le contenu éditorial de SpecNova sont notre propriété. Les marques, logos et noms de produits appartiennent à leurs propriétaires respectifs et sont utilisés uniquement à des fins d'identification."
+          "body": "L'interface et le contenu éditorial de iToPhone sont notre propriété. Les marques, logos et noms de produits appartiennent à leurs propriétaires respectifs et sont utilisés uniquement à des fins d'identification."
         },
         {
           "heading": "Limitation de responsabilité",
-          "body": "Dans toute la mesure permise par la loi, SpecNova ne peut être tenue responsable des dommages indirects, accessoires ou consécutifs résultant de votre utilisation du service."
+          "body": "Dans toute la mesure permise par la loi, iToPhone ne peut être tenue responsable des dommages indirects, accessoires ou consécutifs résultant de votre utilisation du service."
         },
         {
           "heading": "Modification des conditions",

@@ -86,7 +86,7 @@ async function downloadSource(sourceUrl) {
     const res = await fetch(sourceUrl, {
         redirect: "follow",
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        headers: { "user-agent": "SpecNovaMediaPipeline/1.0" },
+        headers: { "user-agent": "iToPhoneMediaPipeline/1.0" },
     });
     if (!res.ok) {
         throw new Error(`download ${sourceUrl} -> HTTP ${res.status}`);
@@ -109,7 +109,7 @@ async function runQc(job, source) {
         model: googleai_1.gemini15Flash,
         prompt: [
             {
-                text: `You are SpecNova's media quality controller. Decide whether the
+                text: `You are iToPhone's media quality controller. Decide whether the
 attached image is an official, accurate photo or render of the ${subject}
 smartphone from ${brand}. Answer with the JSON schema.
 

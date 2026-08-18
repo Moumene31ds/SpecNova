@@ -115,7 +115,7 @@ export default async function PhonePage({ params }: Props) {
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-6">
-                <ScoreRing value={device.score.total} size={92} stroke={7} label="SpecNova" />
+                <ScoreRing value={device.score.total} size={92} stroke={7} label="iToPhone" />
                 <div className="space-y-1">
                   <p className="font-display text-3xl font-bold">
                     {formatCurrency(device.priceSummary.latest, device.priceSummary.currency)}

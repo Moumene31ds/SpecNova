@@ -54,7 +54,7 @@ export function ComparePicker({
           Build your comparison
         </h1>
         <p className="max-w-xl text-muted-foreground">
-          Choose two or more handsets and SpecNova will diff every spec, camera
+          Choose two or more handsets and iToPhone will diff every spec, camera
           and price in real time.
         </p>
       </div>

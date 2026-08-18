@@ -97,7 +97,7 @@ exports.NormalizedSpecSchema = genkit_1.z.object({
  */
 async function normalizeScrape(input) {
     const prompt = `
-You are SpecNova's spec normalizer. Convert the following raw device
+You are iToPhone's spec normalizer. Convert the following raw device
 information into a single, precise JSON spec sheet. Keep numbers as
 numbers (strip units), use ISO dates (YYYY-MM-DD), and mark unknown
 values as null. Never invent specs that are not present; prefer null.
