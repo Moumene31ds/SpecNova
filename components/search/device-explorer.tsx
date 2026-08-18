@@ -65,10 +65,15 @@ function applyFilters(catalog: Device[], query: string, f: Filters): Device[] {
 const isActive = (f: Filters) =>
   f.maxPrice !== null || f.minBattery !== null || f.minCamera !== null || f.chipset.trim() !== "" || f.minYear !== null;
 
-export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string }) {
+interface DeviceExplorerProps {
+  defaultQuery?: string;
+  catalog?: Device[];
+}
+
+export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: DeviceExplorerProps) {
   const t = useTranslations("search");
   const router = useRouter();
-  const catalogRef = React.useRef<Device[]>(getDevCatalog(200));
+  const catalogRef = React.useRef<Device[]>(serverCatalog ?? getDevCatalog(200));
 
   const [query, setQuery] = React.useState(defaultQuery);
   const [inputValue, setInputValue] = React.useState(defaultQuery);

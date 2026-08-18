@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sparkles } from "lucide-react";
 import { DeviceExplorer } from "@/components/search/device-explorer";
+import { getCatalog } from "@/lib/query/device-query";
 
 export const metadata: Metadata = { title: "AI Search" };
 
@@ -21,6 +22,7 @@ export default async function SearchPage({
 }) {
   const { locale } = await params;
   const { q } = await searchParams;
+  const catalog = await getCatalog(200);
 
   return (
     <div className="container flex min-h-[70vh] flex-col items-center pt-16">
@@ -38,7 +40,7 @@ export default async function SearchPage({
       </p>
 
       <div className="mt-8 w-full max-w-3xl">
-        <DeviceExplorer defaultQuery={q ?? ""} />
+        <DeviceExplorer defaultQuery={q ?? ""} catalog={catalog} />
       </div>
 
       <div className="mt-6 flex max-w-3xl flex-wrap items-center justify-center gap-2">

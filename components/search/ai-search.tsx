@@ -79,9 +79,10 @@ export function AiSearch({
         setUsedFallback(false);
       } else {
         const { localSearch } = await import("@/lib/search/local-search");
-        const { getDevCatalog } = await import("@/lib/dev-data");
+        const { getCatalog } = await import("@/lib/query/device-query");
+        const fallbackCatalog = await getCatalog(200);
         if (controller.signal.aborted) return;
-        setResults(localSearch(trimmed, getDevCatalog(), 8));
+        setResults(localSearch(trimmed, fallbackCatalog, 8));
         setUsedFallback(true);
       }
       setLatency(res.latencyMs);
@@ -89,8 +90,9 @@ export function AiSearch({
     } catch {
       if (controller.signal.aborted) return;
       const { localSearch } = await import("@/lib/search/local-search");
-      const { getDevCatalog } = await import("@/lib/dev-data");
-      const hits = localSearch(trimmed, getDevCatalog(), 8);
+      const { getCatalog } = await import("@/lib/query/device-query");
+      const fallbackCatalog = await getCatalog(200);
+      const hits = localSearch(trimmed, fallbackCatalog, 8);
       setResults(hits);
       setUsedFallback(true);
       setLatency(Math.round(performance.now() - started));
