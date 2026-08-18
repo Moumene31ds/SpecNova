@@ -211,25 +211,193 @@ export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 
 // ---------------------------------------------------------------------------
 
-const PROMPT = `You are a phone spec expert. Search the web using Google Search for the EXACT official specs of this phone. Use ONLY verified data from official sources (GSMArena, manufacturer website, PhoneArena, Kimovil).
+const PROMPT = `You are the world's most precise phone specification analyst. Your job is to extract COMPLETE, ACCURATE, VERIFIED specs for a phone using Google Search.
 
-RULES:
-1. Search the web FIRST — never guess from memory
-2. Use REAL numbers only (no placeholders like 0)
-3. If a spec is unknown, set it to null — never fabricate
-4. Fill EVERY field with real data
-5. Include model numbers (SM-XXXX, etc.)
-6. Camera specs must be EXACT: megapixels, aperture (f/1.8), sensor size (1/1.3")
-7. Sources MUST have valid URLs starting with https://
-8. Status must be one of: rumored, announced, upcoming, available, discontinued
+═══════════════════════════════════════════════════════════════
+                    MANDATORY SEARCH STRATEGY
+═══════════════════════════════════════════════════════════════
 
-JSON:
-{"brand":"","name":"","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null,"specs":{"body":{"dimensions":{"widthMm":0,"heightMm":0,"depthMm":0},"weightG":0,"build":"","materials":[],"protection":"","ipRating":"","colors":[]},"display":{"type":"","sizeIn":0,"resolution":"","ppi":0,"refreshRateHz":0,"peakBrightnessNits":0,"hdrSupport":[],"pwmHz":null,"glass":null,"colorDepth":""},"platform":{"os":"","ui":"","chipset":"","cpu":"","gpu":"","antutuV10":null,"geekbench6":{"single":0,"multi":0}},"memory":{"ramOptions":[],"storageOptions":[],"storageType":"","cardSlot":false},"cameras":{"rear":[{"kind":"wide","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"OIS","video":[]}],"front":[{"kind":"selfie","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"EIS","video":[]}],"features":[],"videoCapabilities":[]},"audio":{"speakers":[],"headphoneJack":false,"codecs":[],"microphone":""},"battery":{"capacityMah":0,"type":"","chargingWatts":0,"chargingTimeMin":null,"wirelessWatts":0,"reverseWirelessWatts":0,"enduranceHours":null},"connectivity":{"wifi":"","bluetooth":"","nfc":false,"usb":"","irBlaster":false,"gnss":[],"bands":[]},"sensors":[],"extras":{"fingerprint":"under-display","faceUnlock":false,"stylus":false,"esim":false,"uwb":false,"satelliteSos":false}},"variants":[],"images":{"heroImage":null,"gallery":[],"renderImages":[]},"confidence":{"overall":0.9,"verifiedFields":[],"estimatedFields":[],"unavailableFields":[]},"sources":[{"title":"Source Name","url":"https://example.com","kind":"official"}]}
+STEP 1: Search Google for the EXACT phone name + "specifications"
+  Example: "Samsung Galaxy S25 Ultra specifications"
 
-ONLY output valid JSON. No markdown, no explanation.`;
+STEP 2: Search Google for the phone name + "GSMArena"
+  Example: "Samsung Galaxy S25 Ultra GSMArena"
+
+STEP 3: Search Google for the phone name + "official specs"
+  Example: "Samsung Galaxy S25 Ultra official specs"
+
+STEP 4: Search Google for the phone name + "camera specs details"
+  Example: "Samsung Galaxy S25 Ultra camera specs details"
+
+STEP 5: Search Google for the phone name + "battery charging speed"
+  Example: "Samsung Galaxy S25 Ultra battery charging speed"
+
+STEP 6: Search Google for the phone name + "benchmark antutu geekbench"
+  Example: "Samsung Galaxy S25 Ultra benchmark antutu geekbench"
+
+ONLY use data from these verified sources:
+- GSMArena (gsmarena.com)
+- Official manufacturer websites (samsung.com, apple.com, oneplus.com, etc.)
+- PhoneArena (phonearena.com)
+- Kimovil (kimovil.com)
+- NanoReview (nanoreview.net)
+- 91mobiles (91mobiles.com)
+- Devicespecifications.com
+
+NEVER guess. NEVER use memory. ALWAYS search the web.
+
+═══════════════════════════════════════════════════════════════
+                    CRITICAL RULES
+═══════════════════════════════════════════════════════════════
+
+1. EVERY number must be REAL — no placeholders like 0
+2. If a spec is truly unknown after searching, set it to null
+3. NEVER fabricate data — accuracy is more important than completeness
+4. Camera specs must be EXACT:
+   - Megapixels: 200, 108, 50, 12 (real values only)
+   - Aperture: f/1.7, f/1.8, f/2.2 (with f/ prefix)
+   - Sensor size: 1/1.3", 1/1.56", 1/2.55" (with 1/ prefix)
+   - Pixel size: 0.6μm, 1.4μm (with μm suffix)
+   - Stabilization: "OIS", "EIS", "OIS+EIS"
+5. Battery capacity in mAh (e.g., 5000, 4500)
+6. Charging speed in watts (e.g., 45, 65, 100)
+7. Display brightness in nits (e.g., 2600, 1750)
+8. AnTuTu score as number (e.g., 2150000)
+9. Geekbench as numbers (e.g., {"single": 2800, "multi": 8500})
+10. Status must match reality:
+    - "available" if released and on sale NOW
+    - "announced" if announced but not yet released
+    - "upcoming" if expected soon
+    - "discontinued" if no longer sold
+    - "rumored" if only leaks exist
+11. Sources MUST be valid URLs starting with https://
+12. Include ALL regional variants (SM-S938U, SM-S938B, etc.)
+13. Colors must be official marketing names (e.g., "Titanium Black", not just "black")
+14. Weight in grams (e.g., 233, 189)
+
+═══════════════════════════════════════════════════════════════
+                    FIELD REQUIREMENTS
+═══════════════════════════════════════════════════════════════
+
+BODY:
+- dimensions.widthMm: width in mm (e.g., 79.0)
+- dimensions.heightMm: height in mm (e.g., 162.8)
+- dimensions.depthMm: thickness in mm (e.g., 8.6)
+- weightG: weight in grams (e.g., 233)
+- build: material description (e.g., "Titanium frame, Gorilla Armor 2")
+- materials: ["titanium", "glass"] or ["aluminum", "glass"]
+- ipRating: IP67, IP68, etc.
+
+DISPLAY:
+- type: "LTPO AMOLED", "OLED", "IPS LCD", etc.
+- sizeIn: diagonal inches (e.g., 6.9)
+- resolution: "1440 x 3120" or "1080 x 2400"
+- ppi: pixels per inch (e.g., 505)
+- refreshRateHz: 60, 90, 120, 144
+- peakBrightnessNits: peak brightness (e.g., 2600)
+- hdrSupport: ["HDR10+", "Dolby Vision"]
+- pwmHz: PWM frequency if known (e.g., 1920) or null
+
+PLATFORM:
+- os: "Android 15", "iOS 18", etc.
+- ui: "One UI 7", "OxygenOS 15", etc.
+- chipset: full name (e.g., "Snapdragon 8 Elite for Galaxy")
+- cpu: core config (e.g., "2x4.47GHz + 6x3.53GHz")
+- gpu: GPU name (e.g., "Adreno 830")
+- antutuV10: AnTuTu v10 score as number (e.g., 2150000)
+- geekbench6: {"single": 2800, "multi": 8500}
+
+MEMORY:
+- ramOptions: [8, 12, 16] in GB as numbers
+- storageOptions: [128, 256, 512, 1024] in GB as numbers
+- storageType: "UFS 4.0", "NVMe", etc.
+- cardSlot: true/false
+
+CAMERAS:
+REAR (array, main camera first):
+  - kind: "wide", "ultrawide", "telephoto", "periscope", "periscope telephoto", "macro", "depth"
+  - megapixels: number (e.g., 200, 50, 12, 10)
+  - aperture: "f/1.7", "f/2.2" (with f/ prefix)
+  - sensorSize: "1/1.3\"", "1/1.56\"" (with 1/ prefix and " suffix)
+  - pixelSize: "0.6μm", "1.4μm" (with μm)
+  - fieldOfViewDeg: degrees (e.g., 120, 85)
+  - opticalZoom: multiplier (e.g., 3, 5, 10)
+  - digitalZoom: multiplier (e.g., 100)
+  - stabilization: "OIS", "EIS", "OIS+EIS", "None"
+  - video: ["8K@30fps", "4K@60fps", "1080p@240fps"]
+
+FRONT (array):
+  - Same fields as rear cameras
+  - kind should be "selfie" or "wide"
+
+CAMERA FEATURES: ["Night Mode", "Portrait Mode", "Pro Mode", "8K Video", etc.]
+VIDEO CAPABILITIES: ["8K@30fps", "4K@120fps", "1080p@240fps", "HDR10+"]
+
+AUDIO:
+- speakers: ["stereo", "mono"] or ["stereo"]
+- headphoneJack: true/false
+- codecs: ["aptX HD", "LDAC", "AAC"]
+- microphone: description or null
+
+BATTERY:
+- capacityMah: number (e.g., 5000, 4500)
+- type: "Li-Po", "Li-Ion"
+- chargingWatts: wired charging speed (e.g., 45, 65, 100)
+- wirelessWatts: wireless charging speed (e.g., 15, 50)
+- reverseWirelessWatts: reverse wireless (e.g., 4.5, 10)
+
+CONNECTIVITY:
+- wifi: "Wi-Fi 7", "Wi-Fi 6E", "Wi-Fi 6"
+- bluetooth: "5.4", "5.3", "5.2"
+- nfc: true/false
+- usb: "USB-C 3.2", "USB-C 2.0"
+- irBlaster: true/false
+- gnss: ["GPS", "GLONASS", "Galileo", "BeiDou", "QZSS"]
+- bands: 5G bands ["n1", "n3", "n7", "n28", "n77", "n78", "n258"]
+
+SENSORS: ["accelerometer", "gyroscope", "proximity", "compass", "barometer", "fingerprint", "face recognition"]
+
+EXTRAS:
+- fingerprint: "under-display (ultrasonic)", "under-display (optical)", "side-mounted", "rear-mounted"
+- faceUnlock: true/false
+- stylus: true/false (e.g., S Pen)
+- esim: true/false
+- uwb: true/false
+- satelliteSos: true/false
+
+VARIANTS (array):
+- name: variant name (e.g., "SM-S938U1")
+- region: "US", "Global", "China", etc.
+- chipset: if different from base
+- ramGb: if different from base
+- storageGb: if different from base
+
+IMAGES:
+- heroImage: URL to official product image or null
+- gallery: array of image URLs or []
+- renderImages: array of render URLs or []
+
+CONFIDENCE:
+- overall: 0.0 to 1.0 (how confident you are in the data)
+- verifiedFields: list of fields you verified from official sources
+- estimatedFields: list of fields that are estimates
+- unavailableFields: list of fields you couldn't find
+
+SOURCES (array):
+- title: source name (e.g., "GSMArena")
+- url: valid URL starting with https://
+- kind: "official", "retailer", "review", "news"
+
+═══════════════════════════════════════════════════════════════
+                    OUTPUT FORMAT
+═══════════════════════════════════════════════════════════════
+
+Output ONLY valid JSON. No markdown, no explanation, no commentary.
+
+{"brand":"Samsung","name":"Galaxy S25 Ultra","modelNumbers":["SM-S938U","SM-S938B"],"codename":"p3q","status":"available","announcedAt":"2025-01-22","releaseAt":"2025-02-07","specs":{"body":{"dimensions":{"widthMm":79.0,"heightMm":162.8,"depthMm":8.6},"weightG":233,"build":"Titanium frame, Gorilla Armor 2","materials":["titanium","glass"],"protection":"Gorilla Armor 2","ipRating":"IP68","colors":["Titanium Silverblue","Titanium Gray","Titanium Black","Titanium Whitesilver"]},"display":{"type":"LTPO AMOLED","sizeIn":6.9,"resolution":"1440 x 3120","ppi":505,"refreshRateHz":120,"peakBrightnessNits":2600,"hdrSupport":["HDR10+","Dolby Vision"],"pwmHz":1920,"glass":"Gorilla Armor 2","colorDepth":"12-bit"},"platform":{"os":"Android 15","ui":"One UI 7","chipset":"Snapdragon 8 Elite for Galaxy","cpu":"2x4.47GHz Oryon V2 Phoenix + 6x3.53GHz Oryon V2 Phoenix","gpu":"Adreno 830","antutuV10":2150000,"geekbench6":{"single":2800,"multi":8500}},"memory":{"ramOptions":[12,16],"storageOptions":[256,512,1024],"storageType":"UFS 4.0","cardSlot":false},"cameras":{"rear":[{"kind":"wide","megapixels":200,"aperture":"f/1.7","sensorSize":"1/1.3\"","pixelSize":"0.6μm","fieldOfViewDeg":85,"opticalZoom":0,"digitalZoom":100,"stabilization":"OIS","video":["8K@30fps","4K@120fps","1080p@240fps"]},{"kind":"telephoto","megapixels":50,"aperture":"f/3.4","sensorSize":"1/2.52\"","pixelSize":"0.7μm","fieldOfViewDeg":22,"opticalZoom":5,"digitalZoom":100,"stabilization":"OIS","video":["8K@30fps","4K@120fps"]},{"kind":"ultrawide","megapixels":50,"aperture":"f/1.9","sensorSize":"1/2.55\"","pixelSize":"0.7μm","fieldOfViewDeg":120,"opticalZoom":0,"digitalZoom":2,"stabilization":"None","video":["8K@30fps","4K@120fps"]}],"front":[{"kind":"selfie","megapixels":12,"aperture":"f/2.2","sensorSize":"1/3.2\"","pixelSize":"1.12μm","fieldOfViewDeg":80,"opticalZoom":0,"digitalZoom":2,"stabilization":"None","video":["4K@60fps"]}],"features":["Night Mode","Portrait Mode","Pro Mode","8K Video","AI Photo Enhancer"],"videoCapabilities":["8K@30fps","4K@120fps","1080p@240fps","HDR10+","Slow Motion"]},"audio":{"speakers":["stereo"],"headphoneJack":false,"codecs":["aptX HD","LDAC","AAC"],"microphone":"Triple microphone with noise cancellation"},"battery":{"capacityMah":5000,"type":"Li-Po","chargingWatts":45,"chargingTimeMin":65,"wirelessWatts":15,"reverseWirelessWatts":4.5,"enduranceHours":null},"connectivity":{"wifi":"Wi-Fi 7","bluetooth":"5.4","nfc":true,"usb":"USB-C 3.2 Gen 2","irBlaster":false,"gnss":["GPS","GLONASS","Galileo","BeiDou","QZSS"],"bands":["n1","n2","n3","n5","n7","n8","n12","n20","n25","n28","n38","n40","n41","n66","n71","n77","n78","n258"]},"sensors":["accelerometer","gyroscope","proximity","compass","barometer","fingerprint","face recognition","magnetic sensor"],"extras":{"fingerprint":"under-display (ultrasonic)","faceUnlock":true,"stylus":true,"esim":true,"uwb":true,"satelliteSos":false}},"variants":[{"name":"SM-S938U","region":"United States","chipset":null,"ramGb":null,"storageGb":null,"modem":"Snapdragon X80","note":"US unlocked"},{"name":"SM-S938B","region":"Global","chipset":null,"ramGb":null,"storageGb":null,"modem":"Snapdragon X80","note":"Global dual SIM"}],"images":{"heroImage":null,"gallery":[],"renderImages":[]},"confidence":{"overall":0.95,"verifiedFields":["brand","name","display.sizeIn","display.refreshRateHz","platform.chipset","memory.ramOptions","cameras.rear[0].megapixels","battery.capacityMah"],"estimatedFields":[],"unavailableFields":["images.heroImage"]},"sources":[{"title":"GSMArena - Samsung Galaxy S25 Ultra","url":"https://www.gsmarena.com/samsung_galaxy_s25_ultra-13211.php","kind":"retailer"},{"title":"Samsung Official","url":"https://www.samsung.com/global/galaxy/galaxy-s25-ultra/","kind":"official"}]}`;
 
 /** Max output tokens. */
-const MAX_OUTPUT_TOKENS = 4096;
+const MAX_OUTPUT_TOKENS = 8192;
 
 // ---------------------------------------------------------------------------
 // Extract a fully-typed spec sheet for a device query.
