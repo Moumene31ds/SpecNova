@@ -172,14 +172,14 @@ function gsmarenaUrl(query: string): string {
 
 async function fetchGoogleSearch(query: string): Promise<string> {
   const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
-  const text = await fetchPageText(url, 6000);
+  const text = await fetchPageText(url, 3000);
   return text;
 }
 
 async function fetchGSMArenaSpecs(query: string): Promise<string> {
   // Step 1: search GSMArena
   const searchUrl = gsmarenaUrl(query);
-  const searchText = await fetchPageText(searchUrl, 4000);
+  const searchText = await fetchPageText(searchUrl, 2000);
 
   // Extract the first phone page link from search results
   const phoneLinkMatch = searchText.match(/([a-z0-9_-]+)\.php/i);
@@ -187,7 +187,7 @@ async function fetchGSMArenaSpecs(query: string): Promise<string> {
 
   if (phoneLinkMatch) {
     const phoneUrl = `https://www.gsmarena.com/${phoneLinkMatch[0]}`;
-    specsText = await fetchPageText(phoneUrl, 12000);
+    specsText = await fetchPageText(phoneUrl, 5000);
   }
 
   return specsText;
@@ -204,11 +204,13 @@ async function gatherWebContext(query: string): Promise<string> {
   ]);
 
   const parts: string[] = [];
-  if (gsmarena) parts.push(`=== GSMArena Specs Page ===\n${gsmarena}`);
-  if (google1) parts.push(`=== Google Search: ${query} specifications ===\n${google1}`);
-  if (google2) parts.push(`=== Google Search: ${query} benchmarks & battery ===\n${google2}`);
+  if (gsmarena) parts.push(`=== GSMArena Specs ===\n${gsmarena}`);
+  if (google1) parts.push(`=== Specs Search ===\n${google1}`);
+  if (google2) parts.push(`=== Benchmarks & Battery ===\n${google2}`);
 
-  return parts.join("\n\n---\n\n");
+  const combined = parts.join("\n\n");
+  // Hard cap at 8000 chars to stay under Groq TPM limits
+  return combined.length > 8000 ? combined.slice(0, 8000) : combined;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,8 +267,8 @@ JSON SCHEMA (match EXACTLY):
 
 Return ONLY the JSON object. No markdown, no explanation, no commentary.`;
 
-/** Hard cap — increased to prevent truncation on complex devices. */
-const MAX_OUTPUT_TOKENS = 16384;
+/** Hard cap — limited for Groq free tier TPM. */
+const MAX_OUTPUT_TOKENS = 4096;
 
 // ---------------------------------------------------------------------------
 // Extract a fully-typed spec sheet for a device query.

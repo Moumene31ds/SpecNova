@@ -19,7 +19,7 @@ export const AI_DISCOVERY_MODEL = AI_MODEL;
  */
 
 export const BRAND_CATALOG_MAX_MODELS = 120;
-const DISCOVERY_MAX_OUTPUT_TOKENS = 16384;
+const DISCOVERY_MAX_OUTPUT_TOKENS = 4096;
 
 export const BrandCatalogSchema = z.object({
   brand: z.string().min(1),
@@ -52,13 +52,13 @@ async function fetchBrandWebContext(brand: string): Promise<string> {
   const results = await Promise.all(
     queries.map(async (q) => {
       const url = `https://www.google.com/search?q=${encodeURIComponent(q)}&num=8&hl=en`;
-      return fetchPageText(url, 5000);
+      return fetchPageText(url, 3000);
     }),
   );
 
   // Also fetch GSMArena brand page
   const gsmarenaUrl = `https://www.gsmarena.com/${brand.toLowerCase().replace(/\s+/g, "-")}-phones-f-35-0-p1.php`;
-  const gsmarenaText = await fetchPageText(gsmarenaUrl, 8000);
+  const gsmarenaText = await fetchPageText(gsmarenaUrl, 4000);
 
   const parts: string[] = [];
   if (gsmarenaText) parts.push(`=== GSMArena ${brand} Phones ===\n${gsmarenaText}`);
