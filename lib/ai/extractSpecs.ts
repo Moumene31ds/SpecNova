@@ -171,8 +171,8 @@ export const AiExtractedDeviceSchema = z.object({
   variants: z
     .array(
       z.object({
-        name: z.string(),
-        region: z.string(),
+        name: z.string().nullish().default(null),
+        region: z.string().nullish().default(null),
         chipset: z.string().nullish(),
         ramGb: z.number().nullish(),
         storageGb: z.number().nullish(),
@@ -180,11 +180,12 @@ export const AiExtractedDeviceSchema = z.object({
         note: z.string().nullish(),
       }),
     )
+    .transform((variants) => variants.filter((v) => v.name))
     .default([]),
   images: z.object({
-    heroImage: z.string().url().nullish(),
-    gallery: z.array(z.string().url()).default([]),
-    renderImages: z.array(z.string().url()).default([]),
+    heroImage: z.string().nullish(),
+    gallery: lenientArray,
+    renderImages: lenientArray,
   }).default({}),
   confidence: z.object({
     overall: z.number().min(0).max(1),

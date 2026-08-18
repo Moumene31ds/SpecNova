@@ -735,10 +735,10 @@ export function DeviceEditClient({
                 draft.variants.map((v, i) => (
                   <div key={i} className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2 lg:grid-cols-5">
                     <Field label="Name">
-                      <TextInput value={v.name} onChange={(e) => setDraftState((d) => { d.variants[i].name = e.target.value; })} placeholder="SM-S938U1" />
+                      <TextInput value={v.name ?? undefined} onChange={(e) => setDraftState((d) => { d.variants[i].name = e.target.value; })} placeholder="SM-S938U1" />
                     </Field>
                     <Field label="Region">
-                      <TextInput value={v.region} onChange={(e) => setDraftState((d) => { d.variants[i].region = e.target.value; })} placeholder="US" />
+                      <TextInput value={v.region ?? undefined} onChange={(e) => setDraftState((d) => { d.variants[i].region = e.target.value; })} placeholder="US" />
                     </Field>
                     <Field label="Chipset">
                       <TextInput value={v.chipset ?? ""} onChange={(e) => setDraftState((d) => { d.variants[i].chipset = e.target.value || null; })} />

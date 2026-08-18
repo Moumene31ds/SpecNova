@@ -110,10 +110,10 @@ export async function updateDevice(input: {
     }
 
     draft.variants.forEach((v, idx) => {
-      const variantId = slugify(v.name) || `variant-${idx + 1}`;
+      const variantId = slugify(v.name || "") || `variant-${idx + 1}`;
       const variant: Omit<DeviceVariant, "id" | "deviceId"> = {
         region: v.region || "Global",
-        name: v.name,
+        name: v.name || `Variant ${idx + 1}`,
         chipset: v.chipset ?? doc.specs.platform.chipset ?? "",
         ramGb: v.ramGb ?? draft.specs.memory.ramOptions[0] ?? 0,
         storageGb: v.storageGb ?? draft.specs.memory.storageOptions[0] ?? 0,
