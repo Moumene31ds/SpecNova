@@ -13,6 +13,7 @@ import { writeAuditLog } from "@/lib/server/auditLog";
 import { AppError, ok, fail, type ActionResult } from "@/lib/server/errors";
 import { brandColor } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
+import { computeScore } from "@/lib/score/compute-score";
 import type { DeviceStatus, DeviceVariant, SourceRef } from "@/lib/firebase/types";
 
 /**
@@ -104,16 +105,10 @@ export async function saveDeviceDraft(input: {
       },
       content: buildSearchContent(draft),
       embedding: [],
-      score: {
-        total: 0,
-        hardware: 0,
-        display: 0,
-        camera: 0,
-        battery: 0,
-        value: 0,
-        sentiment: 0,
-        updatedAt: now,
-      },
+      score: (() => {
+        const computed = computeScore(draft.specs);
+        return { ...computed, updatedAt: now };
+      })(),
       priceSummary: {
         currency: "USD",
         latest: 0,

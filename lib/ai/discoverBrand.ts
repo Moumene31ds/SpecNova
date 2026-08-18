@@ -39,16 +39,23 @@ export type BrandCatalogModel = z.infer<typeof BrandCatalogSchema>["models"][num
 export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
 // Phase 1: Flagships + 2024-2026 models
-const PROMPT_PHASE1 = `You are a phone catalog expert. Search the web for ALL phones made by this brand. Use Google Search to find the COMPLETE list.
+const PROMPT_PHASE1 = `You are a phone catalog expert. Use Google Search to find ALL phones made by this brand.
 
-List EVERY phone model this brand has released. Include:
-- Flagship series (Pro, Ultra, Max, Plus variants)
+CRITICAL: Search Google for these exact queries to find the LATEST phones:
+- "[brand] phones 2025 2026"
+- "[brand] latest phones released"
+- "[brand] flagship 2025"
+- "[brand] all models list"
+
+Include ALL phones this brand has made. Include:
+- LATEST flagships (e.g. OnePlus 13, OnePlus 13T, OnePlus 15 — the NEWEST first)
+- Pro, Ultra, Max, Plus, Lite, SE, FE, Mini, T, Ace, Nord variants
 - Sub-flagship / premium mid-range
 - Mid-range series
 - Budget / entry-level
 - Foldable / flip phones
 - Gaming phones
-- Tablets if they make phones too (only phone models)
+- ALL regional variants
 
 Output JSON array. Include modelNumbers if known (SM-XXXX, etc).
 Status: rumored|announced|upcoming|available|discontinued
@@ -56,11 +63,10 @@ Status: rumored|announced|upcoming|available|discontinued
 Output: {"brand":"","models":[{"name":"Model Name","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null}]}
 
 RULES:
-- Include ALL variants: base, Pro, Ultra, Max, Plus, Lite, SE, Mini, FE, etc.
-- Include ALL series, not just flagships
-- Name = official product name without brand prefix (e.g. "Galaxy S25 Ultra")
-- Newest phones first
-- Status = available for released phones
+- NEWEST phones FIRST in the list
+- Include ALL variants and sub-brands (Nord, Ace, SE, FE, etc.)
+- Name = official product name without brand prefix (e.g. "OnePlus 13")
+- Status = available for released phones, announced for announced ones
 - ONLY valid JSON. No markdown.`;
 
 // Phase 2: Ask for more if the first response seems incomplete

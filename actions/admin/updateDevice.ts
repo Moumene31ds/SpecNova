@@ -12,6 +12,7 @@ import { writeAuditLog } from "@/lib/server/auditLog";
 import { AppError, ok, fail, type ActionResult } from "@/lib/server/errors";
 import { brandColor } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
+import { computeScore } from "@/lib/score/compute-score";
 import type { DeviceStatus, DeviceVariant, SourceRef } from "@/lib/firebase/types";
 
 const UpdateDraftSchema = AiExtractedDeviceSchema.omit({
@@ -79,6 +80,10 @@ export async function updateDevice(input: {
         renderImages: draft.images?.renderImages ?? [],
       },
       content: buildSearchContent(draft),
+      score: (() => {
+        const computed = computeScore(draft.specs);
+        return { ...computed, updatedAt: now };
+      })(),
       bandGroupIds: draft.specs.connectivity.bands,
       sources: sources.map<SourceRef>((s) => ({
         kind: s.kind,
