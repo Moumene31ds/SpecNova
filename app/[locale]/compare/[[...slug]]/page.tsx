@@ -11,6 +11,7 @@ import { GamingSimulator } from "@/components/compare/gaming-simulator";
 import { PriceHistoryChart } from "@/components/charts/price-history-chart";
 import { BandChecker } from "@/components/bands/band-checker";
 import { getPriceHistorySafe } from "@/lib/pricing";
+import { ShareButton } from "@/components/compare/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -23,11 +24,39 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug = [] } = await params;
   const devices = await getDevices(slug);
+
+  if (devices.length < 2) {
+    return {
+      title: "Compare devices",
+      description: "Side-by-side SpecNova comparison with AI spec diffing.",
+    };
+  }
+
+  const names = devices.map((d) => `${d.brand} ${d.name}`);
+  const title = `Compare ${names.join(" vs ")} — SpecNova`;
+  const chipsets = devices.map((d) => d.specs.platform.chipset).join(" vs ");
+  const description = `${names.join(" vs ")} compared side-by-side: chipsets (${chipsets}), cameras, battery, display, and more on SpecNova.`;
+
+  const ogImages = devices.map(
+    (d) => d.media.heroImage ?? d.media.gallery?.[0],
+  ).filter(Boolean) as string[];
+
   return {
-    title: devices.length
-      ? `${devices.map((d) => `${d.brand} ${d.name}`).join(" vs ")}`
-      : "Compare devices",
-    description: "Side-by-side SpecNova comparison with AI spec diffing.",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      siteName: "SpecNova",
+      url: `/en/compare/${slug.join("/")}`,
+      ...(ogImages.length >= 2 ? { images: ogImages } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 
@@ -78,9 +107,15 @@ export default async function ComparePage({ params }: Props) {
           )}
 
           <div className="relative z-10">
-            <Badge variant="neon" className="mb-4">
-              <Sparkles className="h-3 w-3" /> AI comparison
-            </Badge>
+            <div className="mb-4 flex items-center gap-3">
+              <Badge variant="neon">
+                <Sparkles className="h-3 w-3" /> AI comparison
+              </Badge>
+              <ShareButton
+                deviceNames={devices.map((d) => `${d.brand} ${d.name}`)}
+                slugs={devices.map((d) => d.slug)}
+              />
+            </div>
 
             <div className="flex flex-wrap items-center gap-x-10 gap-y-6">
               {devices.map((device, i) => (

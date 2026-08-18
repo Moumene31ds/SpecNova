@@ -23,6 +23,51 @@ export function brandColor(brand: string): string {
   return BRAND_COLORS[brand.toLowerCase()] ?? "#6B7280";
 }
 
+export const BRAND_NAME_MAP: Record<string, string> = {
+  samsung: "Samsung",
+  apple: "Apple",
+  google: "Google",
+  xiaomi: "Xiaomi",
+  oppo: "OPPO",
+  oneplus: "OnePlus",
+  vivo: "vivo",
+  realme: "realme",
+  sony: "Sony",
+  motorola: "Motorola",
+  nothing: "Nothing",
+  honor: "HONOR",
+  huawei: "Huawei",
+  asus: "ASUS",
+  nokia: "Nokia",
+  infinix: "Infinix",
+  tecno: "Tecno",
+  itel: "itel",
+};
+
+export const POPULAR_BRANDS = [
+  "samsung",
+  "apple",
+  "xiaomi",
+  "oneplus",
+  "google",
+  "oppo",
+  "vivo",
+  "realme",
+  "sony",
+  "motorola",
+  "nothing",
+  "honor",
+  "huawei",
+];
+
+export function brandDisplayName(slug: string): string {
+  return BRAND_NAME_MAP[slug.toLowerCase()] ?? capitalize(slug);
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
 export const THEMES = ["oled", "neon", "light"] as const;
 export type ThemeName = (typeof THEMES)[number];
 

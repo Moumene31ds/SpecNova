@@ -501,5 +501,27 @@
     "warning": "Avertissement",
     "info": "Information",
     "loading": "Chargement…"
+  },
+  "priceAlerts": {
+    "title": "Alertes de prix",
+    "subtitle": "Gérez vos notifications de baisse de prix",
+    "totalAlerts": "Total des alertes",
+    "activeCount": "Actives",
+    "targetPrice": "Prix cible",
+    "threshold": "Seuil",
+    "channels": "Canaux",
+    "push": "Push",
+    "email": "E-mail",
+    "status": "Statut",
+    "active": "Active",
+    "inactive": "Inactive",
+    "createdAt": "Créée le",
+    "deactivate": "Désactiver",
+    "delete": "Supprimer",
+    "deleteConfirmTitle": "Supprimer l'alerte ?",
+    "deleteConfirmBody": "Cette action supprimera définitivement cette alerte de prix. Vous pourrez en créer une nouvelle à tout moment.",
+    "emptyTitle": "Aucune alerte de prix",
+    "emptyBody": "Créez une alerte de prix sur un appareil et nous vous notifierons lorsqu'il baisse.",
+    "browseDevices": "Parcourir les appareils"
   }
 }

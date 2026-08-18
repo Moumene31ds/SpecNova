@@ -501,5 +501,27 @@
     "warning": "Warning",
     "info": "Info",
     "loading": "Loading…"
+  },
+  "priceAlerts": {
+    "title": "Price Alerts",
+    "subtitle": "Manage your device price-drop notifications",
+    "totalAlerts": "Total alerts",
+    "activeCount": "Active",
+    "targetPrice": "Target price",
+    "threshold": "Threshold",
+    "channels": "Channels",
+    "push": "Push",
+    "email": "Email",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "createdAt": "Created",
+    "deactivate": "Deactivate",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete alert?",
+    "deleteConfirmBody": "This will permanently remove this price alert. You can always create a new one later.",
+    "emptyTitle": "No price alerts yet",
+    "emptyBody": "Set a price alert on any device and we'll notify you when the price drops.",
+    "browseDevices": "Browse devices"
   }
 }
