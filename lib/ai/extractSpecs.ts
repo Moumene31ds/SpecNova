@@ -150,7 +150,10 @@ export const AiExtractedDeviceSchema = z.object({
     .array(
       z.object({
         title: z.string(),
-        url: z.string().url(),
+        url: z.string().min(1).transform((val) => {
+          if (!val.startsWith("http")) return `https://${val}`;
+          return val;
+        }),
         kind: z.string().default("retailer"),
       }),
     )
