@@ -22,7 +22,7 @@ const CameraSchema = z.object({
   fieldOfViewDeg: z.number().nullish(),
   opticalZoom: z.number().nullish(),
   digitalZoom: z.number().nullish(),
-  stabilization: z.enum(["OIS", "OIS+EIS", "EIS", "none"]).nullish(),
+  stabilization: z.enum(["OIS", "OIS+EIS", "EIS", "none"]).or(z.literal("")).transform(v => v === "" ? null : v).nullish(),
   video: z.array(z.string()).default([]),
 });
 
@@ -114,7 +114,7 @@ export const AiExtractedDeviceSchema = z.object({
     }),
     sensors: z.array(z.string()).default([]),
     extras: z.object({
-      fingerprint: z.enum(["under-display", "side", "rear", "none"]).nullish(),
+      fingerprint: z.enum(["under-display", "side", "rear", "none"]).or(z.literal("")).transform(v => v === "" ? null : v).nullish(),
       faceUnlock: z.boolean().nullish(),
       stylus: z.boolean().nullish(),
       esim: z.boolean().nullish(),
