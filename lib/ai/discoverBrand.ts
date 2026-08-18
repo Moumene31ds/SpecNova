@@ -28,7 +28,7 @@ export const BrandCatalogSchema = z.object({
         name: z.string().min(1),
         modelNumbers: z.array(z.string()).default([]),
         codename: z.string().nullish(),
-        status: z.enum(["rumored", "announced", "upcoming", "available", "discontinued"]),
+        status: z.string().default("available"),
         announcedAt: z.string().nullish(),
         releaseAt: z.string().nullish(),
       }),
@@ -42,11 +42,11 @@ export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
 // No web fetch — training knowledge is sufficient for brand catalogs.
 
-const PROMPT = `List all phones from this brand into JSON. Include flagships, mid-range, budget from last 8-10 years. Cap at 120 models.
+const PROMPT = `List phones from this brand into JSON. PRIORITIZE 2024-2026 models first, then older. Include flagships, mid-range, budget. Cap at 120.
 
 JSON: {"brand":"","models":[{"name":"without brand","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null}]}
 
-Rules: status = rumored|announced|upcoming|available|discontinued. ONLY output JSON. No markdown.`;
+Rules: status=rumored|announced|upcoming|available|discontinued. Put NEWEST phones first. ONLY output JSON.`;
 
 /** Discover the brand's full model catalog with web fetch grounding. Retries up to 2 times on malformed JSON. */
 export async function discoverBrand(brand: string): Promise<{

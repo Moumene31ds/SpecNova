@@ -209,7 +209,7 @@ export interface PriceSummary {
 }
 
 export interface SourceRef {
-  kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark";
+  kind: string;
   url: string;
   title: string;
   fetchedAt: Timestamp;

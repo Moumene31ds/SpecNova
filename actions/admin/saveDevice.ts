@@ -33,7 +33,7 @@ const SaveDraftSchema = AiExtractedDeviceSchema.omit({
 const SourceInputSchema = z.object({
   title: z.string(),
   url: z.string().url(),
-  kind: z.enum(["official", "tenaa", "fcc", "retailer", "benchmark"]),
+  kind: z.string().default("retailer"),
 });
 
 export interface SaveDeviceResult {
@@ -76,7 +76,7 @@ export async function saveDeviceDraft(input: {
       );
     }
 
-    const status: DeviceStatus = draft.status;
+    const status = draft.status as DeviceStatus;
     const dateToTs = (iso: string | null | undefined) =>
       iso ? Timestamp.fromDate(new Date(iso)) : null;
 

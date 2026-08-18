@@ -14,15 +14,15 @@ export const AI_EXTRACTION_MODEL = "gemini-3.6-flash (rotating)";
 // ---------------------------------------------------------------------------
 
 const CameraSchema = z.object({
-  kind: z.enum(["wide", "ultrawide", "telephoto", "periscope", "macro", "depth", "selfie"]),
+  kind: z.string().default("wide"),
   megapixels: z.number().nullish(),
   aperture: z.string().nullish(),
   sensorSize: z.string().nullish(),
-  pixelSize: z.string().nullish(),
+  pixelSize: z.union([z.string(), z.number()]).transform(v => String(v)).nullish(),
   fieldOfViewDeg: z.number().nullish(),
   opticalZoom: z.number().nullish(),
   digitalZoom: z.number().nullish(),
-  stabilization: z.enum(["OIS", "OIS+EIS", "EIS", "none"]).or(z.literal("")).transform(v => v === "" ? null : v).nullish(),
+  stabilization: z.string().nullish(),
   video: z.array(z.string()).default([]),
 });
 
@@ -31,7 +31,7 @@ export const AiExtractedDeviceSchema = z.object({
   name: z.string().min(1),
   modelNumbers: z.array(z.string()).default([]),
   codename: z.string().nullish(),
-  status: z.enum(["rumored", "announced", "upcoming", "available", "discontinued"]),
+  status: z.string().default("available"),
   announcedAt: z.string().nullish(),
   releaseAt: z.string().nullish(),
   specs: z.object({
@@ -114,7 +114,7 @@ export const AiExtractedDeviceSchema = z.object({
     }),
     sensors: z.array(z.string()).default([]),
     extras: z.object({
-      fingerprint: z.enum(["under-display", "side", "rear", "none"]).or(z.literal("")).transform(v => v === "" ? null : v).nullish(),
+      fingerprint: z.string().nullish(),
       faceUnlock: z.boolean().nullish(),
       stylus: z.boolean().nullish(),
       esim: z.boolean().nullish(),
@@ -151,7 +151,7 @@ export const AiExtractedDeviceSchema = z.object({
       z.object({
         title: z.string(),
         url: z.string().url(),
-        kind: z.enum(["official", "tenaa", "fcc", "retailer", "benchmark"]),
+        kind: z.string().default("retailer"),
       }),
     )
     .default([]),
