@@ -72,6 +72,7 @@ export async function discoverBrand(brand: string): Promise<{
       topP: 0.9,
       maxTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
       responseMimeType: "application/json",
+      useGoogleSearch: true,
     });
 
     const raw = response.text;

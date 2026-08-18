@@ -167,14 +167,14 @@ export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 // Prompt — compact for Groq free tier (8000 TPM limit)
 // ---------------------------------------------------------------------------
 
-const PROMPT = `Extract phone specs into JSON. Use web data below. null = unknown. Numbers only (no units). Dates = YYYY-MM-DD.
+const PROMPT = `You have Google Search. Search the web for the LATEST specs of this phone. Use real web data, not training memory.
 
 JSON:
 {"brand":"","name":"","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null,"specs":{"body":{"dimensions":{"widthMm":0,"heightMm":0,"depthMm":0},"weightG":0,"build":"","materials":[],"protection":"","ipRating":"","colors":[]},"display":{"type":"","sizeIn":0,"resolution":"","ppi":0,"refreshRateHz":0,"peakBrightnessNits":0,"hdrSupport":[],"pwmHz":0,"glass":"","colorDepth":""},"platform":{"os":"","ui":"","chipset":"","cpu":"","gpu":"","antutuV10":0,"geekbench6":{"single":0,"multi":0}},"memory":{"ramOptions":[],"storageOptions":[],"storageType":"","cardSlot":false},"cameras":{"rear":[{"kind":"wide","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"OIS","video":[]}],"front":[{"kind":"selfie","megapixels":0,"aperture":"","sensorSize":"","pixelSize":"","fieldOfViewDeg":0,"opticalZoom":0,"digitalZoom":0,"stabilization":"EIS","video":[]}],"features":[],"videoCapabilities":[]},"audio":{"speakers":[],"headphoneJack":false,"codecs":[],"microphone":""},"battery":{"capacityMah":0,"type":"","chargingWatts":0,"chargingTimeMin":0,"wirelessWatts":0,"reverseWirelessWatts":0,"enduranceHours":0},"connectivity":{"wifi":"","bluetooth":"","nfc":false,"usb":"","irBlaster":false,"gnss":[],"bands":[]},"sensors":[],"extras":{"fingerprint":"","faceUnlock":false,"stylus":false,"esim":false,"uwb":false,"satelliteSos":false}},"variants":[],"images":{"heroImage":null,"gallery":[],"renderImages":[]},"confidence":{"overall":0.9,"verifiedFields":[],"estimatedFields":[],"unavailableFields":[]},"sources":[{"title":"","url":"","kind":"retailer"}]}
 
-Rules: ONLY output the JSON object. No markdown. No explanation.`;
+null=unknown. Numbers only. ONLY output JSON.`;
 
-/** Hard cap — limited for Groq free tier TPM. */
+/** Max output tokens. */
 const MAX_OUTPUT_TOKENS = 4096;
 
 // ---------------------------------------------------------------------------
@@ -213,18 +213,36 @@ export async function extractSpecs(query: string): Promise<{
       topP: 0.95,
       maxTokens: MAX_OUTPUT_TOKENS,
       responseMimeType: "application/json",
+      useGoogleSearch: true,
     });
 
     const raw = response.text;
     if (!raw.trim()) {
       if (attempt < MAX_RETRIES) continue;
-      throw new Error("Groq returned an empty extraction after all retries.");
+      throw new Error("Gemini returned an empty extraction after all retries.");
     }
 
     try {
       const parsed = parseJsonObject(raw);
       const device = AiExtractedDeviceSchema.parse(parsed);
       lastDevice = device;
+
+      // Extract grounding sources from Google Search
+      const gm = response.groundingMetadata as { groundingChunks?: Array<{ web?: { title?: string; uri?: string } }> } | undefined;
+      const groundingChunks = gm?.groundingChunks;
+      if (groundingChunks?.length) {
+        const seen = new Set(device.sources.map((s) => s.url));
+        for (const chunk of groundingChunks) {
+          const web = chunk.web;
+          if (!web?.uri || seen.has(web.uri)) continue;
+          seen.add(web.uri);
+          device.sources.push({
+            title: web.title ?? new URL(web.uri).hostname,
+            url: web.uri,
+            kind: "retailer",
+          });
+        }
+      }
 
       // If this is attempt 1+ and we got valid data, check if it's complete enough
       if (isRetry) {

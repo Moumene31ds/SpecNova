@@ -60,6 +60,7 @@ export interface GeminiCallOptions {
   topP?: number;
   maxTokens: number;
   responseMimeType?: string;
+  useGoogleSearch?: boolean;
 }
 
 const MAX_API_RETRIES = 3;
@@ -70,7 +71,7 @@ const BASE_DELAY_MS = 5000;
  */
 export async function geminiGenerateContent(
   options: GeminiCallOptions,
-): Promise<{ text: string }> {
+): Promise<{ text: string; groundingMetadata?: Record<string, unknown> }> {
   const client = getClient();
 
   for (let attempt = 0; attempt <= MAX_API_RETRIES; attempt++) {
@@ -90,10 +91,12 @@ export async function geminiGenerateContent(
           maxOutputTokens: options.maxTokens,
           responseMimeType: options.responseMimeType ?? "application/json",
         },
+        ...(options.useGoogleSearch ? { tools: [{ googleSearch: {} }] } : {}),
       });
 
       const text = response.text ?? "";
-      return { text };
+      const gm = (response as unknown as { groundingMetadata?: Record<string, unknown> }).groundingMetadata;
+      return { text, groundingMetadata: gm };
     } catch (err: unknown) {
       const isQuota = isQuotaError(err);
       const isLastAttempt = attempt >= MAX_API_RETRIES;
@@ -116,10 +119,11 @@ export async function geminiGenerateContent(
 
 function isQuotaError(err: unknown): boolean {
   if (err && typeof err === "object" && "status" in err) {
-    return (err as { status: number }).status === 429;
+    const status = (err as { status: number }).status;
+    return status === 429 || status === 503;
   }
   const msg = String(err);
-  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED");
+  return msg.includes("429") || msg.includes("503") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("UNAVAILABLE");
 }
 
 function sleep(ms: number): Promise<void> {
