@@ -11,7 +11,7 @@ import Groq from "groq-sdk";
  */
 
 export const AI_MODEL =
-  process.env.AI_EXTRACTION_MODEL ?? "llama-3.3-70b-versatile";
+  process.env.AI_EXTRACTION_MODEL ?? "openai/gpt-oss-120b";
 
 let groqClient: Groq | null = null;
 
