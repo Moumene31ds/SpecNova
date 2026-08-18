@@ -5,10 +5,9 @@ import {
   geminiGenerateContent,
   getCached,
   setCache,
-  AI_MODEL,
 } from "./gemini-client";
 
-export const AI_EXTRACTION_MODEL = AI_MODEL;
+export const AI_EXTRACTION_MODEL = "gemini-3.6-flash (rotating)";
 
 // ---------------------------------------------------------------------------
 // Schema

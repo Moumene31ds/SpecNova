@@ -3,33 +3,36 @@ import "server-only";
 import { GoogleGenAI } from "@google/genai";
 
 /**
- * Shared Gemini client with retry, exponential backoff for 429 quota errors,
- * and in-memory cache to minimize API calls.
- *
- * Free tier (gemini-3.6-flash): 15 RPM, 1M TPM, 1500 RPD.
+ * Shared Gemini client with:
+ * - Model rotation across 5 free-tier models (5 × 20 RPD = 100 RPD)
+ * - Exponential backoff on 429/503
+ * - In-memory cache (1 hour TTL)
  */
 
-export const AI_MODEL =
-  process.env.AI_EXTRACTION_MODEL ?? "gemini-3.6-flash";
+const MODELS = [
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite-preview",
+];
 
 let geaiClient: InstanceType<typeof GoogleGenAI> | null = null;
 
 function getClient(): InstanceType<typeof GoogleGenAI> {
   if (geaiClient) return geaiClient;
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set.");
-  }
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not set.");
   geaiClient = new GoogleGenAI({ apiKey });
   return geaiClient;
 }
 
 // ---------------------------------------------------------------------------
-// In-memory cache (per-serverless-instance, survives warm invocations)
+// Cache
 // ---------------------------------------------------------------------------
 
 const cache = new Map<string, { data: unknown; ts: number }>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 export function getCached<T>(key: string): T | null {
   const entry = cache.get(key);
@@ -50,7 +53,40 @@ export function setCache(key: string, data: unknown): void {
 }
 
 // ---------------------------------------------------------------------------
-// Rate-limited Gemini generateContent with retry + backoff
+// Model rotation — track 429 per model, skip exhausted ones
+// ---------------------------------------------------------------------------
+
+const exhaustedUntil = new Map<string, number>(); // model → timestamp when quota resets
+
+function pickModel(): string {
+  const now = Date.now();
+  for (const model of MODELS) {
+    const until = exhaustedUntil.get(model) ?? 0;
+    if (now >= until) return model;
+  }
+  // All exhausted — pick the one that resets soonest
+  let best = MODELS[0]!;
+  let bestUntil = Infinity;
+  for (const model of MODELS) {
+    const until = exhaustedUntil.get(model) ?? 0;
+    if (until < bestUntil) {
+      bestUntil = until;
+      best = model;
+    }
+  }
+  return best;
+}
+
+function markExhausted(model: string): void {
+  // Quota resets at midnight UTC — mark exhausted until then
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setUTCHours(24, 0, 0, 0);
+  exhaustedUntil.set(model, tomorrow.getTime());
+}
+
+// ---------------------------------------------------------------------------
+// API call with rotation + retry
 // ---------------------------------------------------------------------------
 
 export interface GeminiCallOptions {
@@ -63,27 +99,23 @@ export interface GeminiCallOptions {
   useGoogleSearch?: boolean;
 }
 
-const MAX_API_RETRIES = 3;
-const BASE_DELAY_MS = 5000;
+const MAX_API_RETRIES = 6; // Try all 5 models + 1 extra
+const BASE_DELAY_MS = 3000;
 
-/**
- * Call Gemini with automatic retry + exponential backoff on 429 quota errors.
- */
 export async function geminiGenerateContent(
   options: GeminiCallOptions,
 ): Promise<{ text: string; groundingMetadata?: Record<string, unknown> }> {
   const client = getClient();
+  const triedModels = new Set<string>();
 
-  for (let attempt = 0; attempt <= MAX_API_RETRIES; attempt++) {
+  for (let attempt = 0; attempt < MAX_API_RETRIES; attempt++) {
+    const model = pickModel();
+    triedModels.add(model);
+
     try {
       const response = await client.models.generateContent({
-        model: AI_MODEL,
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: options.userMessage }],
-          },
-        ],
+        model,
+        contents: [{ role: "user", parts: [{ text: options.userMessage }] }],
         config: {
           systemInstruction: options.systemInstruction,
           temperature: options.temperature ?? 0.2,
@@ -98,15 +130,18 @@ export async function geminiGenerateContent(
       const gm = (response as unknown as { groundingMetadata?: Record<string, unknown> }).groundingMetadata;
       return { text, groundingMetadata: gm };
     } catch (err: unknown) {
-      const isQuota = isQuotaError(err);
-      const isLastAttempt = attempt >= MAX_API_RETRIES;
+      const status = getErrorStatus(err);
+      const isRetryable = status === 429 || status === 503;
 
-      if (isQuota && !isLastAttempt) {
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-        console.warn(
-          `[gemini] 429 quota hit, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_API_RETRIES + 1})`,
-        );
-        await sleep(delay);
+      if (isRetryable) {
+        markExhausted(model);
+        console.warn(`[gemini] ${status} on ${model}, rotating to next model`);
+
+        // If all models exhausted, wait before retrying
+        if (triedModels.size >= MODELS.length) {
+          await sleep(BASE_DELAY_MS * 2);
+          triedModels.clear();
+        }
         continue;
       }
 
@@ -114,16 +149,17 @@ export async function geminiGenerateContent(
     }
   }
 
-  throw new Error("Gemini API: exhausted all retries.");
+  throw new Error("Gemini API: all models exhausted. Try again tomorrow.");
 }
 
-function isQuotaError(err: unknown): boolean {
+function getErrorStatus(err: unknown): number {
   if (err && typeof err === "object" && "status" in err) {
-    const status = (err as { status: number }).status;
-    return status === 429 || status === 503;
+    return (err as { status: number }).status;
   }
   const msg = String(err);
-  return msg.includes("429") || msg.includes("503") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("UNAVAILABLE");
+  if (msg.includes("429")) return 429;
+  if (msg.includes("503")) return 503;
+  return 0;
 }
 
 function sleep(ms: number): Promise<void> {
