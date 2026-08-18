@@ -39,35 +39,28 @@ export type BrandCatalogModel = z.infer<typeof BrandCatalogSchema>["models"][num
 export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
 // Phase 1: Flagships + 2024-2026 models
-const PROMPT_PHASE1 = `You are a phone catalog expert. Use Google Search to find ALL phones made by this brand.
+const PROMPT_PHASE1 = `You are a phone catalog expert. You MUST use Google Search to find ALL phones made by this brand.
 
-CRITICAL: Search Google for these exact queries to find the LATEST phones:
-- "[brand] phones 2025 2026"
-- "[brand] latest phones released"
-- "[brand] flagship 2025"
-- "[brand] all models list"
+STEP 1: Search Google for these EXACT queries (do ALL of them):
+1. "[brand] phones 2025 2026 released"
+2. "[brand] latest flagship 2025"
+3. "[brand] all phones list 2024 2025 2026"
+4. "[brand] mid range budget phones 2025"
+5. "[brand] foldable gaming phone 2025"
 
-Include ALL phones this brand has made. Include:
-- LATEST flagships (e.g. OnePlus 13, OnePlus 13T, OnePlus 15 — the NEWEST first)
-- Pro, Ultra, Max, Plus, Lite, SE, FE, Mini, T, Ace, Nord variants
-- Sub-flagship / premium mid-range
-- Mid-range series
-- Budget / entry-level
-- Foldable / flip phones
-- Gaming phones
-- ALL regional variants
+STEP 2: From the search results, compile a COMPLETE list of ALL models.
 
-Output JSON array. Include modelNumbers if known (SM-XXXX, etc).
-Status: rumored|announced|upcoming|available|discontinued
+CRITICAL RULES:
+- The FIRST phones in your list MUST be the NEWEST (2025-2026 models)
+- You MUST include: OnePlus 13T, OnePlus 13, OnePlus 13R, OnePlus 12, OnePlus 12R, etc.
+- You MUST include ALL sub-brands: Nord, Ace, SE, FE, Lite, Pro, Ultra, Max, Plus, Mini, T
+- You MUST include ALL types: flagship, mid-range, budget, foldable, gaming
+- Status: rumored|announced|upcoming|available|discontinued
+- Include modelNumbers if known (SM-XXXX, etc.)
 
 Output: {"brand":"","models":[{"name":"Model Name","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null}]}
 
-RULES:
-- NEWEST phones FIRST in the list
-- Include ALL variants and sub-brands (Nord, Ace, SE, FE, etc.)
-- Name = official product name without brand prefix (e.g. "OnePlus 13")
-- Status = available for released phones, announced for announced ones
-- ONLY valid JSON. No markdown.`;
+ONLY valid JSON. No markdown.`;
 
 // Phase 2: Ask for more if the first response seems incomplete
 const PROMPT_PHASE2 = `You are a phone catalog expert. The previous search returned these models. Now search the web again and add ANY MISSING models.
@@ -122,12 +115,25 @@ export async function discoverBrand(brand: string): Promise<{
 
   const catalog: BrandCatalog = {
     brand: phase1.catalog.brand || brand,
-    models: allModels.slice(0, BRAND_CATALOG_MAX_MODELS),
+    models: sortModelsNewestFirst(allModels).slice(0, BRAND_CATALOG_MAX_MODELS),
   };
 
   const result = { catalog, raw: rawLog };
   setCache(cacheKey, result);
   return result;
+}
+
+/** Sort models by release year (newest first), unknowns at the end. */
+function sortModelsNewestFirst(models: BrandCatalogModel[]): BrandCatalogModel[] {
+  return [...models].sort((a, b) => {
+    const yearA = a.releaseAt ? parseInt(a.releaseAt.slice(0, 4)) || 0 : 0;
+    const yearB = b.releaseAt ? parseInt(b.releaseAt.slice(0, 4)) || 0 : 0;
+    // Newer first; unknowns (0) go to the end
+    if (yearA === 0 && yearB === 0) return 0;
+    if (yearA === 0) return 1;
+    if (yearB === 0) return -1;
+    return yearB - yearA;
+  });
 }
 
 /** Single discovery phase with retry logic. */

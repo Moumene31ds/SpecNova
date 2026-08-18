@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence } from "framer-motion";
-import { Battery, Camera, Calendar, Cpu, DollarSign, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { Battery, Camera, Calendar, Cpu, DollarSign, RotateCcw, SlidersHorizontal, GitCompareArrows, Check, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { localSearch } from "@/lib/search/local-search";
 import { getDevCatalog } from "@/lib/dev-data";
@@ -66,6 +67,7 @@ const isActive = (f: Filters) =>
 
 export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string }) {
   const t = useTranslations("search");
+  const router = useRouter();
   const catalogRef = React.useRef<Device[]>(getDevCatalog(200));
 
   const [query, setQuery] = React.useState(defaultQuery);
@@ -73,6 +75,8 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
   const [filters, setFilters] = React.useState<Filters>(DEFAULT_FILTERS);
   const [openFilters, setOpenFilters] = React.useState(false);
   const [page, setPage] = React.useState(0);
+  const [compareMode, setCompareMode] = React.useState(false);
+  const [selectedForCompare, setSelectedForCompare] = React.useState<string[]>([]);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(null);
 
   React.useEffect(() => {
@@ -104,7 +108,21 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
     setInputValue("");
     setQuery("");
     setPage(0);
+    setCompareMode(false);
+    setSelectedForCompare([]);
   }, []);
+
+  const toggleCompare = React.useCallback((slug: string) => {
+    setSelectedForCompare((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : prev.length < 4 ? [...prev, slug] : prev
+    );
+  }, []);
+
+  const launchCompare = React.useCallback(() => {
+    if (selectedForCompare.length >= 2) {
+      router.push(`/compare/${selectedForCompare.join("/")}`);
+    }
+  }, [selectedForCompare, router]);
 
   const activeCount = React.useMemo(() =>
     isActive(filters)
@@ -237,6 +255,18 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
             <span className="font-mono font-medium text-foreground">{results.length}</span>{" "}
             {t("resultsFound")}
           </p>
+          <button
+            onClick={() => { setCompareMode(!compareMode); setSelectedForCompare([]); }}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors",
+              compareMode
+                ? "border-primary/40 bg-primary/10 text-foreground"
+                : "border-border bg-secondary/50 text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <GitCompareArrows className="h-3.5 w-3.5" />
+            {compareMode ? "Cancel Compare" : "Compare"}
+          </button>
         </div>
       </div>
 
@@ -244,7 +274,26 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visibleResults.map((device) => (
-              <DeviceCard key={device.id} device={device} />
+              <div key={device.id} className="relative">
+                {compareMode && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleCompare(device.slug); }}
+                    className={cn(
+                      "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
+                      selectedForCompare.includes(device.slug)
+                        ? "border-primary bg-primary text-primary-foreground scale-110"
+                        : "border-white/30 bg-black/40 text-white/70 hover:border-white/60"
+                    )}
+                  >
+                    {selectedForCompare.includes(device.slug) ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <span className="text-xs font-bold">{selectedForCompare.indexOf(device.slug) + 1 || "+"}</span>
+                    )}
+                  </button>
+                )}
+                <DeviceCard device={device} />
+              </div>
             ))}
           </div>
           {hasMore && (
@@ -273,6 +322,55 @@ export function DeviceExplorer({ defaultQuery = "" }: { defaultQuery?: string })
           </button>
         </div>
       )}
+
+      {/* Floating compare bar */}
+      <AnimatePresence>
+        {compareMode && selectedForCompare.length > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-2xl border border-border bg-card/95 px-6 py-3 shadow-2xl backdrop-blur-xl md:bottom-8"
+          >
+            <div className="flex items-center gap-2">
+              {selectedForCompare.map((slug) => {
+                const device = catalogRef.current.find((d) => d.slug === slug);
+                return (
+                  <div
+                    key={slug}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-secondary/50 text-xs font-bold"
+                    style={{ color: device?.brandColor }}
+                  >
+                    {device?.brand?.split(" ")[0] || "?"}
+                  </div>
+                );
+              })}
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {selectedForCompare.length}/4 selected
+            </span>
+            <button
+              onClick={launchCompare}
+              disabled={selectedForCompare.length < 2}
+              className={cn(
+                "inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground transition-all",
+                selectedForCompare.length >= 2
+                  ? "hover:shadow-[0_0_36px_hsl(var(--glow-primary)/0.4)]"
+                  : "cursor-not-allowed opacity-40"
+              )}
+            >
+              <GitCompareArrows className="h-4 w-4" />
+              Compare {selectedForCompare.length}
+            </button>
+            <button
+              onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
