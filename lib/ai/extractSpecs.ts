@@ -373,9 +373,18 @@ VARIANTS (array):
 - storageGb: if different from base
 
 IMAGES:
-- heroImage: URL to official product image or null
-- gallery: array of image URLs or []
-- renderImages: array of render URLs or []
+- heroImage: URL to OFFICIAL high-resolution product image (minimum 1000x1000px preferred)
+  - Search for: "[phone name] official press image high resolution"
+  - Search for: "[phone name] product image png"
+  - Prefer official manufacturer CDN URLs (e.g., samsung.com, apple.com, oneplus.com)
+  - Avoid thumbnails, crops, or low-res preview images
+  - If URL contains "thumb", "small", "preview", "crop", "200x", "300x" — find a better URL
+- gallery: array of high-res image URLs (official renders, press photos, color variants)
+  - Search for: "[phone name] press images gallery"
+  - Search for: "[phone name] official renders high resolution"
+- renderImages: array of high-res render URLs (3D renders, product shots)
+  - Search for: "[phone name] official renders png"
+  - Search for: "[phone name] product renders high quality"
 
 CONFIDENCE:
 - overall: 0.0 to 1.0 (how confident you are in the data)

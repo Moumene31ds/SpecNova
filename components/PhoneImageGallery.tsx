@@ -44,7 +44,13 @@ function isImageOptimizable(url: string): boolean {
     const host = new URL(url).hostname;
     return (
       host === "firebasestorage.googleapis.com" ||
-      host.endsWith(".googleusercontent.com")
+      host.endsWith(".googleusercontent.com") ||
+      host.endsWith("gsmarena.com") ||
+      host.endsWith("samsung.com") ||
+      host.endsWith("apple.com") ||
+      host === "images.unsplash.com" ||
+      host.endsWith("cloudfront.net") ||
+      host === "i0.wp.com"
     );
   } catch {
     return false;

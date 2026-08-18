@@ -28,6 +28,46 @@ const nextConfig = {
         protocol: "https",
         hostname: "**.googleusercontent.com",
       },
+      {
+        protocol: "https",
+        hostname: "fdn2.gsmarena.com",
+      },
+      {
+        protocol: "https",
+        hostname: "fdn1.gsmarena.com",
+      },
+      {
+        protocol: "https",
+        hostname: "image-us.samsung.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.samsung.com",
+      },
+      {
+        protocol: "https",
+        hostname: "store.storeimages.cdn-apple.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.apple.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cloudfront.net",
+      },
+      {
+        protocol: "https",
+        hostname: "i0.wp.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cdn-telegram.org",
+      },
     ],
     minimumCacheTTL: 604800,
   },
