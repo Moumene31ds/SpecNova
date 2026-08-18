@@ -245,7 +245,7 @@ function blankDraft(): AiExtractedDevice {
         cpu: null,
         gpu: null,
         antutuV10: null,
-        geekbench6: null,
+        geekbench6: {},
       },
       memory: {
         ramOptions: [],

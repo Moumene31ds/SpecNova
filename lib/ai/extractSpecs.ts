@@ -2,11 +2,12 @@ import "server-only";
 
 import { z } from "zod";
 import {
-  AI_MODEL,
-  geminiGenerateContent,
+  groqGenerateContent,
+  fetchPageText,
   getCached,
   setCache,
-} from "./gemini-client";
+  AI_MODEL,
+} from "./groq-client";
 
 export const AI_EXTRACTION_MODEL = AI_MODEL;
 
@@ -37,11 +38,13 @@ export const AiExtractedDeviceSchema = z.object({
   releaseAt: z.string().nullish(),
   specs: z.object({
     body: z.object({
-      dimensions: z.object({
-        widthMm: z.number().nullish(),
-        heightMm: z.number().nullish(),
-        depthMm: z.number().nullish(),
-      }).nullish(),
+      dimensions: z
+        .object({
+          widthMm: z.number().nullish(),
+          heightMm: z.number().nullish(),
+          depthMm: z.number().nullish(),
+        })
+        .default({}),
       weightG: z.number().nullish(),
       build: z.string().nullish(),
       materials: z.array(z.string()).default([]),
@@ -50,7 +53,7 @@ export const AiExtractedDeviceSchema = z.object({
       colors: z.array(z.string()).default([]),
     }),
     display: z.object({
-      type: z.enum(["OLED", "AMOLED", "LTPO AMOLED", "LCD", "Mini-LED"]).nullish(),
+      type: z.string().nullish(),
       sizeIn: z.number().nullish(),
       resolution: z.string().nullish(),
       ppi: z.number().nullish(),
@@ -68,15 +71,17 @@ export const AiExtractedDeviceSchema = z.object({
       cpu: z.string().nullish(),
       gpu: z.string().nullish(),
       antutuV10: z.number().nullish(),
-      geekbench6: z.object({
-        single: z.number().nullish(),
-        multi: z.number().nullish(),
-      }).nullish(),
+      geekbench6: z
+        .object({
+          single: z.number().nullish(),
+          multi: z.number().nullish(),
+        })
+        .default({}),
     }),
     memory: z.object({
       ramOptions: z.array(z.number()).default([]),
       storageOptions: z.array(z.number()).default([]),
-      storageType: z.enum(["UFS 2.2", "UFS 3.1", "UFS 4.0", "eMMC 5.1"]).nullish(),
+      storageType: z.string().nullish(),
       cardSlot: z.boolean().nullish(),
     }),
     cameras: z.object({
@@ -157,153 +162,79 @@ export const AiExtractedDeviceSchema = z.object({
 export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 
 // ---------------------------------------------------------------------------
-// Prompt — grounded in live web search
+// Web search grounding — fetch real specs pages before calling LLM
 // ---------------------------------------------------------------------------
 
-const PROMPT = `You are the world's most thorough phone specification engineer. You have Google Search access — USE IT AGGRESSIVELY.
+function gsmarenaUrl(query: string): string {
+  const encoded = encodeURIComponent(query.replace(/\s+/g, "+"));
+  return `https://www.gsmarena.com/results.php3?sQuickSearch=yes&sName=${encoded}`;
+}
 
-INPUT: A device name (e.g. "Samsung Galaxy S25 Ultra").
+async function fetchGoogleSearch(query: string): Promise<string> {
+  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
+  const text = await fetchPageText(url, 6000);
+  return text;
+}
 
-YOUR JOB: Fill in EVERY SINGLE FIELD below with real, verified data from the web. Null is ONLY acceptable for truly non-existent or unpublished data.
+async function fetchGSMArenaSpecs(query: string): Promise<string> {
+  // Step 1: search GSMArena
+  const searchUrl = gsmarenaUrl(query);
+  const searchText = await fetchPageText(searchUrl, 4000);
 
-═══════════════════════════════════════════════════════════════
-MANDATORY SEARCH QUERIES — you MUST search for each of these:
-═══════════════════════════════════════════════════════════════
-Search #1: "[device] full specifications gsmarena"
-  → Gets body dimensions, weight, build, display, chipset, memory, battery, connectivity
+  // Extract the first phone page link from search results
+  const phoneLinkMatch = searchText.match(/([a-z0-9_-]+)\.php/i);
+  let specsText = "";
 
-Search #2: "[device] camera details sensor size aperture"
-  → Gets exact camera specs: sensor size, pixel size, aperture, FOV, video capabilities
+  if (phoneLinkMatch) {
+    const phoneUrl = `https://www.gsmarena.com/${phoneLinkMatch[0]}`;
+    specsText = await fetchPageText(phoneUrl, 12000);
+  }
 
-Search #3: "[device] benchmarks antutu geekbench score"
-  → Gets AnTuTu and Geekbench scores
+  return specsText;
+}
 
-Search #4: "[device] battery test endurance charging speed"
-  → Gets battery endurance hours, charging time 0-100%
+/**
+ * Gather web context from multiple sources for grounding.
+ */
+async function gatherWebContext(query: string): Promise<string> {
+  const [gsmarena, google1, google2] = await Promise.all([
+    fetchGSMArenaSpecs(query),
+    fetchGoogleSearch(`${query} full specifications`),
+    fetchGoogleSearch(`${query} benchmarks antutu geekbench score battery endurance`),
+  ]);
 
-Search #5: "[device] connectivity bands wifi bluetooth version"
-  → Gets WiFi standard, Bluetooth version, full band list, GNSS support
+  const parts: string[] = [];
+  if (gsmarena) parts.push(`=== GSMArena Specs Page ===\n${gsmarena}`);
+  if (google1) parts.push(`=== Google Search: ${query} specifications ===\n${google1}`);
+  if (google2) parts.push(`=== Google Search: ${query} benchmarks & battery ===\n${google2}`);
 
-Search #6: "[device] sensors fingerprint face unlock features"
-  → Gets fingerprint type, face unlock, all sensors, stylus, eSIM, UWB, satellite
+  return parts.join("\n\n---\n\n");
+}
 
-Search #7: "[device] official images press photos renders"
-  → Gets official product photos
+// ---------------------------------------------------------------------------
+// Prompt — adapted for Groq (no built-in web search, uses fetched context)
+// ---------------------------------------------------------------------------
 
-Search #8: "[device] price variants regional models"
-  → Gets pricing, regional variants, model numbers
+const PROMPT = `You are the world's most thorough phone specification engineer. You receive pre-fetched web data from GSMArena, Google, and other sources. USE THIS DATA to fill in every field accurately.
 
-═══════════════════════════════════════════════════════════════
-FIELD-BY-FIELD INSTRUCTIONS — follow EXACTLY:
-═══════════════════════════════════════════════════════════════
+INPUT: A device name (e.g. "Samsung Galaxy S25 Ultra") + pre-fetched web search data containing specs.
 
-BODY:
-- dimensions: widthMm, heightMm, depthMm in millimeters (numbers only, e.g. 79.0)
-- weightG: weight in grams (number only, e.g. 232)
-- build: exact material description (e.g. "Titanium frame, Gorilla Armor 2 back")
-- materials: array like ["titanium", "gorilla armor 2 glass"] — list each material
-- protection: scratch/drop protection details (e.g. "Gorilla Armor 2")
-- ipRating: exact IP rating (e.g. "IP68")
-- colors: ALL color names as marketed (e.g. ["Titanium Silverblue", "Titanium Gray"])
+YOUR JOB: Fill in EVERY SINGLE FIELD below with real, verified data from the provided web context. Null is ONLY acceptable for truly non-existent or unpublished data.
 
-DISPLAY:
-- type: ONE of "OLED", "AMOLED", "LTPO AMOLED", "LCD", "Mini-LED" (pick the most accurate)
-- sizeIn: diagonal inches (number, e.g. 6.9)
-- resolution: exact resolution string (e.g. "3120 x 1440")
-- ppi: pixels per inch (number, e.g. 504)
-- refreshRateHz: max refresh rate (number, e.g. 120)
-- peakBrightnessNits: peak brightness (number, e.g. 2600)
-- hdrSupport: array like ["HDR10+", "Dolby Vision"]
-- pwmHz: PWM dimming frequency if known (number or null)
-- glass: protective glass name (e.g. "Corning Gorilla Armor 2")
-- colorDepth: color depth (e.g. "10-bit" or "16M colors")
-
-PLATFORM:
-- os: base OS (e.g. "Android 15")
-- ui: manufacturer skin (e.g. "One UI 7.0")
-- chipset: exact chipset name (e.g. "Qualcomm Snapdragon 8 Elite")
-- cpu: CPU configuration (e.g. "2x Oryon V2 Phoenix L 4.47GHz + 6x Oryon V2 Phoenix M 3.53GHz")
-- gpu: GPU name (e.g. "Adreno 830")
-- antutuV10: AnTuTu v10 score (number, e.g. 2480000)
-- geekbench6: { single: number, multi: number } (e.g. { single: 3120, multi: 9450 })
-
-MEMORY:
-- ramOptions: ALL RAM variants in GB as numbers (e.g. [12, 16])
-- storageOptions: ALL storage variants in GB as numbers (e.g. [256, 512, 1024])
-- storageType: ONE of "UFS 2.2", "UFS 3.1", "UFS 4.0", "eMMC 5.1"
-- cardSlot: true if microSD slot exists, false if not
-
-CAMERAS:
-- REAR cameras: one entry per physical lens, in order (main, ultrawide, telephoto, periscope, macro, depth)
-- FRONT cameras: one entry per selfie camera
-- For EACH lens provide:
-  * kind: "wide"|"ultrawide"|"telephoto"|"periscope"|"macro"|"depth"|"selfie"
-  * megapixels: exact MP (number, e.g. 200)
-  * aperture: exact f-stop (e.g. "f/1.7")
-  * sensorSize: sensor size (e.g. "1/1.3\"")
-  * pixelSize: pixel size (e.g. "0.6μm" or "1.6μm with pixel binning")
-  * fieldOfViewDeg: FOV in degrees if known (e.g. 120)
-  * opticalZoom: optical zoom multiplier if applicable (e.g. 3, 5)
-  * digitalZoom: max digital zoom (e.g. 100)
-  * stabilization: "OIS", "OIS+EIS", "EIS", or "none"
-  * video: array of video modes (e.g. ["8K@30fps", "4K@60fps", "1080p@240fps"])
-- features: camera software features array (e.g. ["Night Mode", "Pro Mode", "Director's View", "8K Video"])
-- videoCapabilities: overall video capabilities (e.g. ["8K@30fps", "4K@120fps", "Slow-motion 1080p@480fps", "HDR10+ recording"])
-
-AUDIO:
-- speakers: speaker type array (e.g. ["stereo speakers", "tuned by AKG"])
-- headphoneJack: true/false
-- codecs: supported audio codecs (e.g. ["LDAC", "aptX HD", "AAC", "SBC"])
-- microphone: microphone details (e.g. "3 microphones with noise cancellation")
-
-BATTERY:
-- capacityMah: exact capacity (number, e.g. 5000)
-- type: battery chemistry (e.g. "Li-Po" or "Li-Ion")
-- chargingWatts: max wired charging (number, e.g. 45)
-- chargingTimeMin: time for 0-100% charge in minutes (e.g. 65)
-- wirelessWatts: max wireless charging (number, e.g. 15)
-- reverseWirelessWatts: reverse wireless charging (number, e.g. 4.5)
-- enduranceHours: battery endurance/rating in hours (e.g. 142)
-
-CONNECTIVITY:
-- wifi: WiFi standard (e.g. "Wi-Fi 7 (802.11be)")
-- bluetooth: Bluetooth version (e.g. "5.4")
-- nfc: true/false
-- usb: USB standard (e.g. "USB Type-C 3.2 Gen 2")
-- irBlaster: true/false
-- gnss: supported GNSS systems array (e.g. ["GPS", "GLONASS", "BeiDou", "Galileo", "QZSS"])
-- bands: ALL cellular bands as individual strings (e.g. ["n1", "n2", "n3", "n5", "n7", "n8", "n12", "n20", "n25", "n26", "n28", "n38", "n40", "n41", "n48", "n66", "n71", "n77", "n78", "n79", "B1", "B2", "B3", "B4", "B5", "B7", "B8", "B12", "B13", "B17", "B18", "B19", "B20", "B25", "B26", "B28", "B38", "B39", "B40", "B41", "B66"])
-
-SENSORS: array of ALL sensors (e.g. ["accelerometer", "gyroscope", "proximity", "compass", "barometer", "color spectrum", "thermometer"])
-
-EXTRAS:
-- fingerprint: "under-display"|"side"|"rear"|"none" + specific type if known
-- faceUnlock: true/false
-- stylus: true/false (e.g. Samsung S Pen support)
-- esim: true/false
-- uwb: true/false (Ultra-Wideband)
-- satelliteSos: true/false
-
-VARIANTS: include ALL regional variants with different chipsets, RAM, storage (e.g. Snapdragon vs Exynos versions, US vs Global)
-
-IMAGES:
-- heroImage: best official product photo URL (DIRECT image link only, e.g. "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-s25-ultra.jpg")
-- gallery: array of 2-5 official photo URLs (different angles, colors)
-- renderImages: official press render URLs
-
-═══════════════════════════════════════════════════════════════
 RULES:
-═══════════════════════════════════════════════════════════════
-1. Fill EVERY field with real data from web search. null ONLY when truly impossible to find.
-2. NEVER invent or hallucinate. Use real search results only.
+1. Fill EVERY field with real data. null ONLY when truly impossible to find.
+2. NEVER invent or hallucinate. Use only the provided web search data.
 3. Preserve official marketing names exactly.
 4. Numbers only — strip units (mm, g, Hz, nits, mAh, W).
 5. Dates: ISO 8601 (YYYY-MM-DD).
-6. If you cannot find benchmark scores, search "[device] antutu score" and "[device] geekbench score" specifically.
-7. If you cannot find battery endurance, search "[device] battery endurance hours" specifically.
-8. If you cannot find PWM frequency, search "[device] PWM dimming frequency" specifically.
-9. If you cannot find camera sensor size, search "[device] camera sensor size pixel size" specifically.
-10. confidence.overall should be 0.95+ if you searched thoroughly.
+6. If benchmark scores appear in the web data, use them. If not found, set to null.
+7. If battery endurance hours appear in the web data, use them. If not, null.
+8. If camera sensor sizes appear, use them. If not, null.
+9. confidence.overall should reflect how complete the data is: 0.90+ if most fields found, 0.70-0.89 if partial, 0.50-0.69 if limited.
+10. For images.heroImage: find any direct image URL from the web data (e.g. gsmarena.com/vv/bigpic/...). If none found, leave null.
+11. For images.gallery: extract multiple image URLs if available.
+12. For images.renderImages: extract official press render URLs if available.
+13. For sources: list the URLs you actually used from the web data.
 
 JSON SCHEMA (match EXACTLY):
 {
@@ -319,7 +250,7 @@ JSON SCHEMA (match EXACTLY):
     "display": { "type": "LTPO AMOLED", "sizeIn": num, "resolution": "3120x1440", "ppi": num, "refreshRateHz": 120, "peakBrightnessNits": num, "hdrSupport": ["string"], "pwmHz": num, "glass": "string", "colorDepth": "string" },
     "platform": { "os": "Android 15", "ui": "One UI 7", "chipset": "Snapdragon 8 Elite", "cpu": "string", "gpu": "string", "antutuV10": num, "geekbench6": {"single": num, "multi": num} },
     "memory": { "ramOptions": [12, 16], "storageOptions": [256, 512, 1024], "storageType": "UFS 4.0", "cardSlot": false },
-    "cameras": { "rear": [{"kind":"wide","megapixels":200,"aperture":"f/1.7","sensorSize":"1/1.3\\"","pixelSize":"0.6μm","fieldOfViewDeg":85,"opticalZoom":null,"digitalZoom":100,"stabilization":"OIS","video":["8K@30fps","4K@60fps"]}], "front": [{"kind":"selfie","megapixels":12,"aperture":"f/2.2","sensorSize":"1/3.2\\"","pixelSize":"1.12μm","fieldOfViewDeg":80,"opticalZoom":null,"digitalZoom":null,"stabilization":"EIS","video":["4K@30fps"]}], "features": ["Night Mode","Pro Mode"], "videoCapabilities": ["8K@30fps","4K@120fps"] },
+    "cameras": { "rear": [{"kind":"wide","megapixels":200,"aperture":"f/1.7","sensorSize":"1/1.3\\"","pixelSize":"0.6μm","fieldOfViewDeg":85,"opticalZoom":null,"digitalZoom":100,"stabilization":"OIS","video":["8K@30fps","4K@60fps"]}],"front": [{"kind":"selfie","megapixels":12,"aperture":"f/2.2","sensorSize":"1/3.2\\"","pixelSize":"1.12μm","fieldOfViewDeg":80,"opticalZoom":null,"digitalZoom":null,"stabilization":"EIS","video":["4K@30fps"]}],"features": ["Night Mode","Pro Mode"], "videoCapabilities": ["8K@30fps","4K@120fps"] },
     "audio": { "speakers": ["stereo speakers"], "headphoneJack": false, "codecs": ["LDAC","aptX HD","AAC"], "microphone": "3 mics with noise cancellation" },
     "battery": { "capacityMah": 5000, "type": "Li-Po", "chargingWatts": 45, "chargingTimeMin": 65, "wirelessWatts": 15, "reverseWirelessWatts": 4.5, "enduranceHours": 142 },
     "connectivity": { "wifi": "Wi-Fi 7", "bluetooth": "5.4", "nfc": true, "usb": "USB-C 3.2 Gen 2", "irBlaster": false, "gnss": ["GPS","GLONASS","BeiDou","Galileo"], "bands": ["n1","n3","n5","n7","n8","n20","n28","n38","n40","n41","n77","n78","n79"] },
@@ -338,54 +269,12 @@ Return ONLY the JSON object. No markdown, no explanation, no commentary.`;
 const MAX_OUTPUT_TOKENS = 16384;
 
 // ---------------------------------------------------------------------------
-// Source extraction from grounding metadata
+// Extract a fully-typed spec sheet for a device query.
+// Uses Groq LLM with web fetch grounding (GSMArena + Google).
+// Caches results for 1 hour to minimize API calls.
+// Retries up to 2 times — first retry targets missing fields, second retry fixes JSON.
 // ---------------------------------------------------------------------------
 
-function extractGroundingSources(
-  groundingChunks?: Array<{ web?: { title?: string; uri?: string } }>,
-): { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] {
-  if (!groundingChunks?.length) return [];
-
-  const seen = new Set<string>();
-  const sources: { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] = [];
-
-  for (const chunk of groundingChunks) {
-    const web = chunk.web;
-    if (!web?.uri) continue;
-    if (seen.has(web.uri)) continue;
-    seen.add(web.uri);
-
-    const domain = web.uri.toLowerCase();
-    let kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" = "retailer";
-    if (domain.includes("gsmarena.com") || domain.includes("phonearena.com") || domain.includes("notebookcheck") || domain.includes("androidauthority.com") || domain.includes("xda-developers.com") || domain.includes("91mobiles.com") || domain.includes("smartprix.com")) {
-      kind = "retailer";
-    } else if (domain.includes("tenaa.cn")) {
-      kind = "tenaa";
-    } else if (domain.includes("fcc.gov") || domain.includes("fccid.io")) {
-      kind = "fcc";
-    } else if (domain.includes("antutu.com") || domain.includes("nanoreview.net") || domain.includes("geekbench")) {
-      kind = "benchmark";
-    } else if (domain.includes("samsung.com") || domain.includes("apple.com") || domain.includes("xiaomi.com") || domain.includes("oneplus.com") || domain.includes("google.com") || domain.includes("motorola.com") || domain.includes("sony.com") || domain.includes("huawei.com")) {
-      kind = "official";
-    }
-
-    sources.push({
-      title: web.title ?? new URL(web.uri).hostname,
-      url: web.uri,
-      kind,
-    });
-  }
-
-  return sources;
-}
-
-/**
- * Extract a fully-typed spec sheet for a device query.
- * Uses Google Search Grounding so Gemini can access the LIVE web for
- * the latest phone specifications — even phones released today.
- * Caches results for 1 hour to minimize API calls.
- * Retries up to 2 times — first retry targets missing fields, second retry fixes JSON.
- */
 export async function extractSpecs(query: string): Promise<{
   device: AiExtractedDevice;
   raw: string;
@@ -397,40 +286,35 @@ export async function extractSpecs(query: string): Promise<{
   const MAX_RETRIES = 2;
   let lastDevice: AiExtractedDevice | null = null;
 
+  // Gather web context once (shared across retries)
+  const webContext = await gatherWebContext(query);
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
 
     let retryHint = "";
     if (isRetry && attempt === 1 && lastDevice) {
-      // First retry: target specific missing fields
       const missing = findMissingFields(lastDevice);
-      retryHint = `\n\nPREVIOUS ATTEMPT was valid but INCOMPLETE. You LEFT THESE FIELDS EMPTY/NULL:\n${missing}\n\nSEARCH THE WEB for each missing field above and FILL THEM ALL. Do not leave any of them null.`;
+      retryHint = `\n\nPREVIOUS ATTEMPT was valid but INCOMPLETE. You LEFT THESE FIELDS EMPTY/NULL:\n${missing}\n\nLook through the web context data again and FILL THEM ALL. Do not leave any of them null.`;
     } else if (isRetry) {
       retryHint = `\n\nFINAL RETRY: Output COMPLETE, VALID JSON only. Do not truncate. Start with { and end with }. No markdown fences.`;
     }
 
-    const response = await geminiGenerateContent({
-      systemInstruction: PROMPT,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: query },
-            ...(retryHint ? [{ text: retryHint }] : []),
-          ],
-        },
-      ],
-      tools: [{ googleSearch: {} }],
+    const userMessage = `Device: ${query}\n\n${webContext ? `=== WEB SEARCH DATA ===\n${webContext}\n\n=== END WEB DATA ===\n\nExtract ALL specs from the data above into the JSON schema below.${retryHint}` : `No web search data available. Use your training knowledge to fill in as much as possible.${retryHint}`}`;
+
+    const response = await groqGenerateContent({
+      systemPrompt: PROMPT,
+      userMessage,
       temperature: isRetry ? 0 : 0.2,
       topP: 0.95,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-      responseMimeType: "application/json",
+      maxTokens: MAX_OUTPUT_TOKENS,
+      responseFormat: { type: "json_object" },
     });
 
     const raw = response.text;
     if (!raw.trim()) {
       if (attempt < MAX_RETRIES) continue;
-      throw new Error("Gemini returned an empty extraction after all retries.");
+      throw new Error("Groq returned an empty extraction after all retries.");
     }
 
     try {
@@ -438,17 +322,11 @@ export async function extractSpecs(query: string): Promise<{
       const device = AiExtractedDeviceSchema.parse(parsed);
       lastDevice = device;
 
-      // Merge grounding metadata sources with AI-provided sources
-      const groundingChunks = (response.groundingMetadata as { groundingChunks?: Array<{ web?: { title?: string; uri?: string } }> } | undefined)?.groundingChunks;
-      const groundingSources = extractGroundingSources(groundingChunks);
-
-      if (groundingSources.length > 0) {
-        const existingUrls = new Set(device.sources.map((s) => s.url));
-        for (const gs of groundingSources) {
-          if (!existingUrls.has(gs.url)) {
-            device.sources.push(gs);
-            existingUrls.add(gs.url);
-          }
+      // Build source list from web data URLs
+      if (device.sources.length === 0) {
+        const inferredSources = inferSourcesFromWebData(webContext);
+        if (inferredSources.length > 0) {
+          device.sources = inferredSources;
         }
       }
 
@@ -456,7 +334,6 @@ export async function extractSpecs(query: string): Promise<{
       if (isRetry) {
         const missingCount = countNullFields(device);
         if (missingCount > 5 && attempt < MAX_RETRIES) {
-          // Still too many missing fields, retry
           continue;
         }
       }
@@ -477,6 +354,58 @@ export async function extractSpecs(query: string): Promise<{
   }
 
   throw new Error("Extraction failed unexpectedly.");
+}
+
+// ---------------------------------------------------------------------------
+// Source inference from web data
+// ---------------------------------------------------------------------------
+
+function inferSourcesFromWebData(
+  webData: string,
+): { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] {
+  const sources: { title: string; url: string; kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" }[] = [];
+  const seen = new Set<string>();
+
+  // Extract URLs from the web data
+  const urlRegex = /https?:\/\/[^\s<>"')\]]+/g;
+  const urls = webData.match(urlRegex) ?? [];
+
+  for (const url of urls) {
+    if (seen.has(url)) continue;
+    seen.add(url);
+
+    const domain = url.toLowerCase();
+    let kind: "official" | "tenaa" | "fcc" | "retailer" | "benchmark" = "retailer";
+    let title = "";
+
+    if (domain.includes("gsmarena.com")) {
+      kind = "retailer"; title = "GSMArena";
+    } else if (domain.includes("phonearena.com")) {
+      kind = "retailer"; title = "PhoneArena";
+    } else if (domain.includes("notebookcheck")) {
+      kind = "retailer"; title = "Notebookcheck";
+    } else if (domain.includes("androidauthority.com")) {
+      kind = "retailer"; title = "Android Authority";
+    } else if (domain.includes("xda-developers.com")) {
+      kind = "retailer"; title = "XDA Developers";
+    } else if (domain.includes("91mobiles.com")) {
+      kind = "retailer"; title = "91Mobiles";
+    } else if (domain.includes("tenaa.cn")) {
+      kind = "tenaa"; title = "TENAA";
+    } else if (domain.includes("fcc.gov") || domain.includes("fccid.io")) {
+      kind = "fcc"; title = "FCC";
+    } else if (domain.includes("antutu.com") || domain.includes("nanoreview.net") || domain.includes("geekbench")) {
+      kind = "benchmark"; title = "Benchmark";
+    } else if (domain.includes("samsung.com") || domain.includes("apple.com") || domain.includes("xiaomi.com") || domain.includes("oneplus.com") || domain.includes("google.com") || domain.includes("motorola.com") || domain.includes("sony.com") || domain.includes("huawei.com")) {
+      kind = "official"; title = "Official";
+    } else {
+      try { title = new URL(url).hostname; } catch { continue; }
+    }
+
+    sources.push({ title, url, kind });
+  }
+
+  return sources.slice(0, 10);
 }
 
 // ---------------------------------------------------------------------------
@@ -574,7 +503,7 @@ function findMissingFields(device: AiExtractedDevice): string {
 }
 
 // ---------------------------------------------------------------------------
-// JSON Parser with truncation repair
+// JSON Parser with truncation repair (shared logic)
 // ---------------------------------------------------------------------------
 
 function parseJsonObject(text: string): unknown {
@@ -584,7 +513,6 @@ function parseJsonObject(text: string): unknown {
     .replace(/\s*```\s*$/i, "")
     .trim();
 
-  // Strip any leading/trailing non-JSON text (e.g. "Here is the JSON:")
   const firstBrace = cleaned.indexOf("{");
   const firstBracket = cleaned.indexOf("[");
   if (firstBrace === -1 && firstBracket === -1) {
@@ -599,27 +527,17 @@ function parseJsonObject(text: string): unknown {
     cleaned = cleaned.slice(startIdx);
   }
 
-  // Try direct parse first
   try {
     return JSON.parse(cleaned);
   } catch {
-    // Attempt repair for truncated JSON
     const repaired = repairTruncatedJson(cleaned);
     return JSON.parse(repaired);
   }
 }
 
-/**
- * Attempt to repair truncated JSON by closing unclosed strings, arrays,
- * and objects in the correct order.
- */
 function repairTruncatedJson(text: string): string {
-  let result = text;
+  let result = text.replace(/,\s*$/, "");
 
-  // Remove any trailing comma before closing
-  result = result.replace(/,\s*$/, "");
-
-  // Count unclosed delimiters
   let inString = false;
   let escape = false;
   let braces = 0;
@@ -627,18 +545,9 @@ function repairTruncatedJson(text: string): string {
 
   for (let i = 0; i < result.length; i++) {
     const ch = result[i]!;
-    if (escape) {
-      escape = false;
-      continue;
-    }
-    if (ch === "\\") {
-      escape = true;
-      continue;
-    }
-    if (ch === '"') {
-      inString = !inString;
-      continue;
-    }
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
     if (inString) continue;
     if (ch === "{") braces++;
     if (ch === "}") braces--;
@@ -646,12 +555,8 @@ function repairTruncatedJson(text: string): string {
     if (ch === "]") brackets--;
   }
 
-  // If we're inside a string, close it
-  if (inString) {
-    result += '"';
-  }
+  if (inString) result += '"';
 
-  // Remove trailing incomplete key-value (e.g. "someKey": "someVa")
   const lastColon = result.lastIndexOf(":");
   if (lastColon > 0) {
     const afterColon = result.slice(lastColon + 1).trim();
@@ -662,7 +567,6 @@ function repairTruncatedJson(text: string): string {
         result = result.slice(0, lastComma);
       } else if (lastOpenBrace >= 0) {
         result = result.slice(0, lastOpenBrace + 1);
-        // Reset bracket counts since we truncated
         braces = 0;
         brackets = 0;
         for (const ch of result) {
@@ -675,15 +579,8 @@ function repairTruncatedJson(text: string): string {
     }
   }
 
-  // Close remaining brackets/braces in reverse order
-  while (brackets > 0) {
-    result += "]";
-    brackets--;
-  }
-  while (braces > 0) {
-    result += "}";
-    braces--;
-  }
+  while (brackets > 0) { result += "]"; brackets--; }
+  while (braces > 0) { result += "}"; braces--; }
 
   return result;
 }

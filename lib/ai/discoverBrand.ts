@@ -2,18 +2,19 @@ import "server-only";
 
 import { z } from "zod";
 import {
-  AI_MODEL,
-  geminiGenerateContent,
+  groqGenerateContent,
+  fetchPageText,
   getCached,
   setCache,
-} from "./gemini-client";
+  AI_MODEL,
+} from "./groq-client";
 
 export const AI_DISCOVERY_MODEL = AI_MODEL;
 
 /**
- * Brand catalog discovery with live web grounding.
- * Uses Google Search Grounding so Gemini searches the web in real-time
- * for the very latest phone models — including devices announced today.
+ * Brand catalog discovery with web fetch grounding.
+ * Fetches GSMArena + Google search results for the brand's latest phones,
+ * then uses Groq LLM to extract the complete catalog.
  * Caches results for 1 hour to minimize API calls.
  */
 
@@ -41,18 +42,38 @@ export const BrandCatalogSchema = z.object({
 export type BrandCatalogModel = z.infer<typeof BrandCatalogSchema>["models"][number];
 export type BrandCatalog = z.infer<typeof BrandCatalogSchema>;
 
+async function fetchBrandWebContext(brand: string): Promise<string> {
+  const queries = [
+    `${brand} latest phones 2025 2026`,
+    `${brand} all phone models complete catalog`,
+    `${brand} new phone announcements`,
+  ];
+
+  const results = await Promise.all(
+    queries.map(async (q) => {
+      const url = `https://www.google.com/search?q=${encodeURIComponent(q)}&num=8&hl=en`;
+      return fetchPageText(url, 5000);
+    }),
+  );
+
+  // Also fetch GSMArena brand page
+  const gsmarenaUrl = `https://www.gsmarena.com/${brand.toLowerCase().replace(/\s+/g, "-")}-phones-f-35-0-p1.php`;
+  const gsmarenaText = await fetchPageText(gsmarenaUrl, 8000);
+
+  const parts: string[] = [];
+  if (gsmarenaText) parts.push(`=== GSMArena ${brand} Phones ===\n${gsmarenaText}`);
+  results.forEach((r, i) => {
+    if (r) parts.push(`=== Search ${i + 1}: ${queries[i]} ===\n${r}`);
+  });
+
+  return parts.join("\n\n---\n\n");
+}
+
 const PROMPT = `You are SpecNova's world-class device-catalog librarian — an encyclopedic authority on every smartphone ever manufactured.
 
-CRITICAL: You have Google Search access. USE IT. Search the web for the LATEST phone models from this brand, especially any devices announced or released in 2025-2026. Your training data may be outdated — the web search results are your source of truth.
+INPUT: a smartphone brand name + pre-fetched web data containing the brand's phone catalog info.
 
-INPUT: a smartphone brand name.
-
-YOUR MISSION: produce the most COMPLETE and ACCURATE catalog of every phone this brand has ever made, by searching the live web for the latest information.
-
-SEARCH STRATEGY:
-- ALWAYS search for "[brand] latest phones 2025 2026", "[brand] all phone models", "[brand] new phone announcements".
-- Search for "[brand] phone lineup" and "[brand] complete catalog" for comprehensive lists.
-- For sub-brands, search "[brand] [sub-brand] phones" separately.
+YOUR MISSION: produce the most COMPLETE and ACCURATE catalog of every phone this brand has ever made, using the provided web data.
 
 CRITICAL RULES:
 1. RETURN ONE strict JSON object with the brand's complete phone catalog.
@@ -67,7 +88,7 @@ CRITICAL RULES:
 10. NEVER invent phones. If you cannot verify a model exists, leave it out. Accuracy beats completeness.
 11. One entry per model family — do NOT create separate entries for storage/color variants.
 12. Include sub-brands (e.g. for Xiaomi: include "Redmi", "POCO", "Black Shark" models).
-13. MOST IMPORTANTLY: include ALL phones from 2025-2026 that appear in your web search results.
+13. MOST IMPORTANTLY: include ALL phones from 2025-2026 that appear in your web data.
 
 JSON SCHEMA:
 {
@@ -86,7 +107,7 @@ JSON SCHEMA:
 
 Return ONLY the JSON object. No markdown fences, no commentary, no explanation.`;
 
-/** Discover the brand's full model catalog with live web search. Retries up to 2 times on malformed JSON. */
+/** Discover the brand's full model catalog with web fetch grounding. Retries up to 2 times on malformed JSON. */
 export async function discoverBrand(brand: string): Promise<{
   catalog: BrandCatalog;
   raw: string;
@@ -97,33 +118,32 @@ export async function discoverBrand(brand: string): Promise<{
 
   const MAX_RETRIES = 2;
 
+  // Gather web context once
+  const webContext = await fetchBrandWebContext(brand);
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
 
-    const response = await geminiGenerateContent({
-      systemInstruction: PROMPT,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: brand },
-            ...(isRetry
-              ? [{ text: `ATTEMPT ${attempt + 1}/${MAX_RETRIES + 1}: Your previous response was malformed. Issues found:\n${attempt === 1 ? "JSON parse error — output was truncated or contained invalid syntax." : "Schema validation failed."}\n\nIMPORTANT: Output COMPLETE, VALID JSON only. Do not truncate. Do not add markdown fences. Output ONLY the raw JSON object.` }]
-              : []),
-          ],
-        },
-      ],
-      tools: [{ googleSearch: {} }],
+    let retryHint = "";
+    if (isRetry) {
+      retryHint = `\n\nATTEMPT ${attempt + 1}/${MAX_RETRIES + 1}: Your previous response was malformed. Issues found:\n${attempt === 1 ? "JSON parse error — output was truncated or contained invalid syntax." : "Schema validation failed."}\n\nIMPORTANT: Output COMPLETE, VALID JSON only. Do not truncate. Do not add markdown fences. Output ONLY the raw JSON object.`;
+    }
+
+    const userMessage = `Brand: ${brand}\n\n${webContext ? `=== WEB SEARCH DATA ===\n${webContext}\n\n=== END WEB DATA ===\n\nExtract the complete phone catalog from the data above.${retryHint}` : `No web search data available. Use your training knowledge to list all phones from this brand.${retryHint}`}`;
+
+    const response = await groqGenerateContent({
+      systemPrompt: PROMPT,
+      userMessage,
       temperature: isRetry ? 0 : 0.1,
       topP: 0.9,
-      maxOutputTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
-      responseMimeType: "application/json",
+      maxTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
+      responseFormat: { type: "json_object" },
     });
 
     const raw = response.text;
     if (!raw.trim()) {
       if (attempt < MAX_RETRIES) continue;
-      throw new Error("Gemini returned an empty catalog after all retries.");
+      throw new Error("Groq returned an empty catalog after all retries.");
     }
 
     try {
