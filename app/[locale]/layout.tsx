@@ -6,7 +6,10 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AmbientBackground } from "@/components/ui/ambient-background";
 import { Navbar } from "@/components/layout/navbar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { Footer } from "@/components/layout/footer";
+import { PageTransition } from "@/components/layout/page-transition";
+import { LoadingBar } from "@/components/layout/loading-bar";
 import { locales } from "@/lib/i18n";
 import "./globals.css";
 
@@ -87,6 +90,9 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="font-sans">
@@ -94,9 +100,13 @@ export default async function RootLayout({
           <ThemeProvider>
             <TooltipProvider delayDuration={150}>
               <AmbientBackground />
+              <LoadingBar />
               <Navbar />
-              <main className="min-h-screen">{children}</main>
+              <main className="min-h-screen pb-16 md:pb-0">
+                <PageTransition>{children}</PageTransition>
+              </main>
               <Footer />
+              <BottomNav />
             </TooltipProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

@@ -149,11 +149,14 @@
     "changed": "Modifié",
     "aiSearch": "Recherche IA",
     "carrierBands": "Bandes fréquences",
+    "phoneFinder": "Trouver un téléphone",
     "noAccount": "Pas de compte ?",
     "createAccount": "En créer un",
     "themeLight": "Clair",
     "themeOled": "OLED sombre",
     "themeNeon": "Néon",
+    "finder": "Explorer",
+    "rankings": "Classements",
     "adminDashboard": "Tableau de bord"
   },
   "auth": {
@@ -349,7 +352,17 @@
     "success": "Succès",
     "error": "Erreur",
     "warning": "Avertissement",
-    "info": "Information"
+    "info": "Information",
+    "totalDevices": "Total des appareils",
+    "publishedDevices": "Publiés",
+    "draftDevices": "Brouillons",
+    "avgScore": "Score moyen",
+    "totalBrands": "Total des marques",
+    "scoreDistribution": "Distribution des scores",
+    "brandDistribution": "Distribution par marque",
+    "recentActivity": "Activité récente",
+    "devicesPerBrand": "Appareils par marque",
+    "scoreRanges": "Tranches de scores"
   },
   "footer": {
     "description": "iToPhone — Comparaison IA de téléphones & Suivi des prix",
@@ -502,6 +515,26 @@
     "info": "Information",
     "loading": "Chargement…"
   },
+  "finder": {
+    "title": "Trouvez votre téléphone",
+    "subtitle": "Répondez à 4 questions rapides et nous trouverons le téléphone idéal pour vous",
+    "step1Title": "Quel est votre budget ?",
+    "step2Title": "Qu'est-ce qui compte le plus ?",
+    "step3Title": "Taille préférée ?",
+    "step4Title": "Une marque préférée ?",
+    "budgets": ["Moins de 200 €", "200 € - 400 €", "400 € - 600 €", "600 € - 800 €", "800 € - 1200 €", "1200 €+"],
+    "priorities": ["Appareil photo", "Performance", "Autonomie", "Écran", "Gaming", "Rapport qualité-prix"],
+    "priorityDesc": ["Meilleures photos et vidéos", "Chipsets les plus rapides", "Autonomie toute la journée+", "Écrans nets et lumineux", "Taux de rafraîchissement fluides", "Meilleur rapport qualité-prix"],
+    "sizes": ["Compact", "Standard", "Grand"],
+    "sizeDesc": ["Moins de 6,1 pouces", "6,1 à 6,5 pouces", "Plus de 6,5 pouces"],
+    "allBrands": "Toutes les marques",
+    "showResults": "Voir les résultats",
+    "startOver": "Recommencer",
+    "noResults": "Aucun téléphone ne correspond à vos critères. Essayez d'ajuster vos préférences.",
+    "yourMatches": "Vos appareils idéaux",
+    "stepOf": "Étape {current} sur 4",
+    "skip": "Passer"
+  },
   "priceAlerts": {
     "title": "Alertes de prix",
     "subtitle": "Gérez vos notifications de baisse de prix",
@@ -523,5 +556,16 @@
     "emptyTitle": "Aucune alerte de prix",
     "emptyBody": "Créez une alerte de prix sur un appareil et nous vous notifierons lorsqu'il baisse.",
     "browseDevices": "Parcourir les appareils"
+  },
+  "rankings": {
+    "title": "Meilleurs téléphones",
+    "subtitle": "Classement mis à jour en temps réel",
+    "overall": "Meilleur global",
+    "camera": "Meilleur appareil photo",
+    "performance": "Meilleure performance",
+    "battery": "Meilleure batterie",
+    "display": "Meilleur écran",
+    "value": "Meilleur rapport qualité-prix",
+    "compare": "Comparer"
   }
 }

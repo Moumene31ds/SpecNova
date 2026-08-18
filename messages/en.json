@@ -149,11 +149,14 @@
     "changed": "Changed",
     "aiSearch": "AI Search",
     "carrierBands": "Carrier Bands",
+    "phoneFinder": "Phone Finder",
     "noAccount": "Don't have an account?",
     "createAccount": "Create one",
     "themeLight": "Light",
     "themeOled": "OLED Dark",
     "themeNeon": "Neon",
+    "finder": "Finder",
+    "rankings": "Rankings",
     "adminDashboard": "Admin Dashboard"
   },
   "auth": {
@@ -349,7 +352,17 @@
     "success": "Success",
     "error": "Error",
     "warning": "Warning",
-    "info": "Info"
+    "info": "Info",
+    "totalDevices": "Total Devices",
+    "publishedDevices": "Published",
+    "draftDevices": "Drafts",
+    "avgScore": "Avg Score",
+    "totalBrands": "Total Brands",
+    "scoreDistribution": "Score Distribution",
+    "brandDistribution": "Brand Distribution",
+    "recentActivity": "Recent Activity",
+    "devicesPerBrand": "Devices per brand",
+    "scoreRanges": "Score ranges"
   },
   "footer": {
     "description": "iToPhone — AI Phone Comparison & Price Tracking",
@@ -502,6 +515,26 @@
     "info": "Info",
     "loading": "Loading…"
   },
+  "finder": {
+    "title": "Phone Finder",
+    "subtitle": "Answer 4 quick questions and we'll find your perfect phone",
+    "step1Title": "What's your budget?",
+    "step2Title": "What matters most?",
+    "step3Title": "Preferred size?",
+    "step4Title": "Any brand preference?",
+    "budgets": ["Under $200", "$200 - $400", "$400 - $600", "$600 - $800", "$800 - $1200", "$1200+"],
+    "priorities": ["Camera", "Performance", "Battery Life", "Display", "Gaming", "Value"],
+    "priorityDesc": ["Best photos & videos", "Fastest chipsets", "All-day+ endurance", "Sharp & bright screens", "Smooth frame rates", "Best bang for buck"],
+    "sizes": ["Compact", "Standard", "Large"],
+    "sizeDesc": ["Under 6.1 inches", "6.1 to 6.5 inches", "Over 6.5 inches"],
+    "allBrands": "All brands",
+    "showResults": "Show results",
+    "startOver": "Start over",
+    "noResults": "No phones match your criteria. Try adjusting your preferences.",
+    "yourMatches": "Your perfect matches",
+    "stepOf": "Step {current} of 4",
+    "skip": "Skip"
+  },
   "priceAlerts": {
     "title": "Price Alerts",
     "subtitle": "Manage your device price-drop notifications",
@@ -523,5 +556,16 @@
     "emptyTitle": "No price alerts yet",
     "emptyBody": "Set a price alert on any device and we'll notify you when the price drops.",
     "browseDevices": "Browse devices"
+  },
+  "rankings": {
+    "title": "Top Phones",
+    "subtitle": "Rankings updated in real-time",
+    "overall": "Best Overall",
+    "camera": "Best Camera",
+    "performance": "Best Performance",
+    "battery": "Best Battery",
+    "display": "Best Display",
+    "value": "Best Value",
+    "compare": "Compare"
   }
 }

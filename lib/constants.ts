@@ -75,5 +75,7 @@ export const NAV_LINKS = [
   { href: "/", label: "Explore" },
   { href: "/compare", label: "Compare" },
   { href: "/search", label: "AI Search" },
+  { href: "/rankings", label: "Rankings" },
   { href: "/bands", label: "Carrier Bands" },
+  { href: "/finder", label: "Phone Finder" },
 ] as const;

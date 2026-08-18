@@ -65,7 +65,9 @@ export function Navbar() {
     { href: "/", label: t("home") },
     { href: "/compare", label: t("compare") },
     { href: "/search", label: t("aiSearch") },
+    { href: "/rankings", label: t("rankings") },
     { href: "/bands", label: t("carrierBands") },
+    { href: "/finder", label: t("phoneFinder") },
   ] as const;
 
   return (

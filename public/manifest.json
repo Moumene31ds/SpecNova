@@ -1,0 +1,14 @@
+{
+  "name": "iToPhone — AI Phone Comparison",
+  "short_name": "iToPhone",
+  "description": "Compare every phone ever made. AI-powered specs, prices, and carrier bands.",
+  "start_url": "/en",
+  "display": "standalone",
+  "background_color": "#05050a",
+  "theme_color": "#05050a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Box, RadioTower, Sparkles, TrendingDown, WandSparkles, Zap, ShieldCheck, Globe2 } from "lucide-react";
+import { ArrowRight, Box, RadioTower, Sparkles, TrendingDown, WandSparkles, Zap, ShieldCheck, Globe2, Search } from "lucide-react";
 import { AiSearch } from "@/components/search/ai-search";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
 import { DeviceCard } from "@/components/device/device-card";
@@ -191,6 +191,12 @@ export default async function HomePage() {
               to a price and we&apos;ll notify you the moment it falls.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/finder"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-border px-6 text-base font-medium transition-colors hover:border-ring/50 sm:px-8"
+              >
+                <Search className="h-4 w-4" /> Find your perfect phone
+              </Link>
               <Link
                 href="/compare"
                 className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-base font-medium text-primary-foreground shadow-[0_0_36px_hsl(var(--glow-primary)/0.4)] transition-shadow hover:shadow-[0_0_52px_hsl(var(--glow-primary)/0.6)] sm:px-8"
