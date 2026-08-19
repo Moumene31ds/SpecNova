@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * Simple markdown renderer for AI chat responses.
- * Handles: tables, bold, italic, lists, headers, code, links.
+ * Bulletproof Markdown Renderer for AI Chat
+ * 
+ * Handles: tables (with flexible detection), bold, italic, lists, headers, code, links, emoji.
+ * Tables get special treatment — they extend beyond the chat bubble width.
  */
 
 import { useMemo } from "react";
@@ -13,131 +15,345 @@ interface MarkdownRendererProps {
 }
 
 export default function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
-  const html = useMemo(() => renderMarkdown(content), [content]);
+  const elements = useMemo(() => parseMarkdown(content), [content]);
 
   return (
-    <div
-      className={`markdown-content ${className}`}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className={`space-y-2 ${className}`}>
+      {elements.map((el, i) => (
+        <span key={i}>{el}</span>
+      ))}
+    </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Markdown → HTML
+// Types
 // ---------------------------------------------------------------------------
 
-function renderMarkdown(text: string): string {
-  let result = text;
+type MdElement = string | React.ReactNode;
 
-  // 1. Extract and replace markdown tables with HTML tables
-  result = result.replace(
-    /(?:^|\n)((?:\|.+\|\n)+)/g,
-    (_match, tableBlock: string) => {
-      const rows = tableBlock.trim().split("\n");
-      if (rows.length < 2) return tableBlock;
+// ---------------------------------------------------------------------------
+// Parser — converts markdown string to React elements
+// ---------------------------------------------------------------------------
 
-      // Check if row 2 is a separator (|---|---|)
-      const isSeparator = (row: string) => /^\|[\s\-:|]+\|$/.test(row.trim());
-      if (!isSeparator(rows[1]!)) return tableBlock;
+function parseMarkdown(text: string): MdElement[] {
+  const elements: MdElement[] = [];
+  const lines = text.split("\n");
+  let i = 0;
 
-      const headerCells = parseTableRow(rows[0]!);
-      const dataRows = rows.slice(2).filter((r) => !isSeparator(r));
+  while (i < lines.length) {
+    const line = lines[i]!;
 
-      let html = '<div class="overflow-x-auto my-3"><table class="w-full text-xs border-collapse">';
-      html += "<thead><tr>";
-      for (const cell of headerCells) {
-        html += `<th class="px-3 py-2 text-left font-semibold text-foreground bg-white/5 border-b border-white/10">${formatInline(cell)}</th>`;
+    // ── Table Detection ──
+    if (isTableRow(line)) {
+      const tableLines: string[] = [];
+      while (i < lines.length && isTableRow(lines[i]!)) {
+        tableLines.push(lines[i]!);
+        i++;
       }
-      html += "</tr></thead><tbody>";
-
-      for (let i = 0; i < dataRows.length; i++) {
-        const cells = parseTableRow(dataRows[i]!);
-        const bg = i % 2 === 0 ? "" : " bg-white/[0.02]";
-        html += `<tr class="border-b border-white/5${bg}">`;
-        for (const cell of cells) {
-          // Highlight winner cells (checkmarks, "Winner", bold text)
-          const isWinner = cell.includes("✅") || cell.includes("Winner") || cell.includes("🏆");
-          const cellClass = isWinner
-            ? "px-3 py-2 text-green-400 font-semibold"
-            : "px-3 py-2 text-muted-foreground";
-          html += `<td class="${cellClass}">${formatInline(cell)}</td>`;
-        }
-        html += "</tr>";
+      const table = parseTable(tableLines);
+      if (table) {
+        elements.push(<TableRenderer key={`table-${elements.length}`} table={table} />);
       }
+      continue;
+    }
 
-      html += "</tbody></table></div>";
-      return "\n" + html + "\n";
-    },
-  );
+    // ── Headers ──
+    if (line.startsWith("### ")) {
+      elements.push(
+        <h4 key={`h4-${i}`} className="text-sm font-bold text-foreground mt-4 mb-1 flex items-center gap-2">
+          <span className="w-1 h-4 bg-primary rounded-full" />
+          {line.slice(4)}
+        </h4>
+      );
+      i++;
+      continue;
+    }
+    if (line.startsWith("## ")) {
+      elements.push(
+        <h3 key={`h3-${i}`} className="text-base font-bold text-foreground mt-5 mb-2 flex items-center gap-2">
+          <span className="w-1.5 h-5 bg-primary rounded-full" />
+          {line.slice(3)}
+        </h3>
+      );
+      i++;
+      continue;
+    }
+    if (line.startsWith("# ")) {
+      elements.push(
+        <h2 key={`h2-${i}`} className="text-lg font-bold text-foreground mt-5 mb-2">
+          {line.slice(2)}
+        </h2>
+      );
+      i++;
+      continue;
+    }
 
-  // 2. Headers (## → <h3>, ### → <h4>)
-  result = result.replace(/^### (.+)$/gm, '<h4 class="text-sm font-semibold text-foreground mt-3 mb-1">$1</h4>');
-  result = result.replace(/^## (.+)$/gm, '<h3 class="text-base font-bold text-foreground mt-4 mb-2">$1</h3>');
-  result = result.replace(/^# (.+)$/gm, '<h2 class="text-lg font-bold text-foreground mt-4 mb-2">$1</h2>');
+    // ── Unordered list ──
+    if (/^[-*•]\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*•]\s/.test(lines[i]!)) {
+        items.push(lines[i]!.replace(/^[-*•]\s/, ""));
+        i++;
+      }
+      elements.push(
+        <ul key={`ul-${elements.length}`} className="space-y-1 my-1">
+          {items.map((item, j) => (
+            <li key={j} className="flex items-start gap-2 text-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
+              <span className="text-muted-foreground">{renderInline(item)}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
 
-  // 3. Bold **text**
-  result = result.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
+    // ── Ordered list ──
+    if (/^\d+\.\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i]!)) {
+        items.push(lines[i]!.replace(/^\d+\.\s/, ""));
+        i++;
+      }
+      elements.push(
+        <ol key={`ol-${elements.length}`} className="space-y-1 my-1">
+          {items.map((item, j) => (
+            <li key={j} className="flex items-start gap-2 text-sm">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                {j + 1}
+              </span>
+              <span className="text-muted-foreground">{renderInline(item)}</span>
+            </li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
 
-  // 4. Italic *text*
-  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em class="italic">$1</em>');
+    // ── Empty line ──
+    if (line.trim() === "") {
+      i++;
+      continue;
+    }
 
-  // 5. Inline code `text`
-  result = result.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-white/10 rounded text-xs font-mono">$1</code>');
+    // ── Regular paragraph ──
+    const paraLines: string[] = [];
+    while (
+      i < lines.length &&
+      lines[i]!.trim() !== "" &&
+      !isTableRow(lines[i]!) &&
+      !lines[i]!.startsWith("#") &&
+      !/^[-*•]\s/.test(lines[i]!) &&
+      !/^\d+\.\s/.test(lines[i]!)
+    ) {
+      paraLines.push(lines[i]!);
+      i++;
+    }
+    if (paraLines.length > 0) {
+      elements.push(
+        <p key={`p-${elements.length}`} className="text-sm text-muted-foreground leading-relaxed">
+          {renderInline(paraLines.join(" "))}
+        </p>
+      );
+    }
+  }
 
-  // 6. Unordered lists
-  result = result.replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-sm">$1</li>');
-  result = result.replace(/(<li class="ml-4 list-disc[^"]*">[^<]+<\/li>\n?)+/g, (match) => {
-    return `<ul class="my-2 space-y-1">${match}</ul>`;
-  });
-
-  // 7. Ordered lists
-  result = result.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-sm">$1</li>');
-
-  // 8. Links [text](url)
-  result = result.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>',
-  );
-
-  // 9. Line breaks → paragraphs (double newline)
-  result = result.replace(/\n\n+/g, '</p><p class="mb-2">');
-  result = `<p class="mb-2">${result}</p>`;
-
-  // 10. Single line breaks
-  result = result.replace(/\n/g, "<br/>");
-
-  // Clean up empty paragraphs
-  result = result.replace(/<p class="mb-2">\s*<\/p>/g, "");
-  result = result.replace(/<p class="mb-2">\s*(<div|<h[2-4]|<ul|<table)/g, "$1");
-  result = result.replace(/(<\/table>|<\/ul>|<\/div>|<\/h[2-4]>)\s*<\/p>/g, "$1");
-
-  return result;
+  return elements;
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Inline formatting (bold, italic, code, links, emoji)
 // ---------------------------------------------------------------------------
 
-function parseTableRow(row: string): string[] {
+function renderInline(text: string): React.ReactNode {
+  // Split by formatting markers and render each part
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    // Bold **text**
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    if (boldMatch && boldMatch.index !== undefined) {
+      if (boldMatch.index > 0) {
+        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, boldMatch.index))}</span>);
+      }
+      parts.push(
+        <strong key={key++} className="font-semibold text-foreground">{boldMatch[1]}</strong>,
+      );
+      remaining = remaining.slice(boldMatch.index + boldMatch[0].length);
+      continue;
+    }
+
+    // Italic *text*
+    const italicMatch = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/);
+    if (italicMatch && italicMatch.index !== undefined) {
+      if (italicMatch.index > 0) {
+        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, italicMatch.index))}</span>);
+      }
+      parts.push(
+        <em key={key++} className="italic text-muted-foreground/80">{italicMatch[1]}</em>,
+      );
+      remaining = remaining.slice(italicMatch.index + italicMatch[0].length);
+      continue;
+    }
+
+    // Inline code `text`
+    const codeMatch = remaining.match(/`([^`]+)`/);
+    if (codeMatch && codeMatch.index !== undefined) {
+      if (codeMatch.index > 0) {
+        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, codeMatch.index))}</span>);
+      }
+      parts.push(
+        <code key={key++} className="px-1.5 py-0.5 bg-white/10 rounded-md text-xs font-mono text-primary">{codeMatch[1]}</code>,
+      );
+      remaining = remaining.slice(codeMatch.index + codeMatch[0].length);
+      continue;
+    }
+
+    // Link [text](url)
+    const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    if (linkMatch && linkMatch.index !== undefined) {
+      if (linkMatch.index > 0) {
+        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, linkMatch.index))}</span>);
+      }
+      parts.push(
+        <a key={key++} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{linkMatch[1]}</a>,
+      );
+      remaining = remaining.slice(linkMatch.index + linkMatch[0].length);
+      continue;
+    }
+
+    // No more formatting — render rest
+    parts.push(<span key={key++}>{renderEmoji(remaining)}</span>);
+    break;
+  }
+
+  return parts.length === 1 ? parts[0] : <>{parts}</>;
+}
+
+function renderEmoji(text: string): string {
+  return text
+    .replace(/✅/g, '<span class="text-emerald-400 font-bold">✅</span>')
+    .replace(/❌/g, '<span class="text-red-400 font-bold">❌</span>')
+    .replace(/🏆/g, '<span class="text-amber-400 font-bold">🏆</span>')
+    .replace(/⭐/g, '<span class="text-amber-400">⭐</span>')
+    .replace(/🥇/g, '<span class="text-amber-400">🥇</span>')
+    .replace(/🥈/g, '<span class="text-gray-300">🥈</span>')
+    .replace(/🥉/g, '<span class="text-amber-600">🥉</span>');
+}
+
+// ---------------------------------------------------------------------------
+// Table Parser
+// ---------------------------------------------------------------------------
+
+interface ParsedTable {
+  headers: string[];
+  rows: string[][];
+}
+
+function isTableRow(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.startsWith("|") && trimmed.endsWith("|") && trimmed.includes("|");
+}
+
+function isSeparator(line: string): boolean {
+  return /^\|[\s\-:|]+\|$/.test(line.trim());
+}
+
+function parseTableRowCells(row: string): string[] {
   return row
     .split("|")
-    .slice(1, -1) // Remove first and last empty strings from leading/trailing |
+    .slice(1, -1)
     .map((cell) => cell.trim());
 }
 
-function formatInline(text: string): string {
-  let result = text;
-  // Bold
-  result = result.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
-  // Italic
-  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em class="italic">$1</em>');
-  // Code
-  result = result.replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-white/10 rounded text-xs font-mono">$1</code>');
-  // Emoji checkmarks
-  result = result.replace(/✅/g, '<span class="text-green-400">✅</span>');
-  result = result.replace(/❌/g, '<span class="text-red-400">❌</span>');
-  result = result.replace(/🏆/g, '<span class="text-yellow-400">🏆</span>');
-  result = result.replace(/⭐/g, '<span class="text-yellow-400">⭐</span>');
-  return result;
+function parseTable(lines: string[]): ParsedTable | null {
+  if (lines.length < 2) return null;
+
+  // Find header (first non-separator row)
+  const headerIdx = lines.findIndex((l) => !isSeparator(l));
+  if (headerIdx === -1) return null;
+
+  const headers = parseTableRowCells(lines[headerIdx]!);
+
+  // Find separator
+  const sepIdx = headerIdx + 1;
+  if (sepIdx >= lines.length || !isSeparator(lines[sepIdx]!)) return null;
+
+  // Data rows
+  const rows: string[][] = [];
+  for (let i = sepIdx + 1; i < lines.length; i++) {
+    if (!isSeparator(lines[i]!)) {
+      rows.push(parseTableRowCells(lines[i]!));
+    }
+  }
+
+  return { headers, rows };
+}
+
+// ---------------------------------------------------------------------------
+// Table Renderer — the star of the show
+// ---------------------------------------------------------------------------
+
+function TableRenderer({ table }: { table: ParsedTable }) {
+  return (
+    <div className="my-3 rounded-xl border border-white/10 overflow-hidden bg-white/[0.02] backdrop-blur-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10">
+              {table.headers.map((h, i) => (
+                <th
+                  key={i}
+                  className="px-3 py-2.5 text-left font-bold text-foreground border-b border-white/10 first:pl-4 last:pr-4"
+                >
+                  {renderInline(h)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((row, ri) => (
+              <tr
+                key={ri}
+                className={`
+                  border-b border-white/5 last:border-b-0
+                  ${ri % 2 === 0 ? "bg-transparent" : "bg-white/[0.015]"}
+                  hover:bg-white/[0.04] transition-colors
+                `}
+              >
+                {row.map((cell, ci) => {
+                  const isWinner =
+                    cell.includes("✅") ||
+                    cell.includes("🏆") ||
+                    cell.includes("🥇") ||
+                    cell.includes("**Winner**") ||
+                    cell.includes("**Best**");
+                  const isLoser =
+                    cell.includes("❌");
+
+                  return (
+                    <td
+                      key={ci}
+                      className={`
+                        px-3 py-2 first:pl-4 last:pr-4
+                        ${isWinner ? "text-emerald-400 font-semibold bg-emerald-500/5" : ""}
+                        ${isLoser ? "text-red-400/70" : ""}
+                        ${!isWinner && !isLoser ? "text-muted-foreground" : ""}
+                        ${ci === 0 ? "font-medium text-foreground" : ""}
+                      `}
+                    >
+                      {renderInline(cell)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

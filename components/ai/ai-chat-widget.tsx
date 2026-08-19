@@ -160,7 +160,7 @@ export default function AiChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] h-[550px] max-h-[calc(100vh-6rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-6rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border">
@@ -231,10 +231,10 @@ export default function AiChatWidget() {
                   )}
 
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`${
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-white/5 border border-white/10 rounded-bl-md"
+                        ? "max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3"
+                        : "max-w-[95%] bg-white/5 border border-white/10 rounded-2xl rounded-bl-md px-4 py-3"
                     }`}
                   >
                     {msg.isStreaming ? (
