@@ -238,329 +238,73 @@ export type AiExtractedDevice = z.infer<typeof AiExtractedDeviceSchema>;
 
 // ---------------------------------------------------------------------------
 
-const PROMPT = `You are the world's most elite phone specification analyst — a hyper-accurate, zero-hallucination extraction engine. You use Google Search Grounding to retrieve REAL-TIME data from the internet. You NEVER guess, NEVER fabricate, NEVER use training data alone.
+// ---------------------------------------------------------------------------
+// SEARCH PHASE PROMPTS — each is a short, focused search that Gemini can
+// actually execute via Google Search Grounding in a single API call.
+// ---------------------------------------------------------------------------
 
-═══════════════════════════════════════════════════════════════════
-         PHASE 1: MANDATORY MULTI-STEP SEARCH STRATEGY
-═══════════════════════════════════════════════════════════════════
+const SEARCH_IDENTIFY = `Search Google for "{query}" and extract:
+- Brand, full official name, model numbers, codename
+- Announcement date, release date, current status (available/announced/upcoming/discontinued/rumored)
+- Official product image URL (high-res, from manufacturer CDN or GSMArena)
+- Pricing (MSRP in USD or local currency with region)
 
-You MUST execute ALL 10 searches below before extracting any data. Each search targets a specific data category.
+Return as structured text with clear labels. Include ALL sources found.`;
 
-SEARCH 1 — IDENTITY & LAUNCH:
-  Query: "[phone name] specifications release date model numbers codename"
-  Extract: brand, name, model numbers, codename, status, announcedAt, releaseAt
+const SEARCH_BODY_DISPLAY = `Search Google for "{query}" and extract:
+BODY: dimensions (width × height × depth in mm), weight (grams), build description, materials (glass/aluminum/titanium), IP rating, official color names, SIM configuration
+DISPLAY: panel type (AMOLED/LTPO/OLED/LCD), size (inches), resolution (WxH), PPI, refresh rate (Hz), peak brightness (nits), HDR support, PWM dimming frequency, glass type, color depth, touch sampling rate, LTPO generation, always-on display
 
-SEARCH 2 — BODY & BUILD:
-  Query: "[phone name] dimensions weight materials build quality IP rating"
-  Extract: dimensions, weight, build description, materials, IP rating, colors
+Return as structured text with clear labels.`;
 
-SEARCH 3 — DISPLAY (TECHNICAL):
-  Query: "[phone name] display specs LTPO touch sampling rate PWM frequency color depth DeltaE"
-  Extract: type, size, resolution, PPI, refresh rate, brightness, HDR, PWM, glass, touch sampling rate, LTPO generation, always-on display
+const SEARCH_PLATFORM = `Search Google for "{query}" and extract:
+PLATFORM: OS version, UI skin, chipset full name, CPU config (cores × GHz), GPU name, process node (nm), NPU AI TOPS
+BENCHMARKS: AnTuTu v10 score, Geekbench 6 single-core and multi-core
+MEMORY: RAM options (GB), storage options (GB), storage type (UFS/NVMe), microSD card slot
 
-SEARCH 4 — CHIPSET & PERFORMANCE:
-  Query: "[phone name] chipset process node nm CPU GPU NPU TOPS transistors"
-  Extract: chipset, process node, CPU config, GPU, NPU AI TOPS, transistor count
+Return as structured text with clear labels.`;
 
-SEARCH 5 — BENCHMARKS:
-  Query: "[phone name] AnTuTu v10 Geekbench 6 score benchmark 2025"
-  Extract: AnTuTu v10, Geekbench 6 single/multi
+const SEARCH_CAMERA = `Search Google for "{query} camera specs detailed" and extract:
+REAR CAMERAS (each lens): megapixels, aperture (f/), sensor size (1/x"), pixel size (μm), field of view (degrees), optical zoom, digital zoom, stabilization type, video capabilities
+FRONT CAMERA: same fields
+CAMERA FEATURES: all computational photography and AI features
+VIDEO: max resolution, fps, HDR, ProRes, Cinematic mode
 
-SEARCH 6 — MEMORY & STORAGE:
-  Query: "[phone name] RAM storage options UFS type microSD card slot"
-  Extract: RAM options, storage options, storage type, card slot
+Return as structured text with clear labels. Include sensor model names (e.g., Sony IMX989).`;
 
-SEARCH 7 — CAMERA (DETAILED):
-  Query: "[phone name] camera specs sensor size pixel size aperture OIS computational photography AI"
-  Extract: ALL rear + front camera specs, sensor size, pixel size, aperture, stabilization, video capabilities, computational photography features, AI camera features
+const SEARCH_BATTERY_CONNECTIVITY = `Search Google for "{query}" and extract:
+BATTERY: capacity (mAh), type (Li-Po/Silicon-carbon), wired charging (W), wireless charging (W), reverse wireless (W), charging time, endurance rating, adaptive charging, bypass charging
+CONNECTIVITY: WiFi standard, Bluetooth version, NFC, USB type, IR blaster, GNSS systems, ALL 5G/4G/3G bands, Thread/Matter, UWB, satellite
+SENSORS: full list
+EXTRAS: fingerprint type, face unlock, stylus, eSIM, AI features, box contents, software update policy
 
-SEARCH 8 — BATTERY & CHARGING:
-  Query: "[phone name] battery mAh charging speed wireless adaptive charging bypass endurance test"
-  Extract: capacity, type, wired/wireless watts, reverse wireless, adaptive charging, bypass charging, endurance, charging time
+Return as structured text with clear labels.`;
 
-SEARCH 9 — CONNECTIVITY & NETWORK:
-  Query: "[phone name] 5G bands WiFi 7 Bluetooth version Thread Matter UWB satellite NFC USB"
-  Extract: WiFi, Bluetooth, NFC, USB, IR blaster, GNSS, all 5G/4G/3G bands, Thread, Matter, UWB, satellite connectivity type
+// ---------------------------------------------------------------------------
+// EXTRACTION PROMPT — takes gathered search results and produces final JSON
+// ---------------------------------------------------------------------------
 
-SEARCH 10 — EXTRAS, AI & SOFTWARE:
-  Query: "[phone name] AI features software update policy years box contents SAR value eSIM dual SIM"
-  Extract: fingerprint type, face unlock, stylus, eSIM, UWB, satellite SOS, AI features list, box contents, update policy, SAR, SIM config, pricing MSRP
+const EXTRACT_PROMPT = `You are an elite phone specification extraction engine. Given the SEARCH RESULTS below, extract a complete, accurate spec sheet as valid JSON.
 
-═══════════════════════════════════════════════════════════════════
-         PHASE 2: CROSS-VERIFICATION STRATEGY
-═══════════════════════════════════════════════════════════════════
+CRITICAL RULES:
+1. Every value MUST come from the search results. If not found, use null.
+2. NEVER fabricate or guess. null is always better than wrong data.
+3. Use EXACT official names from search results.
+4. Output ONLY valid JSON — no markdown, no commentary.
+5. Camera aperture = "f/1.7", sensor = "1/1.3\\"", pixel = "0.6μm"
+6. 5G bands = "n1","n3", 4G bands = "B1","B3", 3G bands = "B1","B2"
+7. Status: "available"=on sale, "announced"=revealed not on sale, "upcoming"=confirmed no date, "discontinued"=stopped, "rumored"=leaks only
 
-After completing ALL 10 searches, you MUST cross-verify critical specs using at least 2 independent sources:
-- Battery capacity: verify on GSMArena AND official manufacturer site
-- Camera sensor size: verify on GSMArena AND camera review sites
-- Display brightness: verify on official spec sheet AND review measurements
-- Benchmark scores: verify on nanoreview.net OR geekbench.com
-- Charging speed: verify on official site AND charging test reviews
-- Dimensions/weight: verify on manufacturer site AND retail listings
-
-If two sources CONFLICT, use the more recent data point. If still uncertain, use null.
-
-═══════════════════════════════════════════════════════════════════
-         PHASE 3: VERIFIED DATA SOURCES (TRUST HIERARCHY)
-═══════════════════════════════════════════════════════════════════
-
-TIER 1 — Official (HIGHEST TRUST):
-- Manufacturer websites: samsung.com, apple.com, oneplus.com, xiaomi.com, oppo.com, vivo.com, realme.com, motorola.com, nothing.tech, google.com/store, honor.com, huawei.com, nokia.com, sony.com, asus.com, lenovo.com, zte.com
-- Official press kits and media galleries
-
-TIER 2 — Expert Reviews (HIGH TRUST):
-- GSMArena (gsmarena.com) — most comprehensive spec database
-- PhoneArena (phonearena.com) — detailed measurements
-- AnandTech / ArsTechnica — deep technical analysis
-- DXOMARK — camera/display/audio benchmarks
-
-TIER 3 — Aggregator (MEDIUM TRUST):
-- Kimovil (kimovil.com)
-- NanoReview (nanoreview.net)
-- 91mobiles (91mobiles.com)
-- Devicespecifications.com
-- Versus.com
-- NanoReview.net
-
-TIER 4 — Retailer (REFERENCE):
-- Amazon, Best Buy, Flipkart, JD.com — for pricing/availability
-
-NEVER use: Wikipedia (for specs), random blogs, forum posts, YouTube descriptions.
-
-═══════════════════════════════════════════════════════════════════
-         CRITICAL RULES — ZERO TOLERANCE
-═══════════════════════════════════════════════════════════════════
-
-1. ACCURACY OVER COMPLETENESS: If you cannot find a verified value, set it to null. NEVER use 0, "unknown", or placeholders.
-2. NO FABRICATION: Every number, every string must come from search results. If your training data says "5000 mAh" but search confirms "4800 mAh" — use 4800.
-3. OFFICIAL NAMES ONLY: Use exact marketing names. "Titanium Black" not "black". "Snapdragon 8 Elite for Galaxy" not "SD 8 Elite".
-4. PRECISION UNITS: mAh (not Ah), nits (not cd/m²), mm (not inches), grams (not kg), GHz (not MHz for CPU config).
-5. CAMERA FORMATTING: Aperture = "f/1.7" (always with f/ prefix). Sensor = "1/1.3\"" (with 1/ prefix and " suffix). Pixel = "0.6μm" (with μm suffix).
-6. STATUS ACCURACY:
-   - "available" = on sale NOW in at least one market
-   - "announced" = officially revealed but not yet on sale
-   - "upcoming" = confirmed by manufacturer, no release date
-   - "discontinued" = no longer manufactured/sold
-   - "rumored" = leaks/rumors only, no official announcement
-7. BANDS FORMAT: 5G = "n1", "n3", "n7", "n28", "n77", "n78", "n258" (with n prefix). 4G = "B1", "B3", "B7", "B20" (with B prefix). 3G = "B1", "B2", "B5" (with B prefix).
-8. JSON ONLY: Output valid JSON. No markdown fences, no explanations, no commentary before or after.
-9. IMAGES: Return real CDN URLs from official sources. Never return placeholder URLs.
-10. PRICING: Use USD as default. If only local price available, note the currency and region.
-
-═══════════════════════════════════════════════════════════════════
-         COMPLETE FIELD SPECIFICATION
-═══════════════════════════════════════════════════════════════════
-
-TOP-LEVEL:
-- brand: Official brand name (e.g., "Samsung", "Apple", "OnePlus")
-- name: Official model name (e.g., "Galaxy S25 Ultra", "iPhone 16 Pro Max")
-- modelNumbers: ALL known model numbers (e.g., ["SM-S938U", "SM-S938B", "SM-S938N"])
-- codename: Internal codename if known (e.g., "p3q", "t91") or null
-- status: "available" | "announced" | "upcoming" | "discontinued" | "rumored"
-- announcedAt: ISO date of announcement (e.g., "2025-01-22") or null
-- releaseAt: ISO date of release (e.g., "2025-02-07") or null
-
-BODY:
-- dimensions.widthMm: width in mm (e.g., 79.0)
-- dimensions.heightMm: height in mm (e.g., 162.8)
-- dimensions.depthMm: thickness in mm (e.g., 8.6)
-- weightG: weight in grams (e.g., 233)
-- build: descriptive (e.g., "Titanium frame, Gorilla Armor 2 glass back")
-- materials: ["titanium", "glass"] or ["aluminum", "glass"] etc.
-- protection: glass type (e.g., "Gorilla Armor 2", "Ceramic Shield")
-- ipRating: "IP68", "IP67", etc. with EXACT rating string
-- colors: OFFICIAL marketing color names (e.g., ["Titanium Silverblue", "Titanium Gray"])
-- simConfig: "Nano-SIM + eSIM" or "Dual Nano-SIM" or "Nano-SIM + Nano-SIM + eSIM" etc.
-
-DISPLAY:
-- type: exact tech (e.g., "LTPO AMOLED", "Dynamic AMOLED 2X", "OLED", "IPS LCD", "MicroLED")
-- sizeIn: diagonal inches (e.g., 6.9)
-- resolution: "1440 x 3120" format
-- ppi: pixels per inch (e.g., 505)
-- refreshRateHz: max refresh (e.g., 120, 144)
-- peakBrightnessNits: outdoor peak (e.g., 2600)
-- hdrSupport: ["HDR10+", "Dolby Vision", "HLG"]
-- pwmHz: PWM dimming frequency (e.g., 1920, 2160) or null if unknown
-- glass: protective glass name (e.g., "Gorilla Armor 2")
-- colorDepth: "10-bit", "12-bit", "8-bit" etc.
-- touchSamplingRateHz: touch sampling rate (e.g., 240, 480) or null
-- alwaysOnDisplay: true/false
-- ltpoGen: "LTPO 4", "LTPO 3", "LTPO 2", "LTPS" etc. or null
-
-PLATFORM:
-- os: "Android 15", "iOS 18", "HarmonyOS 5" etc.
-- ui: "One UI 7", "MIUI 15", "OxygenOS 15" etc. or null
-- chipset: full official name (e.g., "Snapdragon 8 Elite for Galaxy", "Apple A18 Pro")
-- cpu: detailed config (e.g., "2x4.47GHz Oryon V2 + 6x3.53GHz Oryon V2")
-- gpu: GPU name (e.g., "Adreno 830", "Apple GPU 6-core")
-- processNode: manufacturing process (e.g., "3nm TSMC", "4nm Samsung") or null
-- npuTops: AI performance in TOPS (e.g., 45, 75) or null
-- antutuV10: AnTuTu v10 total score as integer (e.g., 2150000)
-- geekbench6: {"single": 2800, "multi": 8500} or null
-
-MEMORY:
-- ramOptions: [8, 12, 16] in GB as numbers
-- storageOptions: [128, 256, 512, 1024] in GB as numbers
-- storageType: "UFS 4.0", "UFS 3.1", "NVMe" etc.
-- cardSlot: true/false
-
-CAMERAS:
-REAR (array, main camera first):
-  - kind: "wide" | "ultrawide" | "telephoto" | "periscope" | "periscope telephoto" | "macro" | "depth" | "ToF" | "LiDAR"
-  - megapixels: number (e.g., 200, 50, 12, 10, 0.3)
-  - aperture: "f/1.7" format
-  - sensorSize: "1/1.3\"" format with 1/ prefix
-  - pixelSize: "0.6μm" format with μm
-  - fieldOfViewDeg: degrees (e.g., 120, 85)
-  - opticalZoom: multiplier (e.g., 3, 5, 10, 0)
-  - digitalZoom: multiplier (e.g., 100, 30)
-  - stabilization: "OIS" | "EIS" | "OIS+EIS" | "Sensor-shift OIS" | "Action mode" | "None"
-  - video: ["8K@30fps", "4K@120fps", "1080p@240fps"]
-
-FRONT (array):
-  - Same fields, kind = "selfie" or "wide"
-
-CAMERA FEATURES (array): Include ALL computational photography features:
-  "Night Mode", "Portrait Mode", "Pro Mode", "8K Video", "AI Photo Enhancer",
-  "Magic Eraser", "Best Take", "Photo Unblur", "Astrophotography",
-  "Cinematic Mode", "Action Mode", "Spatial Video", "ProRes Video",
-  "Log Video", "Director's View", "Single Take", "AI Scene Optimizer",
-  "Professional RAW", "Focus Peaking", "Zebra Lines", "Histogram"
-
-VIDEO CAPABILITIES (array): ["8K@30fps", "4K@120fps", "1080p@240fps", "HDR10+", "Dolby Vision", "ProRes 422", "Cinematic 4K@30fps"]
-
-AUDIO:
-- speakers: ["stereo"] or ["mono"] or ["stereo", "Dolby Atmos"]
-- headphoneJack: true/false
-- codecs: ["aptX HD", "LDAC", "AAC", "LC3", "Lossless"]
-- microphone: number of mics or description (e.g., "3 microphones" or null)
-
-BATTERY:
-- capacityMah: integer in mAh (e.g., 5000)
-- type: "Li-Po" | "Li-Ion" | "Silicon-carbon" etc.
-- chargingWatts: wired (e.g., 45, 100, 240)
-- chargingTimeMin: 0-100% time in minutes (e.g., 30) or null
-- wirelessWatts: wireless (e.g., 15, 50) or null
-- reverseWirelessWatts: reverse wireless (e.g., 4.5, 10) or null
-- enduranceHours: GSMArena endurance rating hours (e.g., 114) or null
-- adaptiveCharging: true/false (AI-based charging optimization)
-- bypassCharging: true/false (gaming bypass charging)
-
-CONNECTIVITY:
-- wifi: "Wi-Fi 7", "Wi-Fi 6E", "Wi-Fi 6" etc.
-- bluetooth: "5.4", "5.3", "5.2" etc.
-- nfc: true/false
-- usb: "USB-C 3.2 Gen 2", "USB-C 2.0", "USB-C 3.1" etc.
-- irBlaster: true/false
-- gnss: ["GPS L1+L5", "GLONASS", "Galileo", "BeiDou", "QZSS", "NavIC"]
-- bands: ALL cellular bands — 5G ["n1","n3","n7",...], 4G ["B1","B3",...], 3G ["B1","B2",...]
-- thread: true/false (Thread/Matter smart home protocol)
-- matter: true/false (Matter smart home standard)
-- satelliteType: "Iridium", "Globalstar", "Qualcomm Snapdragon Satellite", "MediaTek" or null
-
-SENSORS (array): ["accelerometer", "gyroscope", "proximity", "compass", "barometer", "fingerprint", "face recognition", "ToF sensor", "LiDAR scanner", "color spectrum sensor", "magnetometer"]
-
-EXTRAS:
-- fingerprint: "under-display (ultrasonic)" | "under-display (optical)" | "side-mounted" | "rear-mounted" | "under-display (3D Sonic Max)" or null
-- faceUnlock: true/false (secure 3D face unlock)
-- stylus: true/false + model (e.g., "S Pen")
-- esim: true/false
-- uwb: true/false (Ultra-Wideband)
-- satelliteSos: true/false (emergency satellite SOS)
-- aiFeatures (array): ALL on-device AI features — "Gemini Nano", "Apple Intelligence", "Galaxy AI", "Live Translate", "Circle to Search", "AI Summary", "AI Writing", "Photo AI Editor", "Real-time call translation", "AI-generated emoji", "Smart Reply"
-- boxContents (array): What's in the box — ["Phone", "USB-C cable", "SIM ejector", "Quick start guide", "S Pen"] — NEVER include charger unless confirmed
-- updatePolicy: e.g., "7 years OS, 7 years security" or "3 years OS, 4 years security"
-- sarValue: Head/Body SAR (e.g., "Head: 0.98 W/kg, Body: 1.25 W/kg") or null
-
-PRICING:
-- msrp: launch price in USD (e.g., 1299)
-- currentPrice: current market price in USD (e.g., 1099) or null
-- currency: "USD" (default)
-- region: "US", "Global", "EU" etc.
-
-SOFTWARE:
-- osUpdateYears: years of OS updates (e.g., 7)
-- securityUpdateYears: years of security updates (e.g., 7)
-- aiPlatform: "Google AI / Gemini", "Apple Intelligence", "Samsung Galaxy AI", "Qualcomm AI Engine" or null
-
-VARIANTS (array):
-- name: variant identifier (e.g., "SM-S938U", "A3293")
-- region: "US", "Global", "China", "Japan", "Europe", "India" etc.
-- chipset: if different from base (e.g., some regions get Exynos instead of Snapdragon)
-- ramGb: if different from base
-- storageGb: if different from base
-- modem: modem variant if known (e.g., "Snapdragon X80")
-- note: special notes (e.g., "China-only", "No Google services")
-
-IMAGES:
-- heroImage: OFFICIAL high-res product image URL (min 1000x1000px)
-  Search strategy:
-    1. Search: "[phone name] official press image high resolution PNG"
-    2. Search: "[brand] [name] product image official CDN"
-    3. Search: "[phone name] GSMArena pictures"
-    4. Search: "[phone name] phonearena images"
-    Prefer: samsung.com, apple.com, oneplus.com, xiaomi.com CDN URLs
-    Avoid: thumbnails, crops, watermarks, "thumb", "small", "preview"
-- gallery (array): Official press photos, color variants, multiple angles
-    Search: "[phone name] all color variants official images"
-    Search: "[phone name] press kit gallery official"
-- renderImages (array): 3D renders, product shots, promotional images
-    Search: "[phone name] official renders high quality"
-    Search: "[phone name] promotional render wallpaper"
-
-IMAGE SEARCH PRIORITY (execute ALL):
-1. Official manufacturer press/media page
-2. GSMArena device page → Pictures tab
-3. PhoneArena device page
-4. Official social media announcement posts
-5. Retailer product pages (if official unavailable)
-Set to null if no official images found — NEVER use stock/placeholder images.
-
-CONFIDENCE:
-- overall: 0.0-1.0 (how confident in ALL data combined)
-- verifiedFields (array): fields verified from 2+ sources
-- estimatedFields (array): fields from single source or partially verified
-- unavailableFields (array): fields that could not be found
-
-SOURCES (array):
-- title: source name (e.g., "GSMArena - Samsung Galaxy S25 Ultra")
-- url: valid URL starting with https://
-- kind: "official" | "review" | "benchmark" | "retailer" | "news"
-
-═══════════════════════════════════════════════════════════════════
-         OUTPUT FORMAT — EXAMPLE (Samsung Galaxy S25 Ultra)
-═══════════════════════════════════════════════════════════════════
-
-Output ONLY valid JSON. No markdown, no explanation, no commentary.
-
-{"brand":"Samsung","name":"Galaxy S25 Ultra","modelNumbers":["SM-S938U","SM-S938B","SM-S938N","SM-S938Q"],"codename":"p3q","status":"available","announcedAt":"2025-01-22","releaseAt":"2025-02-07","specs":{"body":{"dimensions":{"widthMm":79.0,"heightMm":162.8,"depthMm":8.6},"weightG":233,"build":"Titanium frame, Corning Gorilla Armor 2 glass","materials":["titanium","glass"],"protection":"Gorilla Armor 2","ipRating":"IP68","colors":["Titanium Silverblue","Titanium Gray","Titanium Black","Titanium Whitesilver"],"simConfig":"Nano-SIM + eSIM"},"display":{"type":"Dynamic AMOLED 2X","sizeIn":6.9,"resolution":"1440 x 3120","ppi":505,"refreshRateHz":120,"peakBrightnessNits":2600,"hdrSupport":["HDR10+","Dolby Vision"],"pwmHz":1920,"glass":"Gorilla Armor 2","colorDepth":"12-bit","touchSamplingRateHz":240,"alwaysOnDisplay":true,"ltpoGen":"LTPO 4"},"platform":{"os":"Android 15","ui":"One UI 7","chipset":"Snapdragon 8 Elite for Galaxy","cpu":"2x4.47GHz Oryon V2 Phoenix + 6x3.53GHz Oryon V2 Phoenix","gpu":"Adreno 830","processNode":"3nm TSMC","npuTops":75,"antutuV10":2150000,"geekbench6":{"single":2800,"multi":8500}},"memory":{"ramOptions":[12,16],"storageOptions":[256,512,1024],"storageType":"UFS 4.0","cardSlot":false},"cameras":{"rear":[{"kind":"wide","megapixels":200,"aperture":"f/1.7","sensorSize":"1/1.3\"","pixelSize":"0.6μm","fieldOfViewDeg":85,"opticalZoom":0,"digitalZoom":100,"stabilization":"OIS","video":["8K@30fps","4K@120fps","1080p@240fps"]},{"kind":"telephoto","megapixels":50,"aperture":"f/3.4","sensorSize":"1/2.52\"","pixelSize":"0.7μm","fieldOfViewDeg":22,"opticalZoom":5,"digitalZoom":100,"stabilization":"OIS","video":["8K@30fps","4K@120fps"]},{"kind":"ultrawide","megapixels":50,"aperture":"f/1.9","sensorSize":"1/2.55\"","pixelSize":"0.7μm","fieldOfViewDeg":120,"opticalZoom":0,"digitalZoom":2,"stabilization":"None","video":["8K@30fps","4K@120fps"]}],"front":[{"kind":"selfie","megapixels":12,"aperture":"f/2.2","sensorSize":"1/3.2\"","pixelSize":"1.12μm","fieldOfViewDeg":80,"opticalZoom":0,"digitalZoom":2,"stabilization":"None","video":["4K@60fps"]}],"features":["Night Mode","Portrait Mode","Pro Mode","8K Video","AI Photo Enhancer","Nightography","Expert RAW","Astrophotography","Single Take","Director's View"],"videoCapabilities":["8K@30fps","4K@120fps","1080p@240fps","HDR10+","ProRes 422"]},"audio":{"speakers":["stereo"],"headphoneJack":false,"codecs":["aptX HD","LDAC","AAC","LC3"],"microphone":"3 microphones"},"battery":{"capacityMah":5000,"type":"Li-Po","chargingWatts":45,"chargingTimeMin":65,"wirelessWatts":15,"reverseWirelessWatts":4.5,"enduranceHours":114,"adaptiveCharging":true,"bypassCharging":false},"connectivity":{"wifi":"Wi-Fi 7","bluetooth":"5.4","nfc":true,"usb":"USB-C 3.2 Gen 2","irBlaster":false,"gnss":["GPS L1+L5","GLONASS","Galileo","BeiDou","QZSS","NavIC"],"bands":["n1","n2","n3","n5","n7","n8","n12","n20","n25","n28","n38","n40","n41","n66","n71","n77","n78","n258"],"thread":true,"matter":true,"satelliteType":null},"sensors":["accelerometer","gyroscope","proximity","compass","barometer","fingerprint","face recognition","magnetometer","color spectrum sensor"],"extras":{"fingerprint":"under-display (ultrasonic)","faceUnlock":true,"stylus":true,"esim":true,"uwb":true,"satelliteSos":false,"aiFeatures":["Galaxy AI","Circle to Search","Live Translate","AI Photo Editor","Chat Assist","Notebook Assist","Circle to Search","AI Summary"],"boxContents":["Samsung Galaxy S25 Ultra","USB-C to USB-C cable","SIM ejector tool","Quick start guide"],"updatePolicy":"7 years OS, 7 years security","sarValue":"Head: 0.98 W/kg, Body: 1.25 W/kg"}},"pricing":{"msrp":1299.99,"currentPrice":1199.99,"currency":"USD","region":"US"},"software":{"osUpdateYears":7,"securityUpdateYears":7,"aiPlatform":"Samsung Galaxy AI / Google Gemini"},"variants":[{"name":"SM-S938U","region":"US","chipset":"Snapdragon 8 Elite for Galaxy","ramGb":12,"storageGb":256,"modem":"Snapdragon X80","note":"US unlocked"},{"name":"SM-S938B","region":"Global","chipset":"Snapdragon 8 Elite","ramGb":12,"storageGb":256,"modem":"Snapdragon X80","note":"International"}],"images":{"heroImage":"https://image-us.samsung.com/SamsungUS/home/mobile/phones/galaxy-s25-ultra/01172025/Gallery-S25Ultra-TitaniumSilverblue.jpg","gallery":["https://image-us.samsung.com/SamsungUS/home/mobile/phones/galaxy-s25-ultra/01172025/Gallery-S25Ultra-TitaniumGray.jpg"],"renderImages":[]},"confidence":{"overall":0.95,"verifiedFields":["brand","name","chipset","display size","battery capacity","camera megapixels","RAM","storage"],"estimatedFields":["touch sampling rate","SAR value"],"unavailableFields":[]},"sources":[{"title":"Samsung Official - Galaxy S25 Ultra","url":"https://www.samsung.com/us/smartphones/galaxy-s25-ultra/","kind":"official"},{"title":"GSMArena - Samsung Galaxy S25 Ultra","url":"https://www.gsmarena.com/samsung_galaxy_s25_ultra-13211.php","kind":"review"},{"title":"NanoReview - Samsung Galaxy S25 Ultra","url":"https://nanoreview.net/en/smartphone/samsung-galaxy-s25-ultra","kind":"retailer"}]}
-
-═══════════════════════════════════════════════════════════════════
-         QUALITY GATES — SELF-CHECK BEFORE OUTPUT
-═══════════════════════════════════════════════════════════════════
-
-Before outputting the JSON, verify:
-1. Is every camera entry complete with megapixels, aperture, sensor size?
-2. Are ALL 5G bands included (search for "[phone] 5G bands list")?
-3. Is the battery capacity correct (cross-verify 2 sources)?
-4. Is the heroImage a real, working URL (not a placeholder)?
-5. Are color names the EXACT official marketing names?
-6. Is the chipset the FULL official name (not abbreviated)?
-7. Are benchmark scores from 2024-2025 (not outdated)?
-8. Is the status current (not outdated)?
-9. Are all prices in USD?
-10. Are sources valid, clickable URLs?
-
-If any answer is "no", fix it before outputting.`;
+OUTPUT JSON SCHEMA:
+{"brand":"","name":"","modelNumbers":[],"codename":null,"status":"available","announcedAt":null,"releaseAt":null,"specs":{"body":{"dimensions":{"widthMm":null,"heightMm":null,"depthMm":null},"weightG":null,"build":null,"materials":[],"protection":null,"ipRating":null,"colors":[],"simConfig":null},"display":{"type":null,"sizeIn":null,"resolution":null,"ppi":null,"refreshRateHz":null,"peakBrightnessNits":null,"hdrSupport":[],"pwmHz":null,"glass":null,"colorDepth":null,"touchSamplingRateHz":null,"alwaysOnDisplay":false,"ltpoGen":null},"platform":{"os":null,"ui":null,"chipset":null,"cpu":null,"gpu":null,"processNode":null,"npuTops":null,"antutuV10":null,"geekbench6":{"single":null,"multi":null}},"memory":{"ramOptions":[],"storageOptions":[],"storageType":null,"cardSlot":false},"cameras":{"rear":[],"front":[],"features":[],"videoCapabilities":[]},"audio":{"speakers":[],"headphoneJack":false,"codecs":[],"microphone":null},"battery":{"capacityMah":null,"type":null,"chargingWatts":null,"chargingTimeMin":null,"wirelessWatts":null,"reverseWirelessWatts":null,"enduranceHours":null,"adaptiveCharging":false,"bypassCharging":false},"connectivity":{"wifi":null,"bluetooth":null,"nfc":false,"usb":null,"irBlaster":false,"gnss":[],"bands":[],"thread":false,"matter":false,"satelliteType":null},"sensors":[],"extras":{"fingerprint":null,"faceUnlock":false,"stylus":false,"esim":false,"uwb":false,"satelliteSos":false,"aiFeatures":[],"boxContents":[],"updatePolicy":null,"sarValue":null}},"pricing":{"msrp":null,"currentPrice":null,"currency":"USD","region":null},"software":{"osUpdateYears":null,"securityUpdateYears":null,"aiPlatform":null},"variants":[],"images":{"heroImage":null,"gallery":[],"renderImages":[]},"confidence":{"overall":0.9,"verifiedFields":[],"estimatedFields":[],"unavailableFields":[]},"sources":[{"title":"Search Results","url":"https://google.com","kind":"review"}]}`;
 
 /** Max output tokens. */
 const MAX_OUTPUT_TOKENS = 16384;
 
 // ---------------------------------------------------------------------------
-// Extract a fully-typed spec sheet for a device query.
-// Uses Gemini LLM with Google Search Grounding.
-// Caches results for 1 hour to minimize API calls.
-// Retries up to 2 times — first retry targets missing fields, second retry fixes JSON.
+// Multi-step extraction: gather search results first, then extract JSON.
+// This fixes the problem where a single 500-line prompt with 10 mandatory
+// searches overwhelms Gemini and it can't actually execute the searches.
 // ---------------------------------------------------------------------------
 
 export async function extractSpecs(query: string): Promise<{
@@ -577,28 +321,91 @@ export async function extractSpecs(query: string): Promise<{
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const isRetry = attempt > 0;
 
-    let userMessage = query;
-    if (isRetry && attempt === 1 && lastDevice) {
+    // ── PHASE 1: Gather raw search results ──
+    const searchPrompts = [
+      { key: "identify", prompt: SEARCH_IDENTIFY, label: "Identity & Launch" },
+      { key: "bodyDisplay", prompt: SEARCH_BODY_DISPLAY, label: "Body & Display" },
+      { key: "platform", prompt: SEARCH_PLATFORM, label: "Platform & Memory" },
+      { key: "camera", prompt: SEARCH_CAMERA, label: "Camera Details" },
+      { key: "battery", prompt: SEARCH_BATTERY_CONNECTIVITY, label: "Battery & Connectivity" },
+      { key: "images", prompt: `Search Google for "{query} official product image high resolution" and find:
+- Hero image: official high-res product photo URL (from manufacturer CDN, GSMArena, or PhoneArena)
+- Gallery: official press photos, color variants
+- Renders: official promotional renders
+Return ONLY valid URLs (https://). Avoid thumbnails, crops, watermarks.`, label: "Product Images" },
+    ];
+
+    console.log(`[extractSpecs] Starting multi-step extraction for: "${query}" (attempt ${attempt + 1})`);
+
+    const searchResults: string[] = [];
+    const allSources: Array<{ title: string; url: string; kind: string }> = [];
+
+    for (const sp of searchPrompts) {
+      const userMsg = sp.prompt.replace("{query}", query);
+      console.log(`[extractSpecs] → Search: ${sp.label}`);
+
+      try {
+        const result = await geminiGenerateContent({
+          systemInstruction: "You are a phone specification researcher. Use Google Search to find accurate, real-time data. Return structured text with all details found. Never fabricate data.",
+          userMessage: userMsg,
+          temperature: 0.1,
+          maxTokens: 8192,
+          useGoogleSearch: true,
+        });
+
+        if (result.text?.trim()) {
+          searchResults.push(`=== ${sp.label} ===\n${result.text}`);
+
+          // Collect grounding sources
+          const gm = result.groundingMetadata as { groundingChunks?: Array<{ web?: { title?: string; uri?: string } }> } | undefined;
+          if (gm?.groundingChunks) {
+            for (const chunk of gm.groundingChunks) {
+              const web = chunk.web;
+              if (!web?.uri) continue;
+              if (!allSources.some(s => s.url === web.uri)) {
+                allSources.push({
+                  title: web.title ?? new URL(web.uri).hostname,
+                  url: web.uri,
+                  kind: "review",
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[extractSpecs] Search "${sp.label}" failed:`, err);
+        // Continue with other searches — don't fail the whole extraction
+      }
+    }
+
+    if (searchResults.length === 0) {
+      if (attempt < MAX_RETRIES) continue;
+      throw new Error(`No search results found for "${query}". Check phone name and try again.`);
+    }
+
+    // ── PHASE 2: Extract structured JSON from gathered results ──
+    console.log(`[extractSpecs] → Extracting structured data from ${searchResults.length} search results`);
+
+    let userMessage = `SEARCH RESULTS FOR "${query}":\n\n${searchResults.join("\n\n")}`;
+    if (isRetry && lastDevice) {
       const missing = findMissingFields(lastDevice);
-      userMessage += `\n\nPREVIOUS ATTEMPT MISSING FIELDS — search specifically for these:\n${missing}`;
-    } else if (isRetry) {
-      userMessage += `\n\nPREVIOUS ATTEMPT HAD INVALID JSON — output ONLY valid JSON with no markdown or commentary.`;
+      userMessage += `\n\nPREVIOUS ATTEMPT MISSING FIELDS — search for these specifically:\n${missing}`;
     }
 
     const response = await geminiGenerateContent({
-      systemInstruction: PROMPT,
+      systemInstruction: EXTRACT_PROMPT,
       userMessage,
       temperature: isRetry ? 0 : 0.15,
       topP: 0.95,
       maxTokens: MAX_OUTPUT_TOKENS,
       responseMimeType: "application/json",
-      useGoogleSearch: true,
+      useGoogleSearch: false, // Already have search results — just extract
     });
 
     const raw = response.text;
     if (!raw.trim()) {
       if (attempt < MAX_RETRIES) continue;
-      throw new Error("Gemini returned an empty extraction after all retries.");
+      throw new Error("Gemini returned empty extraction after all retries.");
     }
 
     try {
@@ -606,24 +413,18 @@ export async function extractSpecs(query: string): Promise<{
       const device = AiExtractedDeviceSchema.parse(parsed);
       lastDevice = device;
 
-      // Extract grounding sources from Google Search
-      const gm = response.groundingMetadata as { groundingChunks?: Array<{ web?: { title?: string; uri?: string } }> } | undefined;
-      const groundingChunks = gm?.groundingChunks;
-      if (groundingChunks?.length) {
+      // Merge sources from search phase
+      if (allSources.length > 0) {
         const seen = new Set(device.sources.map((s) => s.url));
-        for (const chunk of groundingChunks) {
-          const web = chunk.web;
-          if (!web?.uri || seen.has(web.uri)) continue;
-          seen.add(web.uri);
-          device.sources.push({
-            title: web.title ?? new URL(web.uri).hostname,
-            url: web.uri,
-            kind: "retailer",
-          });
+        for (const src of allSources) {
+          if (!seen.has(src.url)) {
+            seen.add(src.url);
+            device.sources.push(src);
+          }
         }
       }
 
-      // If this is a retry and we got valid data, check if it's complete enough
+      // If retry and still too many missing fields, try again
       if (isRetry) {
         const missingCount = countNullFields(device);
         if (missingCount > 5 && attempt < MAX_RETRIES) {
