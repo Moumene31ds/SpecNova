@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { Footer } from "@/components/layout/footer";
 import { PageTransition } from "@/components/layout/page-transition";
 import { LoadingBar } from "@/components/layout/loading-bar";
+import AiChatWidget from "@/components/ai/ai-chat-widget";
 import { locales } from "@/lib/i18n";
 import "./globals.css";
 
@@ -107,6 +108,7 @@ export default async function RootLayout({
               </main>
               <Footer />
               <BottomNav />
+              <AiChatWidget />
             </TooltipProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
