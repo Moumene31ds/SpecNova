@@ -7,6 +7,7 @@ import {
   Cpu, Monitor, Gamepad2, Briefcase, GraduationCap, Heart, Zap, X,
 } from "lucide-react";
 import { recommendPhones, type RecommendationRequest } from "@/actions/aiChat";
+import MarkdownRenderer from "./markdown-renderer";
 
 const USE_CASES = [
   { id: "camera", label: "Photography", icon: Camera, color: "#F59E0B" },
@@ -295,11 +296,7 @@ export default function PhoneRecommender() {
               </div>
 
               <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
-                <div className="prose prose-invert prose-sm max-w-none">
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {result}
-                  </div>
-                </div>
+                <MarkdownRenderer content={result} />
               </div>
 
               <button

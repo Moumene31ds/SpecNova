@@ -7,6 +7,7 @@ import {
   Sparkles, ThumbsUp, ThumbsDown, Copy, RotateCcw,
 } from "lucide-react";
 import { aiChat, type ChatMessage } from "@/actions/aiChat";
+import MarkdownRenderer from "./markdown-renderer";
 
 interface ChatBubble {
   id: string;
@@ -242,8 +243,8 @@ export default function AiChatWidget() {
                         <span className="text-sm text-muted-foreground">Thinking...</span>
                       </div>
                     ) : (
-                      <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                        {msg.content}
+                      <div className="text-sm leading-relaxed">
+                        <MarkdownRenderer content={msg.content} />
                       </div>
                     )}
 

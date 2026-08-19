@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Sparkles, Trophy, AlertCircle } from "lucide-react";
 import { aiChat, type ChatMessage } from "@/actions/aiChat";
+import MarkdownRenderer from "./markdown-renderer";
 
 interface AiCompareAnalysisProps {
   phone1: string;
@@ -119,9 +120,7 @@ Be specific with numbers. Declare clear winners for each category.`,
             <h3 className="font-semibold">AI Analysis: {phone1} vs {phone2}</h3>
           </div>
           <div className="prose prose-invert prose-sm max-w-none">
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-              {analysis}
-            </div>
+            <MarkdownRenderer content={analysis} />
           </div>
           <button
             onClick={() => {
