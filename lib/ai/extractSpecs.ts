@@ -33,19 +33,32 @@ const lenientBool = z
   })
   .default(false);
 
+const lenientNum = z
+  .union([z.number(), z.string(), z.null()])
+  .transform((val) => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const cleaned = val.replace(/[^0-9.\-]/g, "");
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? null : n;
+    }
+    return null;
+  })
+  .nullish();
+
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
 const CameraSchema = z.object({
   kind: z.string().default("wide"),
-  megapixels: z.number().nullish(),
+  megapixels: lenientNum,
   aperture: z.string().nullish(),
   sensorSize: z.string().nullish(),
   pixelSize: z.union([z.string(), z.number()]).transform(v => String(v)).nullish(),
-  fieldOfViewDeg: z.number().nullish(),
-  opticalZoom: z.number().nullish(),
-  digitalZoom: z.number().nullish(),
+  fieldOfViewDeg: lenientNum,
+  opticalZoom: lenientNum,
+  digitalZoom: lenientNum,
   stabilization: z.string().nullish(),
   video: lenientArray,
 });
@@ -62,12 +75,12 @@ export const AiExtractedDeviceSchema = z.object({
     body: z.object({
       dimensions: z
         .object({
-          widthMm: z.number().nullish(),
-          heightMm: z.number().nullish(),
-          depthMm: z.number().nullish(),
+          widthMm: lenientNum,
+          heightMm: lenientNum,
+          depthMm: lenientNum,
         })
         .default({}),
-      weightG: z.number().nullish(),
+      weightG: lenientNum,
       build: z.string().nullish(),
       materials: lenientArray,
       protection: z.string().nullish(),
@@ -77,16 +90,16 @@ export const AiExtractedDeviceSchema = z.object({
     }),
     display: z.object({
       type: z.string().nullish(),
-      sizeIn: z.number().nullish(),
+      sizeIn: lenientNum,
       resolution: z.string().nullish(),
-      ppi: z.number().nullish(),
-      refreshRateHz: z.number().nullish(),
-      peakBrightnessNits: z.number().nullish(),
+      ppi: lenientNum,
+      refreshRateHz: lenientNum,
+      peakBrightnessNits: lenientNum,
       hdrSupport: lenientArray,
-      pwmHz: z.number().nullish(),
+      pwmHz: lenientNum,
       glass: z.string().nullish(),
       colorDepth: z.string().nullish(),
-      touchSamplingRateHz: z.number().nullish(),
+      touchSamplingRateHz: lenientNum,
       alwaysOnDisplay: lenientBool,
       ltpoGen: z.string().nullish(),
     }),
@@ -97,12 +110,12 @@ export const AiExtractedDeviceSchema = z.object({
       cpu: z.string().nullish(),
       gpu: z.string().nullish(),
       processNode: z.string().nullish(),
-      npuTops: z.number().nullish(),
-      antutuV10: z.number().nullish(),
+      npuTops: lenientNum,
+      antutuV10: lenientNum,
       geekbench6: z
         .object({
-          single: z.number().nullish(),
-          multi: z.number().nullish(),
+          single: lenientNum,
+          multi: lenientNum,
         })
         .nullish()
         .default({}),
@@ -148,13 +161,13 @@ export const AiExtractedDeviceSchema = z.object({
       microphone: z.string().nullish(),
     }),
     battery: z.object({
-      capacityMah: z.number().nullish(),
+      capacityMah: lenientNum,
       type: z.string().nullish(),
-      chargingWatts: z.number().nullish(),
-      chargingTimeMin: z.number().nullish(),
-      wirelessWatts: z.number().nullish(),
-      reverseWirelessWatts: z.number().nullish(),
-      enduranceHours: z.number().nullish(),
+      chargingWatts: lenientNum,
+      chargingTimeMin: lenientNum,
+      wirelessWatts: lenientNum,
+      reverseWirelessWatts: lenientNum,
+      enduranceHours: lenientNum,
       adaptiveCharging: lenientBool,
       bypassCharging: lenientBool,
     }),
@@ -185,14 +198,14 @@ export const AiExtractedDeviceSchema = z.object({
     }),
   }),
   pricing: z.object({
-    msrp: z.number().nullish(),
-    currentPrice: z.number().nullish(),
+    msrp: lenientNum,
+    currentPrice: lenientNum,
     currency: z.string().nullish(),
     region: z.string().nullish(),
   }).default({}),
   software: z.object({
-    osUpdateYears: z.number().nullish(),
-    securityUpdateYears: z.number().nullish(),
+    osUpdateYears: lenientNum,
+    securityUpdateYears: lenientNum,
     aiPlatform: z.string().nullish(),
   }).default({}),
   variants: z
@@ -201,8 +214,8 @@ export const AiExtractedDeviceSchema = z.object({
         name: z.string().nullish().default(null),
         region: z.string().nullish().default(null),
         chipset: z.string().nullish(),
-        ramGb: z.number().nullish(),
-        storageGb: z.number().nullish(),
+        ramGb: lenientNum,
+        storageGb: lenientNum,
         modem: z.string().nullish(),
         note: z.string().nullish(),
       }),
