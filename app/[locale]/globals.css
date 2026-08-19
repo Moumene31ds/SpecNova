@@ -412,4 +412,34 @@
   .will-change-transform {
     will-change: transform;
   }
+
+  /* ── AI Chat Markdown Tables ── */
+  .markdown-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .markdown-content th {
+    text-align: left;
+    padding: 0.625rem 0.75rem;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+  }
+
+  .markdown-content td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    white-space: nowrap;
+  }
+
+  .markdown-content tr:last-child td {
+    border-bottom: none;
+  }
+
+  .markdown-content tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+  }
 }

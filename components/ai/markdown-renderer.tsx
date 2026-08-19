@@ -1,13 +1,11 @@
 "use client";
 
 /**
- * Bulletproof Markdown Renderer for AI Chat
- * 
- * Handles: tables (with flexible detection), bold, italic, lists, headers, code, links, emoji.
- * Tables get special treatment — they extend beyond the chat bubble width.
+ * Bulletproof Markdown Renderer — React-native (no dangerouslySetInnerHTML)
+ * Handles: tables, bold, italic, lists, headers, code, links, emoji.
  */
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
 interface MarkdownRendererProps {
   content: string;
@@ -19,41 +17,42 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {elements.map((el, i) => (
-        <span key={i}>{el}</span>
-      ))}
+      {elements}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Types
+// Table types
 // ---------------------------------------------------------------------------
 
-type MdElement = string | React.ReactNode;
+interface ParsedTable {
+  headers: string[];
+  rows: string[][];
+}
 
 // ---------------------------------------------------------------------------
-// Parser — converts markdown string to React elements
+// Parser
 // ---------------------------------------------------------------------------
 
-function parseMarkdown(text: string): MdElement[] {
-  const elements: MdElement[] = [];
+function parseMarkdown(text: string): ReactNode[] {
+  const elements: ReactNode[] = [];
   const lines = text.split("\n");
   let i = 0;
 
   while (i < lines.length) {
     const line = lines[i]!;
 
-    // ── Table Detection ──
+    // ── Table ──
     if (isTableRow(line)) {
       const tableLines: string[] = [];
       while (i < lines.length && isTableRow(lines[i]!)) {
         tableLines.push(lines[i]!);
         i++;
       }
-      const table = parseTable(tableLines);
+      const table = buildTable(tableLines);
       if (table) {
-        elements.push(<TableRenderer key={`table-${elements.length}`} table={table} />);
+        elements.push(<TableBlock key={elements.length} table={table} />);
       }
       continue;
     }
@@ -61,29 +60,29 @@ function parseMarkdown(text: string): MdElement[] {
     // ── Headers ──
     if (line.startsWith("### ")) {
       elements.push(
-        <h4 key={`h4-${i}`} className="text-sm font-bold text-foreground mt-4 mb-1 flex items-center gap-2">
-          <span className="w-1 h-4 bg-primary rounded-full" />
+        <h4 key={elements.length} className="text-sm font-bold text-foreground mt-4 mb-1 flex items-center gap-2">
+          <span className="w-1 h-4 bg-primary rounded-full inline-block" />
           {line.slice(4)}
-        </h4>
+        </h4>,
       );
       i++;
       continue;
     }
     if (line.startsWith("## ")) {
       elements.push(
-        <h3 key={`h3-${i}`} className="text-base font-bold text-foreground mt-5 mb-2 flex items-center gap-2">
-          <span className="w-1.5 h-5 bg-primary rounded-full" />
+        <h3 key={elements.length} className="text-base font-bold text-foreground mt-5 mb-2 flex items-center gap-2">
+          <span className="w-1.5 h-5 bg-primary rounded-full inline-block" />
           {line.slice(3)}
-        </h3>
+        </h3>,
       );
       i++;
       continue;
     }
     if (line.startsWith("# ")) {
       elements.push(
-        <h2 key={`h2-${i}`} className="text-lg font-bold text-foreground mt-5 mb-2">
+        <h2 key={elements.length} className="text-lg font-bold text-foreground mt-5 mb-2">
           {line.slice(2)}
-        </h2>
+        </h2>,
       );
       i++;
       continue;
@@ -97,14 +96,14 @@ function parseMarkdown(text: string): MdElement[] {
         i++;
       }
       elements.push(
-        <ul key={`ul-${elements.length}`} className="space-y-1 my-1">
+        <ul key={elements.length} className="space-y-1 my-1">
           {items.map((item, j) => (
             <li key={j} className="flex items-start gap-2 text-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
-              <span className="text-muted-foreground">{renderInline(item)}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0 inline-block" />
+              <span className="text-muted-foreground">{parseInline(item)}</span>
             </li>
           ))}
-        </ul>
+        </ul>,
       );
       continue;
     }
@@ -117,27 +116,27 @@ function parseMarkdown(text: string): MdElement[] {
         i++;
       }
       elements.push(
-        <ol key={`ol-${elements.length}`} className="space-y-1 my-1">
+        <ol key={elements.length} className="space-y-1 my-1">
           {items.map((item, j) => (
             <li key={j} className="flex items-start gap-2 text-sm">
-              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 inline-flex">
                 {j + 1}
               </span>
-              <span className="text-muted-foreground">{renderInline(item)}</span>
+              <span className="text-muted-foreground">{parseInline(item)}</span>
             </li>
           ))}
-        </ol>
+        </ol>,
       );
       continue;
     }
 
-    // ── Empty line ──
+    // ── Empty ──
     if (line.trim() === "") {
       i++;
       continue;
     }
 
-    // ── Regular paragraph ──
+    // ── Paragraph ──
     const paraLines: string[] = [];
     while (
       i < lines.length &&
@@ -152,9 +151,9 @@ function parseMarkdown(text: string): MdElement[] {
     }
     if (paraLines.length > 0) {
       elements.push(
-        <p key={`p-${elements.length}`} className="text-sm text-muted-foreground leading-relaxed">
-          {renderInline(paraLines.join(" "))}
-        </p>
+        <p key={elements.length} className="text-sm text-muted-foreground leading-relaxed">
+          {parseInline(paraLines.join(" "))}
+        </p>,
       );
     }
   }
@@ -163,153 +162,164 @@ function parseMarkdown(text: string): MdElement[] {
 }
 
 // ---------------------------------------------------------------------------
-// Inline formatting (bold, italic, code, links, emoji)
+// Inline parser — returns ReactNode, NOT HTML strings
 // ---------------------------------------------------------------------------
 
-function renderInline(text: string): React.ReactNode {
-  // Split by formatting markers and render each part
-  const parts: React.ReactNode[] = [];
-  let remaining = text;
+function parseInline(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  let rest = text;
   let key = 0;
 
-  while (remaining.length > 0) {
+  while (rest.length > 0) {
     // Bold **text**
-    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    const boldRe = /\*\*(.+?)\*\*/;
+    const boldMatch = boldRe.exec(rest);
     if (boldMatch && boldMatch.index !== undefined) {
-      if (boldMatch.index > 0) {
-        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, boldMatch.index))}</span>);
-      }
-      parts.push(
-        <strong key={key++} className="font-semibold text-foreground">{boldMatch[1]}</strong>,
-      );
-      remaining = remaining.slice(boldMatch.index + boldMatch[0].length);
+      if (boldMatch.index > 0) parts.push(<span key={key++}>{rest.slice(0, boldMatch.index)}</span>);
+      parts.push(<strong key={key++} className="font-semibold text-foreground">{boldMatch[1]}</strong>);
+      rest = rest.slice(boldMatch.index + boldMatch[0].length);
       continue;
     }
 
     // Italic *text*
-    const italicMatch = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/);
+    const italicRe = /(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/;
+    const italicMatch = italicRe.exec(rest);
     if (italicMatch && italicMatch.index !== undefined) {
-      if (italicMatch.index > 0) {
-        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, italicMatch.index))}</span>);
-      }
-      parts.push(
-        <em key={key++} className="italic text-muted-foreground/80">{italicMatch[1]}</em>,
-      );
-      remaining = remaining.slice(italicMatch.index + italicMatch[0].length);
+      if (italicMatch.index > 0) parts.push(<span key={key++}>{rest.slice(0, italicMatch.index)}</span>);
+      parts.push(<em key={key++} className="italic">{italicMatch[1]}</em>);
+      rest = rest.slice(italicMatch.index + italicMatch[0].length);
       continue;
     }
 
-    // Inline code `text`
-    const codeMatch = remaining.match(/`([^`]+)`/);
+    // Code `text`
+    const codeRe = /`([^`]+)`/;
+    const codeMatch = codeRe.exec(rest);
     if (codeMatch && codeMatch.index !== undefined) {
-      if (codeMatch.index > 0) {
-        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, codeMatch.index))}</span>);
-      }
+      if (codeMatch.index > 0) parts.push(<span key={key++}>{rest.slice(0, codeMatch.index)}</span>);
       parts.push(
-        <code key={key++} className="px-1.5 py-0.5 bg-white/10 rounded-md text-xs font-mono text-primary">{codeMatch[1]}</code>,
+        <code key={key++} className="px-1.5 py-0.5 bg-white/10 rounded-md text-xs font-mono text-primary">
+          {codeMatch[1]}
+        </code>,
       );
-      remaining = remaining.slice(codeMatch.index + codeMatch[0].length);
+      rest = rest.slice(codeMatch.index + codeMatch[0].length);
       continue;
     }
 
     // Link [text](url)
-    const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    const linkRe = /\[([^\]]+)\]\(([^)]+)\)/;
+    const linkMatch = linkRe.exec(rest);
     if (linkMatch && linkMatch.index !== undefined) {
-      if (linkMatch.index > 0) {
-        parts.push(<span key={key++}>{renderEmoji(remaining.slice(0, linkMatch.index))}</span>);
-      }
+      if (linkMatch.index > 0) parts.push(<span key={key++}>{rest.slice(0, linkMatch.index)}</span>);
       parts.push(
-        <a key={key++} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{linkMatch[1]}</a>,
+        <a key={key++} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          {linkMatch[1]}
+        </a>,
       );
-      remaining = remaining.slice(linkMatch.index + linkMatch[0].length);
+      rest = rest.slice(linkMatch.index + linkMatch[0].length);
       continue;
     }
 
-    // No more formatting — render rest
-    parts.push(<span key={key++}>{renderEmoji(remaining)}</span>);
+    // Nothing left to match — just render the rest with emoji
+    parts.push(<span key={key++}>{renderEmoji(rest)}</span>);
     break;
   }
 
-  return parts.length === 1 ? parts[0] : <>{parts}</>;
-}
-
-function renderEmoji(text: string): string {
-  return text
-    .replace(/✅/g, '<span class="text-emerald-400 font-bold">✅</span>')
-    .replace(/❌/g, '<span class="text-red-400 font-bold">❌</span>')
-    .replace(/🏆/g, '<span class="text-amber-400 font-bold">🏆</span>')
-    .replace(/⭐/g, '<span class="text-amber-400">⭐</span>')
-    .replace(/🥇/g, '<span class="text-amber-400">🥇</span>')
-    .replace(/🥈/g, '<span class="text-gray-300">🥈</span>')
-    .replace(/🥉/g, '<span class="text-amber-600">🥉</span>');
+  return parts.length <= 1 ? (parts[0] ?? null) : <>{parts}</>;
 }
 
 // ---------------------------------------------------------------------------
-// Table Parser
+// Emoji — returns ReactNode (JSX spans), NOT HTML strings
 // ---------------------------------------------------------------------------
 
-interface ParsedTable {
-  headers: string[];
-  rows: string[][];
+function renderEmoji(text: string): ReactNode {
+  // Split text by emoji and render each as a colored span
+  const emojiMap: Record<string, string> = {
+    "✅": "text-emerald-400",
+    "❌": "text-red-400",
+    "🏆": "text-amber-400",
+    "⭐": "text-amber-400",
+    "🥇": "text-amber-400",
+    "🥈": "text-gray-300",
+    "🥉": "text-amber-600",
+    "🔥": "text-orange-400",
+    "💪": "text-blue-400",
+    "📸": "text-purple-400",
+    "🎮": "text-green-400",
+    "🔋": "text-emerald-400",
+    "📱": "text-blue-400",
+    "⚡": "text-yellow-400",
+  };
+
+  const emojiRegex = new RegExp(`(${Object.keys(emojiMap).join("|")})`, "g");
+  const tokens = text.split(emojiRegex);
+
+  if (tokens.length === 1) return text; // No emoji found
+
+  return (
+    <>
+      {tokens.map((token, i) => {
+        const colorClass = emojiMap[token];
+        if (colorClass) {
+          return (
+            <span key={i} className={`${colorClass} font-bold`}>
+              {token}
+            </span>
+          );
+        }
+        return <span key={i}>{token}</span>;
+      })}
+    </>
+  );
 }
+
+// ---------------------------------------------------------------------------
+// Table helpers
+// ---------------------------------------------------------------------------
 
 function isTableRow(line: string): boolean {
-  const trimmed = line.trim();
-  return trimmed.startsWith("|") && trimmed.endsWith("|") && trimmed.includes("|");
+  const t = line.trim();
+  return t.startsWith("|") && t.endsWith("|") && t.length > 2;
 }
 
 function isSeparator(line: string): boolean {
   return /^\|[\s\-:|]+\|$/.test(line.trim());
 }
 
-function parseTableRowCells(row: string): string[] {
-  return row
-    .split("|")
-    .slice(1, -1)
-    .map((cell) => cell.trim());
+function parseCells(row: string): string[] {
+  return row.split("|").slice(1, -1).map((c) => c.trim());
 }
 
-function parseTable(lines: string[]): ParsedTable | null {
+function buildTable(lines: string[]): ParsedTable | null {
   if (lines.length < 2) return null;
-
-  // Find header (first non-separator row)
   const headerIdx = lines.findIndex((l) => !isSeparator(l));
   if (headerIdx === -1) return null;
-
-  const headers = parseTableRowCells(lines[headerIdx]!);
-
-  // Find separator
+  const headers = parseCells(lines[headerIdx]!);
   const sepIdx = headerIdx + 1;
   if (sepIdx >= lines.length || !isSeparator(lines[sepIdx]!)) return null;
-
-  // Data rows
   const rows: string[][] = [];
-  for (let i = sepIdx + 1; i < lines.length; i++) {
-    if (!isSeparator(lines[i]!)) {
-      rows.push(parseTableRowCells(lines[i]!));
-    }
+  for (let j = sepIdx + 1; j < lines.length; j++) {
+    if (!isSeparator(lines[j]!)) rows.push(parseCells(lines[j]!));
   }
-
   return { headers, rows };
 }
 
 // ---------------------------------------------------------------------------
-// Table Renderer — the star of the show
+// Table Block Component — the star
 // ---------------------------------------------------------------------------
 
-function TableRenderer({ table }: { table: ParsedTable }) {
+function TableBlock({ table }: { table: ParsedTable }) {
   return (
     <div className="my-3 rounded-xl border border-white/10 overflow-hidden bg-white/[0.02] backdrop-blur-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10">
-              {table.headers.map((h, i) => (
+              {table.headers.map((h, ci) => (
                 <th
-                  key={i}
-                  className="px-3 py-2.5 text-left font-bold text-foreground border-b border-white/10 first:pl-4 last:pr-4"
+                  key={ci}
+                  className="px-3 py-2.5 text-left font-bold text-foreground border-b border-white/10 first:pl-4 last:pr-4 whitespace-nowrap"
                 >
-                  {renderInline(h)}
+                  {parseInline(h)}
                 </th>
               ))}
             </tr>
@@ -318,34 +328,26 @@ function TableRenderer({ table }: { table: ParsedTable }) {
             {table.rows.map((row, ri) => (
               <tr
                 key={ri}
-                className={`
-                  border-b border-white/5 last:border-b-0
-                  ${ri % 2 === 0 ? "bg-transparent" : "bg-white/[0.015]"}
-                  hover:bg-white/[0.04] transition-colors
-                `}
+                className={`border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.04] ${
+                  ri % 2 === 1 ? "bg-white/[0.015]" : ""
+                }`}
               >
                 {row.map((cell, ci) => {
-                  const isWinner =
-                    cell.includes("✅") ||
-                    cell.includes("🏆") ||
-                    cell.includes("🥇") ||
-                    cell.includes("**Winner**") ||
-                    cell.includes("**Best**");
-                  const isLoser =
-                    cell.includes("❌");
+                  const isWin =
+                    cell.includes("✅") || cell.includes("🏆") || cell.includes("🥇") ||
+                    cell.toLowerCase().includes("winner") || cell.toLowerCase().includes("best");
+                  const isLose = cell.includes("❌");
 
                   return (
                     <td
                       key={ci}
-                      className={`
-                        px-3 py-2 first:pl-4 last:pr-4
-                        ${isWinner ? "text-emerald-400 font-semibold bg-emerald-500/5" : ""}
-                        ${isLoser ? "text-red-400/70" : ""}
-                        ${!isWinner && !isLoser ? "text-muted-foreground" : ""}
-                        ${ci === 0 ? "font-medium text-foreground" : ""}
-                      `}
+                      className={`px-3 py-2 first:pl-4 last:pr-4 whitespace-nowrap ${
+                        ci === 0 ? "font-medium text-foreground" : ""
+                      } ${isWin ? "text-emerald-400 font-semibold bg-emerald-500/5" : ""} ${
+                        isLose ? "text-red-400/70" : ""
+                      } ${!isWin && !isLose && ci > 0 ? "text-muted-foreground" : ""}`}
                     >
-                      {renderInline(cell)}
+                      {parseInline(cell)}
                     </td>
                   );
                 })}
