@@ -51,7 +51,7 @@ async function fetchDevice(slug: string): Promise<DeviceData | null> {
     status: data.status ?? "rumored",
     announcedAt: data.announcedAt ? new Date(data.announcedAt.seconds * 1000).toISOString() : null,
     releaseAt: data.releaseAt ? new Date(data.releaseAt.seconds * 1000).toISOString() : null,
-    specs: data.specs as AiExtractedDevice["specs"],
+    specs: data.specs as unknown as AiExtractedDevice["specs"],
     variants,
     media: {
       heroImage: data.media?.heroImage ?? null,

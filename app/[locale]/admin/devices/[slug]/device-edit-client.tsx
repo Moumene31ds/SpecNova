@@ -236,7 +236,44 @@ function deviceToDraft(device: DeviceData): AiExtractedDevice {
     status: device.status as AiExtractedDevice["status"],
     announcedAt: device.announcedAt,
     releaseAt: device.releaseAt,
-    specs: device.specs,
+    specs: {
+      ...device.specs,
+      body: {
+        ...device.specs.body,
+        simConfig: (device.specs.body as Record<string, unknown>).simConfig as string | null ?? null,
+      },
+      display: {
+        ...device.specs.display,
+        touchSamplingRateHz: (device.specs.display as Record<string, unknown>).touchSamplingRateHz as number | null ?? null,
+        alwaysOnDisplay: (device.specs.display as Record<string, unknown>).alwaysOnDisplay as boolean ?? false,
+        ltpoGen: (device.specs.display as Record<string, unknown>).ltpoGen as string | null ?? null,
+      },
+      platform: {
+        ...device.specs.platform,
+        processNode: (device.specs.platform as Record<string, unknown>).processNode as string | null ?? null,
+        npuTops: (device.specs.platform as Record<string, unknown>).npuTops as number | null ?? null,
+      },
+      battery: {
+        ...device.specs.battery,
+        adaptiveCharging: (device.specs.battery as Record<string, unknown>).adaptiveCharging as boolean ?? false,
+        bypassCharging: (device.specs.battery as Record<string, unknown>).bypassCharging as boolean ?? false,
+      },
+      connectivity: {
+        ...device.specs.connectivity,
+        thread: (device.specs.connectivity as Record<string, unknown>).thread as boolean ?? false,
+        matter: (device.specs.connectivity as Record<string, unknown>).matter as boolean ?? false,
+        satelliteType: (device.specs.connectivity as Record<string, unknown>).satelliteType as string | null ?? null,
+      },
+      extras: {
+        ...device.specs.extras,
+        aiFeatures: (device.specs.extras as Record<string, unknown>).aiFeatures as string[] ?? [],
+        boxContents: (device.specs.extras as Record<string, unknown>).boxContents as string[] ?? [],
+        updatePolicy: (device.specs.extras as Record<string, unknown>).updatePolicy as string | null ?? null,
+        sarValue: (device.specs.extras as Record<string, unknown>).sarValue as string | null ?? null,
+      },
+    },
+    pricing: (device as unknown as Record<string, unknown>).pricing as AiExtractedDevice["pricing"] ?? { msrp: null, currentPrice: null, currency: "USD", region: null },
+    software: (device as unknown as Record<string, unknown>).software as AiExtractedDevice["software"] ?? { osUpdateYears: null, securityUpdateYears: null, aiPlatform: null },
     variants: device.variants,
     images: {
       heroImage: device.media.heroImage,
