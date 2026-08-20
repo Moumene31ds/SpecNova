@@ -10,6 +10,7 @@ import { locales, localeNames, defaultLocale } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/theme/theme-provider";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Button } from "@/components/ui/button";
+import { haptic } from "@/lib/haptic";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -159,7 +160,7 @@ export function Navbar() {
               variant="ghost"
               size="icon"
               className="h-10 w-10 md:hidden"
-              onClick={() => setMobileOpen(!mobileOpen)}
+              onClick={() => { haptic("light"); setMobileOpen(!mobileOpen); }}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

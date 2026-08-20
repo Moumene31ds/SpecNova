@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import {
   MessageCircle, X, Send, Loader2, Bot, User,
-  Sparkles, ThumbsUp, ThumbsDown, Copy, RotateCcw,
+  Sparkles, ThumbsUp, ThumbsDown, Copy, RotateCcw, GripVertical,
 } from "lucide-react";
 import { aiChat, type ChatMessage } from "@/actions/aiChat";
 import MarkdownRenderer from "./markdown-renderer";
@@ -26,6 +26,47 @@ const QUICK_QUESTIONS = [
   "Gaming phone recommendation under $800",
 ];
 
+function useDraggable(initialX: number, initialY: number) {
+  const x = useMotionValue(initialX);
+  const y = useMotionValue(initialY);
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, valueX: 0, valueY: 0 });
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY, valueX: x.get(), valueY: y.get() };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }, [x, y]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    x.set(dragStart.current.valueX + dx);
+    y.set(dragStart.current.valueY + dy);
+  }, [x, y]);
+
+  const onPointerUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  const snapToEdge = useCallback((viewportWidth: number, viewportHeight: number, buttonSize: number) => {
+    const currentX = x.get();
+    const currentY = y.get();
+    const padding = 16;
+    const halfButton = buttonSize / 2;
+
+    const clampedY = Math.max(padding + halfButton, Math.min(viewportHeight - padding - halfButton, currentY));
+    const snappedX = currentX < viewportWidth / 2 ? padding + halfButton : viewportWidth - padding - halfButton;
+
+    x.set(snappedX);
+    y.set(clampedY);
+  }, [x, y]);
+
+  return { x, y, isDragging, onPointerDown, onPointerMove, onPointerUp, snapToEdge };
+}
+
 export default function AiChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatBubble[]>([]);
@@ -33,18 +74,47 @@ export default function AiChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragThreshold = useRef(0);
+  const pointerStartPos = useRef({ x: 0, y: 0 });
 
-  // Auto-scroll to bottom
+  const fabSize = 56;
+  const initialX = typeof window !== "undefined" ? window.innerWidth - 80 : 200;
+  const initialY = typeof window !== "undefined" ? window.innerHeight - 160 : 400;
+
+  const { x, y, onPointerDown, onPointerMove, onPointerUp, snapToEdge } = useDraggable(initialX, initialY);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Focus input when opened
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
+
+  const handleFabPointerDown = useCallback((e: React.PointerEvent) => {
+    dragThreshold.current = 0;
+    pointerStartPos.current = { x: e.clientX, y: e.clientY };
+    onPointerDown(e);
+  }, [onPointerDown]);
+
+  const handleFabPointerMove = useCallback((e: React.PointerEvent) => {
+    const dx = Math.abs(e.clientX - pointerStartPos.current.x);
+    const dy = Math.abs(e.clientY - pointerStartPos.current.y);
+    dragThreshold.current = Math.max(dragThreshold.current, dx, dy);
+    onPointerMove(e);
+  }, [onPointerMove]);
+
+  const handleFabPointerUp = useCallback(() => {
+    onPointerUp();
+    if (typeof window !== "undefined") {
+      snapToEdge(window.innerWidth, window.innerHeight, fabSize);
+    }
+    if (dragThreshold.current < 8) {
+      setIsOpen(true);
+    }
+  }, [onPointerUp, snapToEdge]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -60,7 +130,6 @@ export default function AiChatWidget() {
     setInput("");
     setIsLoading(true);
 
-    // Add streaming placeholder
     const assistantId = (Date.now() + 1).toString();
     setMessages((prev) => [
       ...prev,
@@ -74,7 +143,6 @@ export default function AiChatWidget() {
     ]);
 
     try {
-      // Build conversation history for context
       const chatHistory: ChatMessage[] = [...messages, userBubble].map((m) => ({
         role: m.role,
         content: m.content,
@@ -95,7 +163,7 @@ export default function AiChatWidget() {
             : m,
         ),
       );
-    } catch (err) {
+    } catch {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
@@ -131,28 +199,33 @@ export default function AiChatWidget() {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* ── Draggable FAB ── */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            animate={{ scale: 1, opacity: 1, x, y }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:shadow-xl hover:shadow-primary/40 transition-shadow"
+            style={{ x, y, touchAction: "none" }}
+            onPointerDown={handleFabPointerDown}
+            onPointerMove={handleFabPointerMove}
+            onPointerUp={handleFabPointerUp}
+            className="fixed z-[60] w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:shadow-xl hover:shadow-primary/40 transition-shadow cursor-grab active:cursor-grabbing select-none"
           >
             <MessageCircle className="w-6 h-6" />
             {/* Pulse indicator */}
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background">
               <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
             </span>
+            {/* Drag hint for mobile */}
+            <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground/40 whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+              <GripVertical className="w-3 h-3" />
+            </span>
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Chat Window */}
+      {/* ── Chat Window ── */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -160,10 +233,10 @@ export default function AiChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-6rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed z-[60] bottom-4 right-4 left-4 sm:left-auto sm:w-[420px] sm:bottom-6 sm:right-6 top-[15vh] sm:top-auto sm:h-[600px] sm:max-h-[calc(100vh-6rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border">
+            <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center">
                   <Bot className="w-5 h-5 text-primary" />
@@ -248,7 +321,6 @@ export default function AiChatWidget() {
                       </div>
                     )}
 
-                    {/* Sources */}
                     {msg.sources && msg.sources.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-white/10">
                         <p className="text-xs text-muted-foreground mb-1">Sources:</p>
@@ -268,7 +340,6 @@ export default function AiChatWidget() {
                       </div>
                     )}
 
-                    {/* Actions */}
                     {msg.role === "assistant" && !msg.isStreaming && msg.content && (
                       <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
                         <button
@@ -299,7 +370,7 @@ export default function AiChatWidget() {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSubmit} className="p-3 border-t border-border">
+            <form onSubmit={handleSubmit} className="p-3 border-t border-border shrink-0">
               <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
                 <input
                   ref={inputRef}

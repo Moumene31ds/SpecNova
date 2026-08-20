@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { DeviceCard } from "@/components/device/device-card";
-import { getCatalog } from "@/lib/query/device-query";
 import { DeviceCardSkeleton } from "@/components/device/device-card-skeleton";
 import { LazyHeroSearch } from "@/components/search/lazy-components";
 import HeroSection from "@/components/home/hero-section";
 import BrandShowcase from "@/components/home/brand-showcase";
 import FeatureBento from "@/components/home/feature-bento";
 import CtaSection from "@/components/home/cta-section";
+import { SwipeableDeviceGrid } from "@/components/home/swipeable-devices";
+import { getCatalog } from "@/lib/query/device-query";
 
 export const metadata: Metadata = {
   title: "Every phone. Compared. Tracked.",
@@ -19,15 +19,7 @@ export const metadata: Metadata = {
 
 async function FeaturedDevices() {
   const catalog = await getCatalog(8);
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {catalog.slice(0, 8).map((device) => (
-        <div key={device.id} className="min-h-[20rem]">
-          <DeviceCard device={device} />
-        </div>
-      ))}
-    </div>
-  );
+  return <SwipeableDeviceGrid devices={catalog} />;
 }
 
 export default async function HomePage() {

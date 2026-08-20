@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ArrowRight, Cpu, Battery, Camera, Disc, Gauge, Smartphone, Zap } from "lucide-react";
+import { ArrowRight, Cpu, Battery, Camera, Smartphone, Zap } from "lucide-react";
 import { getDevice, getCatalog } from "@/lib/query/device-query";
 import { brandColor } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceCard } from "@/components/device/device-card";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
 import { ShareButton } from "@/components/device/share-button";
+import { CollapsibleSpecGrid, QuickSpecsBar } from "@/components/device/collapsible-specs";
+import { BatteryVisual, CameraVisual, ChipsetBadge } from "@/components/device/phone-visuals";
 import {
   LazyPriceHistoryChart,
   LazyBandChecker,
@@ -90,6 +92,10 @@ export default async function PhonePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {/* ── Quick Specs Floating Bar (mobile) ── */}
+      <QuickSpecsBar specs={device.specs} brand={device.brand} name={device.name} accent={accent} />
+
       {/* ---------------------------------------------- Hero header */}
       <section className="container">
         <div
@@ -193,7 +199,15 @@ export default async function PhonePage({ params }: Props) {
           </TabsList>
 
           <TabsContent value="specs">
-            <SpecGrid device={device} accent={accent} />
+            <div className="space-y-6">
+              {/* Visual highlights */}
+              <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card/40 p-4 backdrop-blur">
+                <ChipsetBadge chipset={device.specs.platform.chipset} />
+                <BatteryVisual mah={device.specs.battery.capacityMah} />
+                <CameraVisual cameras={device.specs.cameras.rear.map(c => ({ megapixels: c.megapixels, kind: c.kind, aperture: c.aperture }))} />
+              </div>
+              <CollapsibleSpecGrid specs={device.specs} accent={accent} />
+            </div>
           </TabsContent>
           <TabsContent value="price">
             <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-card/50" />}>
@@ -233,78 +247,6 @@ export default async function PhonePage({ params }: Props) {
           ))}
         </BentoGrid>
       </section>
-    </div>
-  );
-}
-
-function SpecGrid({ device, accent }: { device: Awaited<ReturnType<typeof getDevice>> & object; accent: string }) {
-  const s = device!.specs;
-  const groups = [
-    { label: "Body", icon: Smartphone, rows: [
-      ["Dimensions", `${s.body.dimensions.heightMm} × ${s.body.dimensions.widthMm} × ${s.body.dimensions.depthMm} mm`],
-      ["Weight", `${s.body.weightG} g`],
-      ["Build", s.body.build],
-      ["Protection", s.body.protection ?? "—"],
-      ["Water resistance", s.body.ipRating ?? "None"],
-      ["Colors", s.body.colors.join(", ")],
-    ]},
-    { label: "Display", icon: Zap, rows: [
-      ["Type", `${s.display.type}, ${s.display.colorDepth}`],
-      ["Size", `${s.display.sizeIn}" (${s.display.resolution})`],
-      ["Refresh", `${s.display.refreshRateHz}Hz`],
-      ["Peak brightness", `${s.display.peakBrightnessNits} nits`],
-      ["PPI", String(s.display.ppi)],
-      ["Glass", s.display.glass ?? "—"],
-    ]},
-    { label: "Performance", icon: Gauge, rows: [
-      ["Chipset", s.platform.chipset],
-      ["CPU", s.platform.cpu],
-      ["GPU", s.platform.gpu],
-      ["RAM", s.memory.ramOptions.join(" / ") + " GB"],
-      ["Storage", s.memory.storageOptions.join(" / ") + " GB " + s.memory.storageType],
-      ["AnTuTu v10", s.platform.antutuV10 ? s.platform.antutuV10.toLocaleString() : "—"],
-    ]},
-    { label: "Camera", icon: Camera, rows: [
-      ["Main", `${s.cameras.rear[0]?.megapixels} MP ${s.cameras.rear[0]?.aperture}`],
-      ["Ultrawide", `${s.cameras.rear[1]?.megapixels ?? "—"} MP`],
-      ["Telephoto", `${s.cameras.rear[2]?.megapixels ?? "—"} MP ${s.cameras.rear[2]?.opticalZoom ? `(${s.cameras.rear[2].opticalZoom}x)` : ""}`],
-      ["Front", `${s.cameras.front[0]?.megapixels} MP`],
-      ["Features", s.cameras.features.slice(0, 4).join(" · ")],
-    ]},
-    { label: "Battery", icon: Battery, rows: [
-      ["Capacity", `${s.battery.capacityMah} mAh`],
-      ["Wired", `${s.battery.chargingWatts}W`],
-      ["Wireless", `${s.battery.wirelessWatts}W`],
-      ["Endurance", s.battery.enduranceHours ? `${s.battery.enduranceHours} h` : "—"],
-      ["Charging", s.battery.chargingTimeMin ? `${s.battery.chargingTimeMin} min (0-100%)` : "—"],
-    ]},
-    { label: "Connectivity", icon: Disc, rows: [
-      ["Wi-Fi", s.connectivity.wifi],
-      ["Bluetooth", s.connectivity.bluetooth],
-      ["NFC", s.connectivity.nfc ? "Yes" : "No"],
-      ["eSIM", s.extras.esim ? "Yes" : "No"],
-      ["Satellite SOS", s.extras.satelliteSos ? "Yes" : "No"],
-      ["5G bands", s.connectivity.bands.filter((b) => b.startsWith("n")).join(" ")],
-    ]},
-  ];
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {groups.map(({ label, icon: Icon, rows }) => (
-        <div key={label} className="rounded-2xl border border-border bg-card/40 p-5 backdrop-blur">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            <Icon className="h-4 w-4" style={{ color: accent }} /> {label}
-          </h3>
-          <dl className="space-y-2">
-            {rows.map(([k, v]) => (
-              <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/40 pb-2 text-sm last:border-0 last:pb-0">
-                <dt className="shrink-0 text-muted-foreground">{k}</dt>
-                <dd className="text-right font-medium tabular-nums">{v}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ))}
     </div>
   );
 }
