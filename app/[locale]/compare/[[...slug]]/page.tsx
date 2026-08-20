@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, Gamepad2, RadioTower, Sparkles, TrendingDown, BarChart3, Camera } from "lucide-react";
+import { ArrowLeft, Gamepad2, RadioTower, Sparkles, TrendingDown, BarChart3, Camera, Smartphone } from "lucide-react";
 import { getDevices, getCatalog } from "@/lib/query/device-query";
 import { ScoreRing } from "@/components/device/score-ring";
 import { ComparePicker } from "@/components/compare/compare-picker";
@@ -121,26 +122,53 @@ export default async function ComparePage({ params }: Props) {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-10 gap-y-6">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-x-10">
               {devices.map((device, i) => (
-                <div key={device.id} className="flex items-center gap-4">
-                  <ScoreRing value={device.score.total} size={80} stroke={6} label="Score" />
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: device.brandColor }}>
-                      {device.brand}
-                    </p>
-                    <Link
-                      href={`/phone/${device.slug}`}
-                      className="font-display text-2xl font-bold tracking-tight transition-colors hover:text-primary md:text-3xl"
-                    >
-                      {device.name}
-                    </Link>
-                    <p className="mt-0.5 font-mono text-sm text-muted-foreground">
-                      {device.specs.platform.chipset}
-                    </p>
+                <div key={device.id} className="flex flex-1 items-center gap-4">
+                  {/* Phone Image */}
+                  <div
+                    className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/60 sm:h-28 sm:w-28"
+                    style={{
+                      background: `linear-gradient(135deg, ${device.brandColor}18 0%, ${device.brandColor}08 100%)`,
+                    }}
+                  >
+                    {device.media?.heroImage ? (
+                      <Image
+                        src={device.media.heroImage}
+                        alt={`${device.brand} ${device.name}`}
+                        width={112}
+                        height={112}
+                        className="h-full w-full object-contain p-1"
+                        unoptimized
+                      />
+                    ) : (
+                      <Smartphone
+                        className="h-12 w-12 sm:h-14 sm:w-14"
+                        style={{ color: `${device.brandColor}60` }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Score + Info */}
+                  <div className="flex items-center gap-3">
+                    <ScoreRing value={device.score.total} size={68} stroke={5} label="Score" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: device.brandColor }}>
+                        {device.brand}
+                      </p>
+                      <Link
+                        href={`/phone/${device.slug}`}
+                        className="block truncate font-display text-lg font-bold tracking-tight transition-colors hover:text-primary sm:text-2xl"
+                      >
+                        {device.name}
+                      </Link>
+                      <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground sm:text-sm">
+                        {device.specs.platform.chipset}
+                      </p>
+                    </div>
                   </div>
                   {i < devices.length - 1 && (
-                    <span className="hidden font-display text-2xl text-muted-foreground/40 md:block">VS</span>
+                    <span className="hidden font-display text-2xl text-muted-foreground/40 sm:block">VS</span>
                   )}
                 </div>
               ))}
@@ -156,22 +184,22 @@ export default async function ComparePage({ params }: Props) {
 
         {/* ---------------------------------------------- Tabs */}
         <Tabs defaultValue="overview" className="mt-6 w-full">
-          <TabsList className="w-full justify-start overflow-x-auto md:w-auto">
-            <TabsTrigger value="overview">Spec diffing</TabsTrigger>
-            <TabsTrigger value="benchmarks">
+          <TabsList className="w-full justify-start gap-1 overflow-x-auto p-1.5 md:w-auto">
+            <TabsTrigger value="overview" className="px-4 py-2 text-xs sm:text-sm">Spec diffing</TabsTrigger>
+            <TabsTrigger value="benchmarks" className="px-4 py-2 text-xs sm:text-sm">
               <BarChart3 className="me-1.5 h-3.5 w-3.5" /> Benchmarks
             </TabsTrigger>
-            <TabsTrigger value="cameras">
+            <TabsTrigger value="cameras" className="px-4 py-2 text-xs sm:text-sm">
               <Camera className="me-1.5 h-3.5 w-3.5" /> Camera
             </TabsTrigger>
-            <TabsTrigger value="camera-samples">Camera Samples</TabsTrigger>
-            <TabsTrigger value="gaming">
+            <TabsTrigger value="camera-samples" className="px-4 py-2 text-xs sm:text-sm">Camera Samples</TabsTrigger>
+            <TabsTrigger value="gaming" className="px-4 py-2 text-xs sm:text-sm">
               <Gamepad2 className="me-1.5 h-3.5 w-3.5" /> Gaming
             </TabsTrigger>
-            <TabsTrigger value="price">
+            <TabsTrigger value="price" className="px-4 py-2 text-xs sm:text-sm">
               <TrendingDown className="me-1.5 h-3.5 w-3.5" /> Price
             </TabsTrigger>
-            <TabsTrigger value="bands">
+            <TabsTrigger value="bands" className="px-4 py-2 text-xs sm:text-sm">
               <RadioTower className="me-1.5 h-3.5 w-3.5" /> Bands
             </TabsTrigger>
           </TabsList>
