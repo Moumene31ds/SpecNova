@@ -59,7 +59,7 @@ export default function BrandShowcase() {
                 whileHover={{ scale: 1.05, y: -4 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => router.push(`/search?q=${brand.name}`)}
-                className="group relative p-5 bg-white/5 dark:bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 transition-all duration-300 text-left overflow-hidden"
+                className="group relative p-5 bg-white/5 dark:bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 transition-all duration-300 text-start overflow-hidden"
               >
                 {/* Color Glow on Hover */}
                 <div

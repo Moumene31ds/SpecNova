@@ -317,7 +317,7 @@ function TableBlock({ table }: { table: ParsedTable }) {
               {table.headers.map((h, ci) => (
                 <th
                   key={ci}
-                  className="px-3 py-2.5 text-left font-bold text-foreground border-b border-white/10 first:pl-4 last:pr-4 whitespace-nowrap"
+                  className="px-3 py-2.5 text-start font-bold text-foreground border-b border-white/10 first:ps-4 last:pe-4 whitespace-nowrap"
                 >
                   {parseInline(h)}
                 </th>
@@ -341,7 +341,7 @@ function TableBlock({ table }: { table: ParsedTable }) {
                   return (
                     <td
                       key={ci}
-                      className={`px-3 py-2 first:pl-4 last:pr-4 whitespace-nowrap ${
+                      className={`px-3 py-2 first:ps-4 last:pe-4 whitespace-nowrap ${
                         ci === 0 ? "font-medium text-foreground" : ""
                       } ${isWin ? "text-emerald-400 font-semibold bg-emerald-500/5" : ""} ${
                         isLose ? "text-red-400/70" : ""

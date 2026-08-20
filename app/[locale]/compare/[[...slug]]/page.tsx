@@ -158,13 +158,13 @@ export default async function ComparePage({ params }: Props) {
             <TabsTrigger value="overview">Spec diffing</TabsTrigger>
             <TabsTrigger value="cameras">Camera</TabsTrigger>
             <TabsTrigger value="gaming">
-              <Gamepad2 className="mr-1.5 h-3.5 w-3.5" /> Gaming
+              <Gamepad2 className="me-1.5 h-3.5 w-3.5" /> Gaming
             </TabsTrigger>
             <TabsTrigger value="price">
-              <TrendingDown className="mr-1.5 h-3.5 w-3.5" /> Price
+              <TrendingDown className="me-1.5 h-3.5 w-3.5" /> Price
             </TabsTrigger>
             <TabsTrigger value="bands">
-              <RadioTower className="mr-1.5 h-3.5 w-3.5" /> Bands
+              <RadioTower className="me-1.5 h-3.5 w-3.5" /> Bands
             </TabsTrigger>
           </TabsList>
 

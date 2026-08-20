@@ -6,6 +6,7 @@ import { ArrowRight, Cpu, Battery, Camera, Smartphone, Zap } from "lucide-react"
 import { getDevice, getCatalog } from "@/lib/query/device-query";
 import { brandColor } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { locales } from "@/lib/i18n";
 import { ScoreRing } from "@/components/device/score-ring";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,10 +29,15 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const device = await getDevice(slug);
   if (!device) return { title: "Device not found" };
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://phone-steel-beta.vercel.app";
+  const alternates: Record<string, string> = {};
+  for (const loc of locales) {
+    alternates[loc] = `${siteUrl}/${loc}/phone/${device.slug}`;
+  }
+  alternates["x-default"] = `${siteUrl}/en/phone/${device.slug}`;
   return {
     title: `${device.brand} ${device.name} — specs, price & review`,
     description: `Full ${device.brand} ${device.name} specs, live price tracking and carrier compatibility. Score: ${device.score?.total ?? "—"}/100.`,
@@ -48,7 +54,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: device.media.heroImage ? [device.media.heroImage] : [],
     },
     alternates: {
-      canonical: `${siteUrl}/en/phone/${device.slug}`,
+      canonical: `${siteUrl}/${locale}/phone/${device.slug}`,
+      languages: alternates,
     },
   };
 }

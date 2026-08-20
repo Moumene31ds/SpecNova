@@ -302,7 +302,7 @@ export default function AiChatWidget() {
                       <button
                         key={q}
                         onClick={() => handleQuickQuestion(q)}
-                        className="w-full text-left px-3 py-3 bg-white/5 border border-white/10 rounded-xl text-sm hover:bg-white/10 transition-colors"
+                        className="w-full text-start px-3 py-3 bg-white/5 border border-white/10 rounded-xl text-sm hover:bg-white/10 transition-colors"
                       >
                         {q}
                       </button>

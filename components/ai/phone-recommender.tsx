@@ -111,7 +111,7 @@ export default function PhoneRecommender() {
                       setRequest((prev) => ({ ...prev, useCase: uc.id }));
                       setStep(1);
                     }}
-                    className={`p-4 bg-white/5 border border-white/10 rounded-xl text-left hover:border-white/20 transition-all ${
+                    className={`p-4 bg-white/5 border border-white/10 rounded-xl text-start hover:border-white/20 transition-all ${
                       request.useCase === uc.id ? "border-primary bg-primary/5" : ""
                     }`}
                   >

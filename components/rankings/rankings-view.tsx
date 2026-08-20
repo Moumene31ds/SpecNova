@@ -134,7 +134,7 @@ function RankingCard({
         </div>
 
         <div className="hidden flex-shrink-0 items-center gap-3 sm:flex">
-          <div className="hidden text-right md:block">
+          <div className="hidden text-end md:block">
             {battery && (
               <p className="text-xs text-muted-foreground">
                 {battery} mAh

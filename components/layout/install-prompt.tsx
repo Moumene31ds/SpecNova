@@ -64,7 +64,7 @@ export function InstallPrompt() {
       >
         <button
           onClick={handleDismiss}
-          className="absolute top-3 right-3 p-2 rounded-lg hover:bg-white/10 transition-colors"
+          className="absolute top-3 end-3 p-2 rounded-lg hover:bg-white/10 transition-colors"
         >
           <X className="h-4 w-4 text-muted-foreground" />
         </button>

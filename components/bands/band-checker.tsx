@@ -76,12 +76,12 @@ export function BandChecker({ device }: BandCheckerProps) {
           </span>
         </div>
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search carrier…"
-            className="h-8 w-44 rounded-lg border border-input bg-background/50 pl-8 pr-3 text-xs outline-none transition-colors focus:border-ring"
+            className="h-8 w-44 rounded-lg border border-input bg-background/50 ps-8 pe-3 text-xs outline-none transition-colors focus:border-ring"
           />
         </div>
       </div>
@@ -96,7 +96,7 @@ export function BandChecker({ device }: BandCheckerProps) {
               key={carrier}
               onClick={() => setSelected(selected === carrier ? null : carrier)}
               className={cn(
-                "flex w-full items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5 text-left transition-colors hover:bg-secondary/60 last:border-0",
+                "flex w-full items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5 text-start transition-colors hover:bg-secondary/60 last:border-0",
                 selected === carrier && "bg-secondary",
               )}
             >

@@ -78,7 +78,7 @@ export function PriceHistoryChart({
         <div className="flex items-center gap-2">
           <meta.icon className={`h-4 w-4 ${meta.className}`} />
           <h3 className="text-sm font-medium">Price history · {meta.label}</h3>
-          <Badge variant="neon" className="ml-1 font-mono">
+          <Badge variant="neon" className="ms-1 font-mono">
             {current ? formatCurrency(current.priceUsd, current.currency) : "—"}
           </Badge>
         </div>
@@ -99,7 +99,7 @@ export function PriceHistoryChart({
           ))}
           <button
             onClick={() => setModalOpen(true)}
-            className="ml-1 inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground shadow-[0_0_16px_hsl(var(--glow-primary)/0.3)] transition-shadow hover:shadow-[0_0_24px_hsl(var(--glow-primary)/0.5)]"
+            className="ms-1 inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground shadow-[0_0_16px_hsl(var(--glow-primary)/0.3)] transition-shadow hover:shadow-[0_0_24px_hsl(var(--glow-primary)/0.5)]"
           >
             <Bell className="h-3.5 w-3.5" /> Set alert
           </button>

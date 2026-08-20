@@ -74,7 +74,7 @@ Be specific with numbers. Declare clear winners for each category.`,
             <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
-            <div className="text-left">
+            <div className="text-start">
               <p className="font-semibold">Get AI Deep Analysis</p>
               <p className="text-sm text-muted-foreground">
                 Let AI compare {phone1} vs {phone2} in detail

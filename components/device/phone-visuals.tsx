@@ -29,11 +29,11 @@ export function BatteryVisual({ mah }: {
           style={{ backgroundColor: color.fill }}
         />
         {/* Battery tip */}
-        <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-1 h-3 rounded-r-sm bg-current" />
+        <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-1 h-3 rounded-e-sm bg-current" />
       </div>
       <div>
         <span className="text-xs font-semibold">{mah.toLocaleString()} mAh</span>
-        <span className="ml-1.5 text-[10px] text-muted-foreground">{color.label}</span>
+        <span className="ms-1.5 text-[10px] text-muted-foreground">{color.label}</span>
       </div>
     </div>
   );

@@ -242,7 +242,7 @@ export function PhoneListItem({ phone }: PhoneListItemProps) {
       </div>
 
       {/* Price */}
-      <div className="text-right">
+      <div className="text-end">
         {phone.pricing?.msrp && (
           <p className="text-sm font-bold">${phone.pricing.msrp.toLocaleString()}</p>
         )}

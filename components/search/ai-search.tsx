@@ -148,7 +148,7 @@ export function AiSearch({
   return (
     <div className="relative w-full max-w-2xl">
       <div className="group relative">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+        <div className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2">
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-neon-cyan" />
           ) : (
@@ -164,9 +164,9 @@ export function AiSearch({
           onBlur={() => { blurTimeoutRef.current = setTimeout(() => setOpen(false), 160); }}
           placeholder={placeholder}
           aria-label={t("aiSearchPlaceholder")}
-          className="h-14 w-full rounded-2xl border border-border bg-card/80 pl-12 pr-4 font-mono text-sm text-foreground shadow-[0_0_40px_hsl(var(--glow-primary)/0.08)] outline-none backdrop-blur-xl transition-all placeholder:text-muted-foreground focus:border-ring focus:shadow-[0_0_48px_hsl(var(--glow-primary)/0.2)]"
+          className="h-14 w-full rounded-2xl border border-border bg-card/80 ps-12 pe-4 font-mono text-sm text-foreground shadow-[0_0_40px_hsl(var(--glow-primary)/0.08)] outline-none backdrop-blur-xl transition-all placeholder:text-muted-foreground focus:border-ring focus:shadow-[0_0_48px_hsl(var(--glow-primary)/0.2)]"
         />
-        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+        <div className="pointer-events-none absolute end-4 top-1/2 -translate-y-1/2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
           {loading ? t("embedding") : t("aiVectorSearch")}
         </div>
       </div>
@@ -225,7 +225,7 @@ export function AiSearch({
                         onMouseEnter={() => setActiveIndex(i)}
                         onClick={() => navigate(i)}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                          "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start transition-colors",
                           i === activeIndex && "bg-secondary/80",
                         )}
                       >

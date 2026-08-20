@@ -101,7 +101,7 @@ export function ComparePicker({
               key={device.id}
               onClick={() => toggle(device.slug)}
               className={cn(
-                "group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card/50 p-4 text-left backdrop-blur transition-all hover:border-ring/40 hover:bg-card/80",
+                "group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card/50 p-4 text-start backdrop-blur transition-all hover:border-ring/40 hover:bg-card/80",
                 isSelected && "border-ring/60 bg-card",
               )}
               aria-pressed={isSelected}

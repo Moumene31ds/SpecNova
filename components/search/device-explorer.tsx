@@ -203,12 +203,12 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
       <div className="rounded-2xl border border-border bg-card/40 p-3 sm:p-4 backdrop-blur-xl">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Smartphone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Smartphone className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={t("aiSearchPlaceholder")}
-              className="h-11 w-full rounded-xl border border-border bg-background/60 pl-10 pr-3 text-sm outline-none transition-colors focus:border-ring"
+              className="h-11 w-full rounded-xl border border-border bg-background/60 ps-10 pe-3 text-sm outline-none transition-colors focus:border-ring"
             />
           </div>
           <button
@@ -366,13 +366,13 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="h-10 appearance-none rounded-lg border border-border bg-secondary/50 pl-7 pr-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus:border-ring"
+                className="h-10 appearance-none rounded-lg border border-border bg-secondary/50 ps-7 pe-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus:border-ring"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.key} value={opt.key}>{opt.label}</option>
                 ))}
               </select>
-              <ArrowUpDown className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <ArrowUpDown className="pointer-events-none absolute start-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             </div>
             {/* Compare toggle */}
             <button
@@ -401,7 +401,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleCompare(device.slug); }}
                     className={cn(
-                      "absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all active:scale-95",
+                      "absolute end-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all active:scale-95",
                       selectedForCompare.includes(device.slug)
                         ? "border-primary bg-primary text-primary-foreground scale-110"
                         : "border-white/30 bg-black/40 text-white/70 hover:border-white/60"

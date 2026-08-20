@@ -59,7 +59,7 @@ export function SpecDiffTable({ devices }: SpecDiffTableProps) {
           <div key={group} className="border-b border-border/60 last:border-0">
             <button
               onClick={() => toggleGroup(group)}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+              className="flex w-full items-center justify-between px-4 py-2.5 text-start text-xs font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
             >
               {group}
               <ChevronDown

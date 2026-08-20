@@ -444,12 +444,23 @@
   }
 
   /* ── Arabic / RTL Support ── */
-  [dir="rtl"] .font-arabic {
-    font-family: var(--font-arabic), "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  /* Apply Arabic font to the html element when dir=rtl, but let Latin text
+     override with font-sans where needed. Arabic characters will use
+     --font-arabic via the cascade. */
+  [dir="rtl"] {
+    font-family: var(--font-arabic), "Noto Sans Arabic", var(--font-sans), system-ui, sans-serif;
+  }
+
+  /* Latin text inside RTL pages keeps the sans font for readability */
+  [dir="rtl"] code,
+  [dir="rtl"] pre,
+  [dir="rtl"] .font-mono,
+  [dir="rtl"] .font-sans {
+    font-family: var(--font-sans), system-ui, sans-serif;
   }
 
   [dir="rtl"] .markdown-content th {
-    text-align: right;
+    text-align: start;
   }
 
   /* Logical property helpers for RTL */

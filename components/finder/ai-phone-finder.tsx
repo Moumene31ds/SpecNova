@@ -64,6 +64,35 @@ export function AiPhoneFinder() {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
+  // ── Persistence ──────────────────────────────────────────────────────
+  const STORAGE_KEY = "itophone-finder-chat";
+
+  // Load saved conversation on mount
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as ChatMessage[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  // Save conversation when messages change
+  React.useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      } catch {
+        // Storage full, ignore
+      }
+    }
+  }, [messages]);
+
   // Auto-scroll to bottom
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -141,6 +170,7 @@ export function AiPhoneFinder() {
   const startOver = React.useCallback(() => {
     setMessages([]);
     setInput("");
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
@@ -270,7 +300,7 @@ export function AiPhoneFinder() {
                           </div>
                           <Link
                             href={`/phone/${device.slug}`}
-                            className="ml-3 flex h-8 shrink-0 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                            className="ms-3 flex h-8 shrink-0 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
                           >
                             <ArrowRight className="h-3 w-3" />
                           </Link>

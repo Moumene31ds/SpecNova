@@ -45,7 +45,7 @@ const notoSansArabic = Noto_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://specnova.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://phone-steel-beta.vercel.app"),
   title: {
     default: "iToPhone — AI Phone Comparison & Price Tracking",
     template: "%s · iToPhone",
@@ -109,8 +109,21 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {locales.map((loc) => (
+          <link
+            key={loc}
+            rel="alternate"
+            hrefLang={loc}
+            href={`${process.env.NEXT_PUBLIC_APP_URL || "https://phone-steel-beta.vercel.app"}/${loc}`}
+          />
+        ))}
+        <link
+          rel="alternate"
+          hrefLang="x-default"
+          href={`${process.env.NEXT_PUBLIC_APP_URL || "https://phone-steel-beta.vercel.app"}/en`}
+        />
       </head>
-      <body className={rtl ? "font-arabic" : "font-sans"}>
+      <body className="font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <TooltipProvider delayDuration={150}>

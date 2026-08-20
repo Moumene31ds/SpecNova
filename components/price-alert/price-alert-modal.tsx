@@ -114,7 +114,7 @@ export function PriceAlertModal({
                     min={1}
                     value={targetPrice}
                     onChange={(e) => setTargetPrice(Number(e.target.value))}
-                    className="h-9 w-24 text-right font-mono"
+                    className="h-9 w-24 text-end font-mono"
                   />
                   <span className="text-sm text-muted-foreground">USD</span>
                 </div>

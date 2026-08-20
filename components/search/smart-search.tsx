@@ -222,9 +222,9 @@ export default function SmartSearch() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
                           {liveResult.source === "database" ? (
-                            <><Database className="w-3 h-3 inline mr-1" />Database</>
+                            <><Database className="w-3 h-3 inline me-1" />Database</>
                           ) : (
-                            <><Zap className="w-3 h-3 inline mr-1" />Live Fetch</>
+                            <><Zap className="w-3 h-3 inline me-1" />Live Fetch</>
                           )}
                         </span>
                         <span className="text-xs text-muted-foreground">
@@ -249,7 +249,7 @@ export default function SmartSearch() {
                   </div>
                   {liveResult.source === "live" && (
                     <div className="mt-3 text-xs text-muted-foreground text-center">
-                      <Sparkles className="w-3 h-3 inline mr-1" />
+                      <Sparkles className="w-3 h-3 inline me-1" />
                       Auto-saved to database for future searches
                     </div>
                   )}
@@ -283,7 +283,7 @@ export default function SmartSearch() {
               <button
                 key={`${s.text}-${i}`}
                 onClick={() => handleSuggestionClick(s.text)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors text-start"
               >
                 {s.kind === "brand" ? (
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">

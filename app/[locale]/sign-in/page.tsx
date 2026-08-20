@@ -321,7 +321,7 @@ function SignInForm({ locale }: { locale: string }) {
                 {t("email")}
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors duration-200 peer-focus-within:text-neon-cyan">
+                <div className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors duration-200 peer-focus-within:text-neon-cyan">
                   <Mail className="h-5 w-5" />
                 </div>
                 <input
@@ -335,7 +335,7 @@ function SignInForm({ locale }: { locale: string }) {
                   onChange={(e) => handleEmailChange(e.target.value)}
                   onBlur={() => setInputErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
                   className={cn(
-                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 pl-12 pr-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
+                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 ps-12 pe-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
                     "focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30",
                     "hover:border-border",
                     inputErrors.email && "border-destructive/50 focus:border-destructive focus:ring-destructive/20",
@@ -350,7 +350,7 @@ function SignInForm({ locale }: { locale: string }) {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     id="email-error"
-                    className="absolute -bottom-5 left-4 text-xs text-destructive"
+                    className="absolute -bottom-5 start-4 text-xs text-destructive"
                     role="alert"
                   >
                     {inputErrors.email}
@@ -369,7 +369,7 @@ function SignInForm({ locale }: { locale: string }) {
                 {t("password")}
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors duration-200 peer-focus-within:text-neon-cyan">
+                <div className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors duration-200 peer-focus-within:text-neon-cyan">
                   <Lock className="h-5 w-5" />
                 </div>
                 <input
@@ -383,7 +383,7 @@ function SignInForm({ locale }: { locale: string }) {
                   onChange={(e) => handlePasswordChange(e.target.value)}
                   onBlur={() => setInputErrors((prev) => ({ ...prev, password: validatePassword(password) }))}
                   className={cn(
-                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 pl-12 pr-12 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
+                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 ps-12 pe-12 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
                     "focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30",
                     "hover:border-border",
                     inputErrors.password && "border-destructive/50 focus:border-destructive focus:ring-destructive/20",
@@ -396,7 +396,7 @@ function SignInForm({ locale }: { locale: string }) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -406,7 +406,7 @@ function SignInForm({ locale }: { locale: string }) {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     id="password-error"
-                    className="absolute -bottom-5 left-4 text-xs text-destructive"
+                    className="absolute -bottom-5 start-4 text-xs text-destructive"
                     role="alert"
                   >
                     {inputErrors.password}

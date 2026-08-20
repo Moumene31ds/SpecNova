@@ -168,7 +168,7 @@ export function PriceAlertList({ alerts: initial, labels }: PriceAlertListProps)
                         <Mail className="h-3 w-3" /> {labels.email}
                       </Badge>
                     )}
-                    <Badge variant="success" className="ml-1">{labels.active}</Badge>
+                    <Badge variant="success" className="ms-1">{labels.active}</Badge>
                   </div>
                 </div>
 

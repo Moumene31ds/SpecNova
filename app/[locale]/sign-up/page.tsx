@@ -239,7 +239,7 @@ function SignUpForm({ locale }: { locale: string }) {
             >
               <label htmlFor="name" className="sr-only">{t("name")}</label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
+                <div className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
                   <User className="h-5 w-5" />
                 </div>
                 <input
@@ -253,7 +253,7 @@ function SignUpForm({ locale }: { locale: string }) {
                     if (inputErrors.name) setInputErrors((prev) => ({ ...prev, name: e.target.value.trim() ? undefined : validationT("required") }));
                   }}
                   className={cn(
-                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 pl-12 pr-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
+                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 ps-12 pe-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
                     "focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30",
                     inputErrors.name && "border-red-500/60 focus:border-red-500/60 focus:ring-red-500/30",
                   )}
@@ -274,7 +274,7 @@ function SignUpForm({ locale }: { locale: string }) {
             >
               <label htmlFor="email" className="sr-only">{t("email")}</label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
+                <div className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
                   <Mail className="h-5 w-5" />
                 </div>
                 <input
@@ -289,7 +289,7 @@ function SignUpForm({ locale }: { locale: string }) {
                     if (inputErrors.email) setInputErrors((prev) => ({ ...prev, email: validateEmail(e.target.value) }));
                   }}
                   className={cn(
-                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 pl-12 pr-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
+                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 ps-12 pe-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
                     "focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30",
                     inputErrors.email && "border-red-500/60 focus:border-red-500/60 focus:ring-red-500/30",
                   )}
@@ -310,7 +310,7 @@ function SignUpForm({ locale }: { locale: string }) {
             >
               <label htmlFor="password" className="sr-only">{t("password")}</label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
+                <div className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
                   <Lock className="h-5 w-5" />
                 </div>
                 <input
@@ -331,7 +331,7 @@ function SignUpForm({ locale }: { locale: string }) {
                     }
                   }}
                   className={cn(
-                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 pl-12 pr-12 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
+                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 ps-12 pe-12 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
                     "focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30",
                     inputErrors.password && "border-red-500/60 focus:border-red-500/60 focus:ring-red-500/30",
                   )}
@@ -339,7 +339,7 @@ function SignUpForm({ locale }: { locale: string }) {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors hover:text-foreground"
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors hover:text-foreground"
                   aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -360,7 +360,7 @@ function SignUpForm({ locale }: { locale: string }) {
             >
               <label htmlFor="confirm" className="sr-only">{t("confirmPassword")}</label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
+                <div className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">
                   <Lock className="h-5 w-5" />
                 </div>
                 <input
@@ -375,7 +375,7 @@ function SignUpForm({ locale }: { locale: string }) {
                     if (inputErrors.confirm) setInputErrors((prev) => ({ ...prev, confirm: validateConfirm(e.target.value) }));
                   }}
                   className={cn(
-                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 pl-12 pr-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
+                    "peer h-12 w-full rounded-xl bg-background/50 border border-border/50 ps-12 pe-4 text-foreground placeholder:text-muted-foreground/50 transition-all duration-200",
                     "focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30",
                     inputErrors.confirm && "border-red-500/60 focus:border-red-500/60 focus:ring-red-500/30",
                   )}
@@ -411,7 +411,7 @@ function SignUpForm({ locale }: { locale: string }) {
                   <span>{status === "busy" ? t("signingUp") : status === "success" ? t("accountCreated") : t("signUpButton")}</span>
                 </span>
                 {status !== "busy" && status !== "success" && (
-                  <ArrowRight className="h-4 w-4 ml-2 text-primary-foreground/70 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  <ArrowRight className="h-4 w-4 ms-2 text-primary-foreground/70 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-neon-cyan to-neon-violet opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
               </motion.button>

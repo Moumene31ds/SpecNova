@@ -92,7 +92,7 @@ export default function FeatureBento() {
               whileHover={{ scale: 1.02, y: -4 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push(feature.link)}
-              className={`group relative p-6 bg-white/5 dark:bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 transition-all duration-300 text-left overflow-hidden ${feature.span}`}
+              className={`group relative p-6 bg-white/5 dark:bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 transition-all duration-300 text-start overflow-hidden ${feature.span}`}
             >
               {/* Background Glow */}
               <div

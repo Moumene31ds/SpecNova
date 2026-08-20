@@ -100,7 +100,7 @@ function CollapsibleSpecGroup({
     <div className="rounded-2xl border border-border bg-card/40 backdrop-blur overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between p-4 text-start hover:bg-white/5 transition-colors"
       >
         <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
           <Icon className="h-4 w-4" style={{ color: accent }} /> {label}
@@ -125,7 +125,7 @@ function CollapsibleSpecGroup({
               {rows.map(([k, v]) => (
                 <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/40 pb-2 text-sm last:border-0 last:pb-0">
                   <dt className="shrink-0 text-muted-foreground">{k}</dt>
-                  <dd className="text-right font-medium tabular-nums min-w-0 truncate">{v || "—"}</dd>
+                  <dd className="text-end font-medium tabular-nums min-w-0 truncate">{v || "—"}</dd>
                 </div>
               ))}
             </dl>
