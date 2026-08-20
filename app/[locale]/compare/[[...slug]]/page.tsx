@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, Gamepad2, RadioTower, Sparkles, TrendingDown } from "lucide-react";
+import { ArrowLeft, Gamepad2, RadioTower, Sparkles, TrendingDown, BarChart3, Camera } from "lucide-react";
 import { getDevices, getCatalog } from "@/lib/query/device-query";
 import { ScoreRing } from "@/components/device/score-ring";
 import { ComparePicker } from "@/components/compare/compare-picker";
@@ -9,6 +9,8 @@ import { SpecDiffTable } from "@/components/compare/spec-diff-table";
 import { ShareButton } from "@/components/compare/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import BenchmarkComparison from "@/components/compare/benchmark-comparison";
+import CameraSampleComparison from "@/components/compare/camera-sample-comparison";
 import {
   LazyWinnerBanner,
   LazyCameraComparator,
@@ -156,7 +158,13 @@ export default async function ComparePage({ params }: Props) {
         <Tabs defaultValue="overview" className="mt-6 w-full">
           <TabsList className="w-full justify-start overflow-x-auto md:w-auto">
             <TabsTrigger value="overview">Spec diffing</TabsTrigger>
-            <TabsTrigger value="cameras">Camera</TabsTrigger>
+            <TabsTrigger value="benchmarks">
+              <BarChart3 className="me-1.5 h-3.5 w-3.5" /> Benchmarks
+            </TabsTrigger>
+            <TabsTrigger value="cameras">
+              <Camera className="me-1.5 h-3.5 w-3.5" /> Camera
+            </TabsTrigger>
+            <TabsTrigger value="camera-samples">Camera Samples</TabsTrigger>
             <TabsTrigger value="gaming">
               <Gamepad2 className="me-1.5 h-3.5 w-3.5" /> Gaming
             </TabsTrigger>
@@ -172,10 +180,41 @@ export default async function ComparePage({ params }: Props) {
             <SpecDiffTable devices={devices} />
           </TabsContent>
 
+          <TabsContent value="benchmarks" className="mt-4">
+            <BenchmarkComparison devices={devices} />
+          </TabsContent>
+
           <TabsContent value="cameras" className="mt-4">
             <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-card/50" />}>
               <LazyCameraComparator devices={devices} />
             </Suspense>
+          </TabsContent>
+
+          <TabsContent value="camera-samples" className="mt-4">
+            {devices.length >= 2 && (
+              <CameraSampleComparison
+                deviceA={{
+                  brand: devices[0]!.brand,
+                  name: devices[0]!.name,
+                  cameraSamples: devices[0]!.media.cameraSamples ?? {},
+                  cameras: {
+                    rear: devices[0]!.specs.cameras.rear,
+                    front: devices[0]!.specs.cameras.front[0] ?? { megapixels: 0, aperture: null },
+                  },
+                  specs: { display: { sizeIn: devices[0]!.specs.display.sizeIn } },
+                }}
+                deviceB={{
+                  brand: devices[1]!.brand,
+                  name: devices[1]!.name,
+                  cameraSamples: devices[1]!.media.cameraSamples ?? {},
+                  cameras: {
+                    rear: devices[1]!.specs.cameras.rear,
+                    front: devices[1]!.specs.cameras.front[0] ?? { megapixels: 0, aperture: null },
+                  },
+                  specs: { display: { sizeIn: devices[1]!.specs.display.sizeIn } },
+                }}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="gaming" className="mt-4">

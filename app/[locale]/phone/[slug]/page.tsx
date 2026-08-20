@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ArrowRight, Cpu, Battery, Camera, Smartphone, Zap } from "lucide-react";
+import { ArrowRight, Cpu, Battery, Camera, Smartphone, Zap, Star, Clock, Shield } from "lucide-react";
 import { getDevice, getCatalog } from "@/lib/query/device-query";
 import { brandColor } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -17,6 +17,8 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { CollapsibleSpecGrid, QuickSpecsBar } from "@/components/device/collapsible-specs";
 import { BatteryVisual, CameraVisual, ChipsetBadge } from "@/components/device/phone-visuals";
 import { PhoneViewTracker } from "@/components/device/phone-view-tracker";
+import { UserReviews } from "@/components/device/user-reviews";
+import UpdateTracker from "@/components/device/update-tracker";
 import {
   LazyPriceHistoryChart,
   LazyBandChecker,
@@ -230,6 +232,8 @@ export default async function PhonePage({ params }: Props) {
             <TabsTrigger value="specs" className="text-xs sm:text-sm">Full specs</TabsTrigger>
             <TabsTrigger value="price" className="text-xs sm:text-sm">Price history</TabsTrigger>
             <TabsTrigger value="bands" className="text-xs sm:text-sm">Carrier bands</TabsTrigger>
+            <TabsTrigger value="reviews" className="text-xs sm:text-sm gap-1"><Star className="h-3 w-3" /> Reviews</TabsTrigger>
+            <TabsTrigger value="updates" className="text-xs sm:text-sm gap-1"><Clock className="h-3 w-3" /> Updates</TabsTrigger>
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
           </TabsList>
 
@@ -259,6 +263,27 @@ export default async function PhonePage({ params }: Props) {
             <Suspense fallback={<div className="h-48 animate-pulse rounded-2xl bg-card/50" />}>
               <LazyBandChecker device={device} />
             </Suspense>
+          </TabsContent>
+          <TabsContent value="reviews">
+            <UserReviews
+              deviceId={device.id}
+              brand={device.brand}
+              deviceName={device.name}
+              score={device.score}
+            />
+          </TabsContent>
+          <TabsContent value="updates">
+            <UpdateTracker
+              device={{
+                brand: device.brand,
+                name: device.name,
+                specs: {
+                  platform: { os: device.specs.platform.os, ui: device.specs.platform.ui },
+                },
+                releaseAt: device.releaseAt,
+                status: device.status,
+              }}
+            />
           </TabsContent>
           <TabsContent value="overview">
             <p className="max-w-3xl leading-relaxed text-muted-foreground">
