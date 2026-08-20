@@ -184,23 +184,23 @@ export default async function ComparePage({ params }: Props) {
 
         {/* ---------------------------------------------- Tabs */}
         <Tabs defaultValue="overview" className="mt-6 w-full">
-          <TabsList className="w-full justify-start gap-1 overflow-x-auto p-1.5 md:w-auto">
-            <TabsTrigger value="overview" className="px-4 py-2 text-xs sm:text-sm">Spec diffing</TabsTrigger>
-            <TabsTrigger value="benchmarks" className="px-4 py-2 text-xs sm:text-sm">
-              <BarChart3 className="me-1.5 h-3.5 w-3.5" /> Benchmarks
+          <TabsList className="flex w-full flex-nowrap items-stretch gap-2 overflow-x-auto rounded-2xl bg-secondary/50 p-2 md:w-auto md:flex-wrap md:items-center">
+            <TabsTrigger value="overview" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">Spec diffing</TabsTrigger>
+            <TabsTrigger value="benchmarks" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">
+              <BarChart3 className="me-1.5 h-4 w-4" /> Benchmarks
             </TabsTrigger>
-            <TabsTrigger value="cameras" className="px-4 py-2 text-xs sm:text-sm">
-              <Camera className="me-1.5 h-3.5 w-3.5" /> Camera
+            <TabsTrigger value="cameras" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">
+              <Camera className="me-1.5 h-4 w-4" /> Camera
             </TabsTrigger>
-            <TabsTrigger value="camera-samples" className="px-4 py-2 text-xs sm:text-sm">Camera Samples</TabsTrigger>
-            <TabsTrigger value="gaming" className="px-4 py-2 text-xs sm:text-sm">
-              <Gamepad2 className="me-1.5 h-3.5 w-3.5" /> Gaming
+            <TabsTrigger value="camera-samples" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">Camera Samples</TabsTrigger>
+            <TabsTrigger value="gaming" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">
+              <Gamepad2 className="me-1.5 h-4 w-4" /> Gaming
             </TabsTrigger>
-            <TabsTrigger value="price" className="px-4 py-2 text-xs sm:text-sm">
-              <TrendingDown className="me-1.5 h-3.5 w-3.5" /> Price
+            <TabsTrigger value="price" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">
+              <TrendingDown className="me-1.5 h-4 w-4" /> Price
             </TabsTrigger>
-            <TabsTrigger value="bands" className="px-4 py-2 text-xs sm:text-sm">
-              <RadioTower className="me-1.5 h-3.5 w-3.5" /> Bands
+            <TabsTrigger value="bands" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">
+              <RadioTower className="me-1.5 h-4 w-4" /> Bands
             </TabsTrigger>
           </TabsList>
 
