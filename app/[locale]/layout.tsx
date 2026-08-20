@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AmbientBackground } from "@/components/ui/ambient-background";
@@ -12,6 +14,8 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { LoadingBar } from "@/components/layout/loading-bar";
 import AiChatWidget from "@/components/ai/ai-chat-widget";
 import { InstallPrompt } from "@/components/layout/install-prompt";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
+import { KeyboardShortcutsProvider } from "@/components/ui/keyboard-shortcuts";
 import { locales } from "@/lib/i18n";
 import "./globals.css";
 
@@ -111,9 +115,13 @@ export default async function RootLayout({
               <BottomNav />
               <AiChatWidget />
               <InstallPrompt />
+              <ScrollToTop />
+              <KeyboardShortcutsProvider locale={locale} />
             </TooltipProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

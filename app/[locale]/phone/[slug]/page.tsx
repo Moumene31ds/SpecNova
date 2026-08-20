@@ -12,8 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceCard } from "@/components/device/device-card";
 import { BentoGrid, BentoCell } from "@/components/bento/bento-grid";
 import { ShareButton } from "@/components/device/share-button";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { CollapsibleSpecGrid, QuickSpecsBar } from "@/components/device/collapsible-specs";
 import { BatteryVisual, CameraVisual, ChipsetBadge } from "@/components/device/phone-visuals";
+import { PhoneViewTracker } from "@/components/device/phone-view-tracker";
 import {
   LazyPriceHistoryChart,
   LazyBandChecker,
@@ -22,16 +24,32 @@ import {
 } from "@/components/device/lazy-components";
 
 interface Props {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const device = await getDevice(slug);
   if (!device) return { title: "Device not found" };
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://phone-steel-beta.vercel.app";
   return {
     title: `${device.brand} ${device.name} — specs, price & review`,
-    description: `Full ${device.brand} ${device.name} specs, live price tracking and carrier compatibility.`,
+    description: `Full ${device.brand} ${device.name} specs, live price tracking and carrier compatibility. Score: ${device.score?.total ?? "—"}/100.`,
+    openGraph: {
+      title: `${device.brand} ${device.name} — iToPhone`,
+      description: `Compare ${device.brand} ${device.name} specs, price, and carrier bands. iToPhone score: ${device.score?.total ?? "—"}/100.`,
+      images: device.media.heroImage ? [{ url: device.media.heroImage, width: 1200, height: 630 }] : [],
+      type: "website",
+      siteName: "iToPhone",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${device.brand} ${device.name} — iToPhone`,
+      images: device.media.heroImage ? [device.media.heroImage] : [],
+    },
+    alternates: {
+      canonical: `${siteUrl}/en/phone/${device.slug}`,
+    },
   };
 }
 
@@ -92,6 +110,16 @@ export default async function PhonePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      <PhoneViewTracker slug={device.slug} brand={device.brand} name={device.name} />
+
+      {/* ── Breadcrumbs ── */}
+      <div className="container mb-4">
+        <Breadcrumbs items={[
+          { label: device.brand, href: `/search?brand=${device.brand.toLowerCase()}` },
+          { label: device.name },
+        ]} />
+      </div>
 
       {/* ── Quick Specs Floating Bar (mobile) ── */}
       <QuickSpecsBar specs={device.specs} brand={device.brand} name={device.name} accent={accent} />

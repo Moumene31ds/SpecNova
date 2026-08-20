@@ -53,7 +53,9 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <a
               aria-label="GitHub"
-              href="https://github.com"
+              href="https://github.com/Moumene31ds/SpecNova"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex h-11 w-11 items-center justify-center rounded-xl transition-colors hover:text-foreground hover:bg-white/5"
             >
               <Github className="h-5 w-5" />
@@ -61,6 +63,8 @@ export function Footer() {
             <a
               aria-label="X"
               href="https://x.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex h-11 w-11 items-center justify-center rounded-xl transition-colors hover:text-foreground hover:bg-white/5"
             >
               <Twitter className="h-5 w-5" />

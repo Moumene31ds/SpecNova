@@ -46,7 +46,7 @@ function sortDevices(devices: Device[], key: SortKey): Device[] {
   } else {
     sorted.sort((a, b) => (b.score?.[key] ?? 0) - (a.score?.[key] ?? 0));
   }
-  return sorted.slice(0, 10);
+  return sorted;
 }
 
 const containerVariants = {
@@ -182,8 +182,12 @@ function RankingCard({
   );
 }
 
+const INITIAL_COUNT = 10;
+const LOAD_MORE_COUNT = 10;
+
 export function RankingsView({ catalog }: { catalog: Device[] }) {
   const [activeTab, setActiveTab] = useState<SortKey>("total");
+  const [showCount, setShowCount] = useState(INITIAL_COUNT);
 
   const sortedMap = useMemo(() => {
     const map: Record<SortKey, Device[]> = {} as Record<SortKey, Device[]>;
@@ -249,7 +253,7 @@ export function RankingsView({ catalog }: { catalog: Device[] }) {
                 key={cat.key}
                 className="flex flex-col gap-3"
               >
-                {sortedMap[cat.key].map((device, i) => (
+                {sortedMap[cat.key].slice(0, showCount).map((device, i) => (
                   <RankingCard
                     key={device.id}
                     device={device}
@@ -258,6 +262,16 @@ export function RankingsView({ catalog }: { catalog: Device[] }) {
                   />
                 ))}
               </motion.div>
+              {sortedMap[cat.key].length > showCount && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={() => setShowCount((c) => c + LOAD_MORE_COUNT)}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium transition-colors hover:border-ring/40 hover:bg-card/80"
+                  >
+                    Show more ({sortedMap[cat.key].length - showCount} remaining)
+                  </button>
+                </div>
+              )}
             </TabsContent>
           ))}
         </Tabs>

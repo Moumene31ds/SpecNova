@@ -9,6 +9,8 @@ import BrandShowcase from "@/components/home/brand-showcase";
 import FeatureBento from "@/components/home/feature-bento";
 import CtaSection from "@/components/home/cta-section";
 import { SwipeableDeviceGrid } from "@/components/home/swipeable-devices";
+import { RecentlyViewed } from "@/components/layout/recently-viewed";
+import { ComparisonHistory } from "@/components/layout/comparison-history";
 import { getCatalog } from "@/lib/query/device-query";
 
 export const metadata: Metadata = {
@@ -36,6 +38,10 @@ export default async function HomePage() {
           </Suspense>
         </div>
       </section>
+
+      {/* ── Recently Viewed + Comparison History ── */}
+      <RecentlyViewed />
+      <ComparisonHistory />
 
       {/* ── Brand Showcase ── */}
       <BrandShowcase />

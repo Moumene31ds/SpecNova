@@ -1,27 +1,25 @@
 "use client";
 
-import { useEffect } from "react";
-import { AlertTriangle, RefreshCcw, Home } from "lucide-react";
+import { AlertTriangle, RefreshCcw, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export default function GlobalError({
+export default function PhoneError({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("[iToPhone] Global error:", error);
-  }, [error]);
+  const router = useRouter();
 
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+    <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
       <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
         <AlertTriangle className="h-8 w-8 text-destructive" />
       </div>
-      <h2 className="font-display text-2xl font-bold">Something went wrong</h2>
+      <h2 className="font-display text-2xl font-bold">Phone not found</h2>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        An unexpected error occurred. Our team has been notified.
+        We couldn&apos;t load this phone&apos;s details. It may be temporarily unavailable.
         {error.digest && (
           <span className="mt-2 block font-mono text-xs text-muted-foreground/60">
             Error ID: {error.digest}
@@ -36,10 +34,10 @@ export default function GlobalError({
           <RefreshCcw className="h-4 w-4" /> Try again
         </button>
         <button
-          onClick={() => window.location.href = "/en"}
+          onClick={() => router.back()}
           className="inline-flex h-11 items-center gap-2 rounded-xl border border-border px-5 text-sm font-medium transition-colors hover:bg-secondary"
         >
-          <Home className="h-4 w-4" /> Go home
+          <ArrowLeft className="h-4 w-4" /> Go back
         </button>
       </div>
     </div>

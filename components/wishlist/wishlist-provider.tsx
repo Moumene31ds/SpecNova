@@ -28,6 +28,11 @@ export function useWishlist() {
 
   React.useEffect(() => {
     setIds(getWishlist());
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === WISHLIST_KEY) setIds(getWishlist());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const toggle = React.useCallback((id: string) => {

@@ -11,6 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default async function RankingsPage() {
-  const catalog = await getCatalog(50);
+  const catalog = await getCatalog(200);
   return <RankingsView catalog={catalog} />;
 }

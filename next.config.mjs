@@ -86,6 +86,27 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://fdn2.gsmarena.com https://fdn1.gsmarena.com https://*.samsung.com https://store.storeimages.cdn-apple.com https://*.apple.com https://images.unsplash.com https://*.cloudfront.net https://i0.wp.com https://*.cdn-telegram.org",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+              "frame-src https://www.google.com https://*.firebaseapp.com",
+              "worker-src 'self' blob:",
+            ].join("; "),
+          },
         ],
       },
       {
