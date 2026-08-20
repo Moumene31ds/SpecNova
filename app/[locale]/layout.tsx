@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, Space_Grotesk, JetBrains_Mono, Noto_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/react";
@@ -16,7 +16,7 @@ import AiChatWidget from "@/components/ai/ai-chat-widget";
 import { InstallPrompt } from "@/components/layout/install-prompt";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { KeyboardShortcutsProvider } from "@/components/ui/keyboard-shortcuts";
-import { locales } from "@/lib/i18n";
+import { locales, isRtl, type Locale } from "@/lib/i18n";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,6 +35,13 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
+});
+
+const notoSansArabic = Noto_Sans_Arabic({
+  subsets: ["arabic"],
+  variable: "--font-arabic",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -87,12 +94,14 @@ export default async function RootLayout({
   const { locale } = await params;
   const messages = await getMessages({ locale });
   setRequestLocale(locale);
+  const rtl = isRtl(locale as Locale);
 
   return (
     <html
       lang={locale}
+      dir={rtl ? "rtl" : "ltr"}
       data-theme="light"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${notoSansArabic.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -101,7 +110,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="font-sans">
+      <body className={rtl ? "font-arabic" : "font-sans"}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <TooltipProvider delayDuration={150}>

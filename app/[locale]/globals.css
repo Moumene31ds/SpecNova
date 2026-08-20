@@ -442,4 +442,30 @@
   .markdown-content tr:hover td {
     background: rgba(255, 255, 255, 0.03);
   }
+
+  /* ── Arabic / RTL Support ── */
+  [dir="rtl"] .font-arabic {
+    font-family: var(--font-arabic), "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  }
+
+  [dir="rtl"] .markdown-content th {
+    text-align: right;
+  }
+
+  /* Logical property helpers for RTL */
+  [dir="rtl"] .ms-auto {
+    margin-inline-start: auto;
+  }
+
+  [dir="rtl"] .me-auto {
+    margin-inline-end: auto;
+  }
+
+  [dir="rtl"] .text-start {
+    text-align: start;
+  }
+
+  [dir="rtl"] .text-end {
+    text-align: end;
+  }
 }

@@ -75,6 +75,7 @@ const config: Config = {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
         mono: ["var(--font-mono)", "monospace"],
+        arabic: ["var(--font-arabic)", "Noto Sans Arabic", "Segoe UI", "Tahoma", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

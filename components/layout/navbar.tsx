@@ -141,7 +141,7 @@ export function Navbar() {
                       }}
                     >
                       <span className="flex h-4 w-6 items-center justify-center">
-                        {locale === "fr" ? "🇫🇷" : "🇺🇸"}
+                        {locale === "fr" ? "🇫🇷" : locale === "ar" ? "🇸🇦" : "🇺🇸"}
                       </span>
                       {localeNames[locale as keyof typeof localeNames]}
                       {locale === currentLocale && (

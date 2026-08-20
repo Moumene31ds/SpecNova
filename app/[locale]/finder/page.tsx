@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
-import { getCatalog } from "@/lib/query/device-query";
-import { PhoneFinderClient } from "@/components/finder/phone-finder";
+import { AiPhoneFinder } from "@/components/finder/ai-phone-finder";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Phone Finder",
+  title: "AI Phone Finder",
   description:
-    "Answer 4 quick questions and find your perfect phone — budget, priority, size, and brand preferences matched against our full catalog.",
+    "Tell us what you need and our AI will find the perfect phone for you — powered by Gemini and our full device database.",
 };
 
-export default async function FinderPage() {
-  const catalog = await getCatalog(50);
-
-  return <PhoneFinderClient catalog={catalog} />;
+export default function FinderPage() {
+  return <AiPhoneFinder />;
 }

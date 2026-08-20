@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getRequestConfig } from "next-intl/server";
 
-export const locales = ["en", "fr"] as const;
+export const locales = ["en", "fr", "ar"] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "en";
@@ -9,7 +9,14 @@ export const defaultLocale: Locale = "en";
 export const localeNames: Record<Locale, string> = {
   en: "English",
   fr: "Français",
+  ar: "العربية",
 };
+
+export const rtlLocales: Locale[] = ["ar"];
+
+export function isRtl(locale: Locale): boolean {
+  return rtlLocales.includes(locale);
+}
 
 export function getLocaleFromPathname(pathname: string): Locale {
   for (const locale of locales) {
