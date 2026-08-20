@@ -161,7 +161,7 @@
   },
   "auth": {
     "signInTitle": "Bon retour",
-    "signInSubtitle": "Connectez-vous à votre compte admin iToPhone",
+    "signInSubtitle": "Connectez-vous pour accéder à votre compte et gérer vos appareils",
     "email": "Adresse e-mail",
     "emailPlaceholder": "vous@specnova.app",
     "password": "Mot de passe",
@@ -197,7 +197,11 @@
     "emailInUse": "Un compte avec cet e-mail existe déjà.",
     "accountCreated": "Compte créé !",
     "notConfigured": "L'authentification n'est pas configurée sur ce déploiement. Ajoutez les variables d'environnement Firebase (NEXT_PUBLIC_FIREBASE_API_KEY) sur Vercel, puis redéployez.",
-    "sessionFailed": "Connexion réussie mais la session n'a pas pu être créée. Assurez-vous que les variables d'environnement serveur (FIREBASE_SERVICE_ACCOUNT_JSON, COOKIE_SIGNATURE_KEY) sont définies puis redéployez."
+    "sessionFailed": "Connexion réussie mais la session n'a pas pu être créée. Assurez-vous que les variables d'environnement serveur (FIREBASE_SERVICE_ACCOUNT_JSON, COOKIE_SIGNATURE_KEY) sont définies puis redéployez.",
+    "googleSignIn": "Continuer avec Google",
+    "orContinueWith": "ou",
+    "popupClosed": "La fenêtre de connexion a été fermée. Réessayez.",
+    "accountExistsDifferentCredential": "Un compte existe déjà avec cet e-mail en utilisant une autre méthode de connexion."
   },
   "search": {
     "title": "Recherche IA",
