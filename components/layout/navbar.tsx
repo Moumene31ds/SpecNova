@@ -73,7 +73,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/60 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/60 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="container flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-6">
           <Link
             href={getLocalizedHref(currentLocale, "/")}
@@ -117,7 +117,7 @@ export function Navbar() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10">
+                <Button variant="ghost" size="icon" className="h-11 w-11">
                   <Globe className="h-4 w-4" />
                   <span className="sr-only">Select language</span>
                 </Button>
@@ -159,7 +159,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 md:hidden"
+              className="h-11 w-11 md:hidden"
               onClick={() => { haptic("light"); setMobileOpen(!mobileOpen); }}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
@@ -177,7 +177,7 @@ export function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              className="fixed inset-0 z-[55] bg-black/40 md:hidden"
               onClick={() => setMobileOpen(false)}
             />
             <motion.div
@@ -185,7 +185,7 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="fixed inset-x-0 top-14 z-50 max-h-[calc(100vh-3.5rem)] overflow-y-auto border-b border-border/50 bg-background/95 backdrop-blur-xl sm:top-16 md:hidden"
+              className="fixed inset-x-0 top-14 z-[55] max-h-[calc(100vh-3.5rem)] overflow-y-auto border-b border-border/50 bg-background/95 backdrop-blur-xl sm:top-16 md:hidden"
             >
               <nav className="container flex flex-col gap-1 py-3">
                 {navLinks.map((link) => {

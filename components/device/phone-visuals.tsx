@@ -63,7 +63,7 @@ export function CameraVisual({ cameras }: {
             title={`${cam.megapixels}MP ${cam.kind} ${cam.aperture ?? ""}`}
           >
             <span className="font-mono font-bold">{cam.megapixels}</span>
-            <span className="absolute -bottom-3 text-[8px] text-muted-foreground whitespace-nowrap">
+            <span className="absolute -bottom-3 text-[10px] text-muted-foreground whitespace-nowrap">
               {cam.kind === "wide" ? "Main" : cam.kind === "ultrawide" ? "Ultra" : cam.kind === "telephoto" || cam.kind === "periscope" ? "Tele" : cam.kind === "selfie" ? "Front" : cam.kind}
             </span>
           </motion.div>

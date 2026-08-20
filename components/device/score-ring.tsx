@@ -49,7 +49,7 @@ export function ScoreRing({
       </svg>
       <div className="absolute text-center">
         <span className="font-display text-sm font-bold tabular-nums">{value}</span>
-        {label && <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>}
+        {label && <span className="block text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>}
       </div>
     </div>
   );

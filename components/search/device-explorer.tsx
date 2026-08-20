@@ -236,7 +236,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
           <button
             onClick={() => set("brand", "")}
             className={cn(
-              "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all",
+              "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition-all",
               !filters.brand
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-secondary/50 text-muted-foreground hover:text-foreground hover:border-ring/40"
@@ -249,7 +249,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
               key={name}
               onClick={() => set("brand", filters.brand === name ? "" : name)}
               className={cn(
-                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all",
+                "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition-all",
                 filters.brand === name
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-secondary/50 text-muted-foreground hover:text-foreground hover:border-ring/40"
@@ -281,7 +281,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
                     value={filters.maxPrice ?? ""}
                     onChange={(e) => set("maxPrice", e.target.value ? Number(e.target.value) : null)}
                     placeholder="$"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
+                    className="h-11 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
                   />
                 </label>
 
@@ -296,7 +296,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
                     value={filters.minBattery ?? ""}
                     onChange={(e) => set("minBattery", e.target.value ? Number(e.target.value) : null)}
                     placeholder="mAh"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
+                    className="h-11 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
                   />
                 </label>
 
@@ -311,7 +311,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
                     value={filters.minCamera ?? ""}
                     onChange={(e) => set("minCamera", e.target.value ? Number(e.target.value) : null)}
                     placeholder="MP"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
+                    className="h-11 rounded-lg border border-border bg-background/60 px-3 font-mono text-sm outline-none focus:border-ring"
                   />
                 </label>
 
@@ -323,7 +323,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
                     value={filters.chipset}
                     onChange={(e) => set("chipset", e.target.value)}
                     placeholder="Snapdragon 8 Elite…"
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
+                    className="h-11 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
                   />
                 </label>
 
@@ -334,7 +334,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
                   <select
                     value={filters.minYear ?? ""}
                     onChange={(e) => set("minYear", e.target.value ? Number(e.target.value) : null)}
-                    className="h-10 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
+                    className="h-11 rounded-lg border border-border bg-background/60 px-3 text-sm outline-none focus:border-ring"
                   >
                     <option value="">Any</option>
                     {[2020, 2021, 2022, 2023, 2024, 2025, 2026].map((y) => (
@@ -345,7 +345,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
 
                 <button
                   onClick={reset}
-                  className="col-span-2 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:col-span-1"
+                  className="col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:col-span-1"
                 >
                   <RotateCcw className="h-3.5 w-3.5" /> {t("resetFilters")}
                 </button>
@@ -366,7 +366,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="h-8 appearance-none rounded-lg border border-border bg-secondary/50 pl-7 pr-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus:border-ring"
+                className="h-10 appearance-none rounded-lg border border-border bg-secondary/50 pl-7 pr-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus:border-ring"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.key} value={opt.key}>{opt.label}</option>
@@ -378,7 +378,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
             <button
               onClick={() => { setCompareMode(!compareMode); setSelectedForCompare([]); }}
               className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors",
+                "inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors",
                 compareMode
                   ? "border-primary/40 bg-primary/10 text-foreground"
                   : "border-border bg-secondary/50 text-muted-foreground hover:text-foreground"
@@ -452,7 +452,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-2xl backdrop-blur-xl md:bottom-8 sm:gap-4 sm:px-6"
+            className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-2xl backdrop-blur-xl md:bottom-8 sm:gap-4 sm:px-6"
           >
             <div className="flex items-center gap-1.5">
               {selectedForCompare.map((slug) => {
@@ -486,7 +486,7 @@ export function DeviceExplorer({ defaultQuery = "", catalog: serverCatalog }: De
             </button>
             <button
               onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>

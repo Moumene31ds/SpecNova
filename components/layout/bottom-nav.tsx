@@ -40,7 +40,7 @@ export function BottomNav() {
   const t = useTranslations("common");
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border/50 bg-background/80 backdrop-blur-xl pb-safe md:hidden">
+    <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border/50 bg-background/80 backdrop-blur-xl pb-[env(safe-area-inset-bottom,0px)] md:hidden">
       <div className="flex items-center justify-around px-2 py-1.5">
         {tabs.map((tab) => {
           const active =
@@ -52,7 +52,7 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href === "/" ? `/${currentLocale}` : `/${currentLocale}${tab.href}`}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-colors",
+                "flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-[11px] font-medium transition-colors",
                 active
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground",

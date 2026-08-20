@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DeviceCard } from "@/components/device/device-card";
@@ -11,13 +11,27 @@ export function SwipeableDeviceGrid({ devices }: { devices: Device[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     setCanScrollLeft(el.scrollLeft > 10);
     setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
-  };
+    const cardWidth = 320 + 12;
+    const idx = Math.round(el.scrollLeft / cardWidth);
+    setActiveIndex(Math.min(idx, devices.length - 1));
+  }, [devices.length]);
+
+  const scrollToIndex = useCallback((index: number) => {
+    haptic("light");
+    const el = scrollRef.current;
+    if (!el) return;
+    const cards = el.children;
+    if (cards[index]) {
+      (cards[index] as HTMLElement).scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }, []);
 
   const scroll = (direction: "left" | "right") => {
     haptic("light");
@@ -39,7 +53,7 @@ export function SwipeableDeviceGrid({ devices }: { devices: Device[] }) {
       </div>
 
       {/* Mobile swipe carousel */}
-      <div className="sm:hidden relative">
+      <div className="sm:hidden relative overflow-visible">
         <div
           ref={scrollRef}
           onScroll={checkScroll}
@@ -62,9 +76,10 @@ export function SwipeableDeviceGrid({ devices }: { devices: Device[] }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 h-8 w-8 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center"
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-10 h-11 w-11 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center"
+            aria-label="Scroll left"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5" />
           </motion.button>
         )}
         {canScrollRight && (
@@ -72,18 +87,25 @@ export function SwipeableDeviceGrid({ devices }: { devices: Device[] }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 h-8 w-8 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center"
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 h-11 w-11 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center"
+            aria-label="Scroll right"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5" />
           </motion.button>
         )}
 
         {/* Scroll indicators */}
         <div className="flex justify-center gap-1.5 mt-2">
           {devices.map((_, i) => (
-            <div
+            <button
               key={i}
-              className="h-1 w-1 rounded-full bg-muted-foreground/30"
+              onClick={() => scrollToIndex(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === activeIndex
+                  ? "w-4 bg-primary"
+                  : "w-1.5 bg-muted-foreground/30"
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
             />
           ))}
         </div>

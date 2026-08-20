@@ -104,7 +104,7 @@ export default async function RootLayout({
               <AmbientBackground />
               <LoadingBar />
               <Navbar />
-              <main className="min-h-screen pb-16 md:pb-0">
+              <main className="min-h-screen pb-24 md:pb-0">
                 <PageTransition>{children}</PageTransition>
               </main>
               <Footer />

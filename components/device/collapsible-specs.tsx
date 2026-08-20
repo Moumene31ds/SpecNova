@@ -125,7 +125,7 @@ function CollapsibleSpecGroup({
               {rows.map(([k, v]) => (
                 <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/40 pb-2 text-sm last:border-0 last:pb-0">
                   <dt className="shrink-0 text-muted-foreground">{k}</dt>
-                  <dd className="text-right font-medium tabular-nums">{v || "—"}</dd>
+                  <dd className="text-right font-medium tabular-nums min-w-0 truncate">{v || "—"}</dd>
                 </div>
               ))}
             </dl>
@@ -147,7 +147,7 @@ export function QuickSpecsBar({ specs, brand, name, accent }: {
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.4, ease: "easeOut" }}
-      className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-4 rounded-2xl border border-border bg-background/90 backdrop-blur-xl px-4 py-2.5 shadow-2xl max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-hide"
+      className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-4 rounded-2xl border border-border bg-background/90 backdrop-blur-xl px-4 py-2.5 shadow-2xl max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-hide"
     >
       <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap hidden sm:inline">{brand} {name}</span>
       <div className="h-4 w-px bg-border hidden sm:block" />
@@ -169,7 +169,7 @@ function QuickSpec({ icon: Icon, label, value, accent }: {
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap">
       <Icon className="h-3.5 w-3.5" style={{ color: accent }} />
-      <span className="text-[10px] text-muted-foreground">{label}</span>
+      <span className="text-[11px] text-muted-foreground">{label}</span>
       <span className="text-xs font-semibold tabular-nums">{value}</span>
     </div>
   );

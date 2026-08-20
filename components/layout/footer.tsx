@@ -54,16 +54,16 @@ export function Footer() {
             <a
               aria-label="GitHub"
               href="https://github.com"
-              className="transition-colors hover:text-foreground"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl transition-colors hover:text-foreground hover:bg-white/5"
             >
-              <Github className="h-4 w-4" />
+              <Github className="h-5 w-5" />
             </a>
             <a
               aria-label="X"
               href="https://x.com"
-              className="transition-colors hover:text-foreground"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl transition-colors hover:text-foreground hover:bg-white/5"
             >
-              <Twitter className="h-4 w-4" />
+              <Twitter className="h-5 w-5" />
             </a>
           </div>
           <p className="text-xs text-muted-foreground/60 md:hidden">

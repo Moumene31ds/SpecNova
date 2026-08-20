@@ -45,6 +45,7 @@ export function SpecDiffTable({ devices }: SpecDiffTableProps) {
           type="single"
           value={mode}
           onValueChange={(v) => v && setMode(v as DiffMode)}
+          className="flex-wrap"
         >
           <ToggleGroupItem value="all">All</ToggleGroupItem>
           <ToggleGroupItem value="only-differences">Differences</ToggleGroupItem>
@@ -98,7 +99,7 @@ const SpecRowLine = React.memo(function SpecRowLine({ row, devices }: { row: Spe
           <span
             key={i}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-medium transition-colors duration-200",
+              "flex items-center gap-1.5 min-w-0 rounded-lg px-2.5 py-1.5 font-medium transition-colors duration-200",
               isBetter && "bg-primary/12 text-primary ring-1 ring-primary/20",
               isWorse && "text-muted-foreground/60",
             )}
@@ -106,7 +107,7 @@ const SpecRowLine = React.memo(function SpecRowLine({ row, devices }: { row: Spe
           >
             {isBetter && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
             {isWorse && <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />}
-            <span className="truncate tabular-nums">{value}</span>
+            <span className="truncate min-w-0 tabular-nums">{value}</span>
           </span>
         );
       })}

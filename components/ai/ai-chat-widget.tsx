@@ -56,8 +56,9 @@ function useDraggable(initialX: number, initialY: number) {
     const currentY = y.get();
     const padding = 16;
     const halfButton = buttonSize / 2;
+    const bottomNavOffset = 90;
 
-    const clampedY = Math.max(padding + halfButton, Math.min(viewportHeight - padding - halfButton, currentY));
+    const clampedY = Math.max(padding + halfButton, Math.min(viewportHeight - bottomNavOffset - padding - halfButton, currentY));
     const snappedX = currentX < viewportWidth / 2 ? padding + halfButton : viewportWidth - padding - halfButton;
 
     x.set(snappedX);
@@ -77,9 +78,10 @@ export default function AiChatWidget() {
   const dragThreshold = useRef(0);
   const pointerStartPos = useRef({ x: 0, y: 0 });
 
+  const BOTTOM_NAV_HEIGHT = 90;
   const fabSize = 56;
   const initialX = typeof window !== "undefined" ? window.innerWidth - 80 : 200;
-  const initialY = typeof window !== "undefined" ? window.innerHeight - 160 : 400;
+  const initialY = typeof window !== "undefined" ? Math.min(window.innerHeight - 160, window.innerHeight - BOTTOM_NAV_HEIGHT - 40) : 400;
 
   const { x, y, onPointerDown, onPointerMove, onPointerUp, snapToEdge } = useDraggable(initialX, initialY);
 
@@ -90,8 +92,24 @@ export default function AiChatWidget() {
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 300);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
+    return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      const maxX = window.innerWidth - 80;
+      const maxY = Math.min(window.innerHeight - 160, window.innerHeight - BOTTOM_NAV_HEIGHT - 40);
+      x.set(Math.min(x.get(), maxX));
+      y.set(Math.min(y.get(), maxY));
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [x, y]);
 
   const handleFabPointerDown = useCallback((e: React.PointerEvent) => {
     dragThreshold.current = 0;
@@ -233,7 +251,7 @@ export default function AiChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed z-[60] bottom-4 right-4 left-4 sm:left-auto sm:w-[420px] sm:bottom-6 sm:right-6 top-[15vh] sm:top-auto sm:h-[600px] sm:max-h-[calc(100vh-6rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed z-[60] bottom-24 right-4 left-4 sm:left-auto sm:w-[420px] sm:bottom-6 sm:right-6 top-[max(15vh,env(safe-area-inset-top))] sm:top-auto sm:h-[600px] sm:max-h-[calc(100vh-6rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border shrink-0">
@@ -252,15 +270,16 @@ export default function AiChatWidget() {
                 {messages.length > 0 && (
                   <button
                     onClick={clearChat}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                    title="Clear chat"
+                    className="p-2.5 rounded-lg hover:bg-white/10 transition-colors"
+                    aria-label="Clear chat"
                   >
                     <RotateCcw className="w-4 h-4 text-muted-foreground" />
                   </button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                  className="p-2.5 rounded-lg hover:bg-white/10 transition-colors"
+                  aria-label="Close chat"
                 >
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
@@ -283,7 +302,7 @@ export default function AiChatWidget() {
                       <button
                         key={q}
                         onClick={() => handleQuickQuestion(q)}
-                        className="w-full text-left px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm hover:bg-white/10 transition-colors"
+                        className="w-full text-left px-3 py-3 bg-white/5 border border-white/10 rounded-xl text-sm hover:bg-white/10 transition-colors"
                       >
                         {q}
                       </button>
@@ -316,7 +335,7 @@ export default function AiChatWidget() {
                         <span className="text-sm text-muted-foreground">Thinking...</span>
                       </div>
                     ) : (
-                      <div className="text-sm leading-relaxed">
+                      <div className="text-sm leading-relaxed break-words overflow-hidden">
                         <MarkdownRenderer content={msg.content} />
                       </div>
                     )}
@@ -344,16 +363,16 @@ export default function AiChatWidget() {
                       <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
                         <button
                           onClick={() => copyMessage(msg.content)}
-                          className="p-1 rounded hover:bg-white/10 transition-colors"
-                          title="Copy"
+                          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                          aria-label="Copy message"
                         >
-                          <Copy className="w-3 h-3 text-muted-foreground" />
+                          <Copy className="w-4 h-4 text-muted-foreground" />
                         </button>
-                        <button className="p-1 rounded hover:bg-white/10 transition-colors" title="Helpful">
-                          <ThumbsUp className="w-3 h-3 text-muted-foreground" />
+                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Helpful">
+                          <ThumbsUp className="w-4 h-4 text-muted-foreground" />
                         </button>
-                        <button className="p-1 rounded hover:bg-white/10 transition-colors" title="Not helpful">
-                          <ThumbsDown className="w-3 h-3 text-muted-foreground" />
+                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Not helpful">
+                          <ThumbsDown className="w-4 h-4 text-muted-foreground" />
                         </button>
                       </div>
                     )}
@@ -378,8 +397,9 @@ export default function AiChatWidget() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about any phone..."
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
                   disabled={isLoading}
+                  aria-label="Ask about any phone"
                 />
                 <button
                   type="submit"
