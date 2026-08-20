@@ -282,11 +282,11 @@ export function UserReviews({ deviceId, brand, deviceName, score }: UserReviewsP
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{review.text}</p>
 
             <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-              <button className="flex items-center gap-1 transition-colors hover:text-foreground">
+              <button className="flex h-8 w-8 items-center justify-center gap-1 transition-colors hover:text-foreground">
                 <ThumbsUp className="h-3.5 w-3.5" />
                 {review.helpful}
               </button>
-              <button className="flex items-center gap-1 transition-colors hover:text-foreground">
+              <button className="flex h-8 w-8 items-center justify-center gap-1 transition-colors hover:text-foreground">
                 <ThumbsDown className="h-3.5 w-3.5" />
               </button>
             </div>

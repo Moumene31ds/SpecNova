@@ -114,7 +114,7 @@ export default async function PhonePage({ params }: Props) {
   };
 
   return (
-    <div className="pb-20 pt-8">
+    <div className="pb-24 pt-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

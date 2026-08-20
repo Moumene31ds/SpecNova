@@ -35,7 +35,7 @@ export function GamingSimulator({ devices }: GamingSimulatorProps) {
           <h3 className="text-sm font-medium">FPS & thermal simulator</h3>
         </div>
         <Tabs value={genre} onValueChange={(v) => setGenre(v as keyof typeof GENRES)}>
-          <TabsList>
+          <TabsList className="overflow-x-auto">
             {Object.entries(GENRES).map(([key, { label }]) => (
               <TabsTrigger key={key} value={key}>{label}</TabsTrigger>
             ))}

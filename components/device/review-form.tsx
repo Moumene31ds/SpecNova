@@ -42,7 +42,7 @@ function ClickableStars({ value, onChange, size = 20 }: { value: number; onChang
           <button
             key={i}
             type="button"
-            className="transition-transform hover:scale-110 focus:outline-none"
+            className="h-8 w-8 min-w-8 transition-transform hover:scale-110 focus:outline-none"
             onMouseEnter={() => setHover(i + 1)}
             onMouseLeave={() => setHover(0)}
             onClick={() => onChange(i + 1)}

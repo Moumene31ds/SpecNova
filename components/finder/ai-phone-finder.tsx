@@ -180,7 +180,7 @@ export function AiPhoneFinder() {
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col">
+    <div className="flex h-[calc(100dvh-8rem)] flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 backdrop-blur-sm md:px-6">
         <div className="flex items-center gap-3">

@@ -133,7 +133,9 @@ export default async function RootLayout({
               <main className="min-h-screen pb-24 md:pb-0">
                 <PageTransition>{children}</PageTransition>
               </main>
-              <Footer />
+              <div className="pb-24 md:pb-0">
+                <Footer />
+              </div>
               <BottomNav />
               <AiChatWidget />
               <InstallPrompt />

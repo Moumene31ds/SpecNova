@@ -40,7 +40,7 @@ export function ComparisonHistory() {
               </Link>
               <button
                 onClick={() => remove(idx)}
-                className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute -right-1.5 -top-1.5 h-7 w-7 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Remove from comparison history"
               >
                 <X className="h-3 w-3" />
