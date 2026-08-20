@@ -19,3 +19,4 @@ import.log
 progress.json
 scraper.log
 scraper_output.log
+*.log
