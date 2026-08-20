@@ -184,7 +184,7 @@ export default async function ComparePage({ params }: Props) {
 
         {/* ---------------------------------------------- Tabs */}
         <Tabs defaultValue="overview" className="mt-6 w-full">
-          <TabsList className="flex w-full flex-nowrap items-stretch gap-2 overflow-x-auto rounded-2xl bg-secondary/50 p-2 md:w-auto md:flex-wrap md:items-center">
+          <TabsList className="flex w-full flex-nowrap items-stretch gap-2 overflow-x-auto overscroll-x-contain rounded-2xl bg-secondary/50 p-2 md:w-auto md:flex-wrap md:items-center">
             <TabsTrigger value="overview" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">Spec diffing</TabsTrigger>
             <TabsTrigger value="benchmarks" className="min-w-0 flex-shrink-0 px-5 py-2.5 text-sm font-semibold">
               <BarChart3 className="me-1.5 h-4 w-4" /> Benchmarks

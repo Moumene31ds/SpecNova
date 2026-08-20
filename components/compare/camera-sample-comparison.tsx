@@ -166,7 +166,7 @@ function SampleSlider({
       className="overflow-hidden rounded-2xl border border-border bg-card/40 backdrop-blur-xl"
     >
       {sampleKeys.length > 1 && (
-        <div className="flex items-center gap-1 overflow-x-auto border-b border-border/60 px-4 py-2">
+        <div className="flex items-center gap-1 overflow-x-auto overscroll-x-contain border-b border-border/60 px-4 py-2">
           {sampleKeys.map((key) => (
             <button
               key={key}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, X, Smartphone, Check, ExternalLink } from "lucide-react";
 import { haptic } from "@/lib/haptic";
@@ -17,6 +17,8 @@ export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [state, setState] = useState<InstallState>("idle");
   const [progress, setProgress] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const wasDismissed = localStorage.getItem("itophone-install-dismissed");
@@ -32,48 +34,53 @@ export function InstallPrompt() {
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  const simulateProgress = useCallback(() => {
-    setProgress(0);
-    const steps = [
-      { target: 20, delay: 100 },
-      { target: 45, delay: 200 },
-      { target: 70, delay: 300 },
-      { target: 90, delay: 400 },
-      { target: 100, delay: 200 },
-    ];
+  const animateProgress = () => {
+    startTimeRef.current = performance.now();
+    const totalDuration = 4000;
 
-    let step = 0;
-    const advance = () => {
-      if (step < steps.length) {
-        setProgress(steps[step]!.target);
-        step++;
-        setTimeout(advance, steps[step - 1]!.delay);
+    const tick = (now: number) => {
+      const elapsed = now - startTimeRef.current;
+      const ratio = Math.min(elapsed / totalDuration, 1);
+      const eased = 1 - Math.pow(1 - ratio, 3);
+      const pct = Math.min(Math.round(eased * 100), 99);
+      setProgress(pct);
+
+      if (ratio < 1) {
+        rafRef.current = requestAnimationFrame(tick);
       }
     };
-    advance();
-  }, []);
+
+    rafRef.current = requestAnimationFrame(tick);
+  };
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
     haptic("medium");
     setState("installing");
-    simulateProgress();
+    setProgress(0);
+    animateProgress();
 
     try {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
       if (outcome === "accepted") {
         setProgress(100);
         haptic("success");
-        setTimeout(() => setState("installed"), 600);
+        setTimeout(() => setState("installed"), 500);
       } else {
         setState("idle");
         setProgress(0);
       }
     } catch {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setState("idle");
       setProgress(0);
     }
@@ -111,14 +118,13 @@ export function InstallPrompt() {
           <X className="h-4 w-4 text-muted-foreground" />
         </button>
 
-        {/* Progress bar */}
-        {(state === "installing" || state === "installed") && (
+        {/* Progress bar - only during install */}
+        {state === "installing" && (
           <div className="h-1 w-full bg-secondary/50">
             <motion.div
               className="h-full rounded-full bg-gradient-to-r from-neon-violet to-neon-cyan"
-              initial={{ width: "0%" }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              style={{ width: `${progress}%` }}
+              transition={{ duration: 0 }}
             />
           </div>
         )}
@@ -145,44 +151,55 @@ export function InstallPrompt() {
             </div>
           )}
 
-          {/* Installing state - Progress */}
+          {/* Installing state - Smooth progress */}
           {state === "installing" && (
             <div className="flex items-center gap-3">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan"
-              >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-neon-violet to-neon-cyan">
                 <Download className="h-5 w-5 text-white" />
-              </motion.div>
+              </div>
               <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-sm">Installing...</h4>
+                <h4 className="font-bold text-sm">Installing iToPhone...</h4>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {progress < 50 ? "Downloading..." : progress < 90 ? "Preparing..." : "Almost done..."}
+                  {progress < 30
+                    ? "Downloading files..."
+                    : progress < 60
+                      ? "Extracting resources..."
+                      : progress < 85
+                        ? "Setting up..."
+                          : "Finishing up..."}
                 </p>
-                <p className="mt-1 font-mono text-xs font-semibold text-neon-cyan">{progress}%</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary/50">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-neon-violet to-neon-cyan transition-none"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-xs font-semibold text-neon-cyan tabular-nums">{progress}%</span>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Installed state - Open button */}
+          {/* Installed state - Open App button ONLY here */}
           {state === "installed" && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
               className="flex items-center gap-3"
             >
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", damping: 15, stiffness: 300 }}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", damping: 12, stiffness: 200 }}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-neon-green to-accent shadow-lg shadow-neon-green/25"
               >
                 <Check className="h-5 w-5 text-white" />
               </motion.div>
               <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-sm text-neon-green">Installed!</h4>
-                <p className="mt-0.5 text-xs text-muted-foreground">iToPhone is ready on your home screen</p>
+                <h4 className="font-bold text-sm text-neon-green">Installation Complete!</h4>
+                <p className="mt-0.5 text-xs text-muted-foreground">iToPhone is on your home screen</p>
                 <button
                   onClick={handleOpenApp}
                   className="mt-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-neon-green to-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-neon-green/25 hover:shadow-neon-green/40 transition-all active:scale-95"

@@ -228,7 +228,7 @@ export default async function PhonePage({ params }: Props) {
       {/* ---------------------------------------------- Detail tabs */}
       <section className="container mt-6">
         <Tabs defaultValue="specs" className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto gap-1 md:w-auto">
+          <TabsList className="w-full justify-start overflow-x-auto overscroll-x-contain gap-1 md:w-auto">
             <TabsTrigger value="specs" className="text-xs sm:text-sm">Full specs</TabsTrigger>
             <TabsTrigger value="price" className="text-xs sm:text-sm">Price history</TabsTrigger>
             <TabsTrigger value="bands" className="text-xs sm:text-sm">Carrier bands</TabsTrigger>
