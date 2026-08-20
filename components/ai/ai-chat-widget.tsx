@@ -222,7 +222,7 @@ export default function AiChatWidget() {
         {!isOpen && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1, x, y }}
+            animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             style={{ x, y, touchAction: "none" }}
             onPointerDown={handleFabPointerDown}
