@@ -479,4 +479,25 @@
   [dir="rtl"] .text-end {
     text-align: end;
   }
+
+  /* ── Prevent pull-to-refresh bounce on mobile ── */
+  html {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* ── Hide scrollbars globally ── */
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
 }
