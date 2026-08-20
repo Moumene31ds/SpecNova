@@ -4,17 +4,17 @@ iToPhone Scraper — Extract ALL smartphones from GSMArena (1996–today)
 ====================================================================
 
 Usage:
-    python scraper.py --mode=full           # Scrape all brands + all phones
-    python scraper.py --mode=daily          # Scrape only today's new releases
-    python scraper.py --mode=full --brands=samsung,apple  # Specific brands only
-    python scraper.py --mode=full --download-images        # Download images locally
-    python scraper.py --resume              # Resume from last checkpoint
-    python scraper.py --stats               # Show progress statistics
+    python scraper.py --mode=full                    # All brands + all phones
+    python scraper.py --mode=daily                   # Today's new releases only
+    python scraper.py --mode=full --brands=samsung,apple  # Specific brands
+    python scraper.py --mode=full --download-images  # Download images locally
+    python scraper.py --resume                       # Resume from checkpoint
+    python scraper.py --stats                        # Show statistics
 
 Output:
-    phones.json       — Array of ScrapedPhone objects
-    progress.json     — Checkpoint for resuming interrupted scrapes
-    public/images/phones/ — Downloaded images (if --download-images)
+    phones.json              — Array of ScrapedPhone objects
+    progress.json            — Checkpoint for resume
+    public/images/phones/    — Downloaded images (if --download-images)
 
 Dependencies:
     pip install requests beautifulsoup4 lxml tqdm
@@ -27,6 +27,7 @@ import hashlib
 import json
 import logging
 import os
+import random
 import re
 import sys
 import time
@@ -38,7 +39,6 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from tqdm import tqdm
 
 # ============================================================================
 # Configuration
@@ -52,56 +52,28 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:133.0) Gecko/20100101 Firefox/133.0",
 ]
-REQUEST_DELAY = (2.0, 4.0)      # Random delay between requests (min, max) seconds
-IMAGE_DELAY = (0.3, 0.8)        # Delay between image downloads
-MAX_RETRIES = 3                 # Max retries per request
-RETRY_BACKOFF = 5               # Base backoff for retries
+REQUEST_DELAY = (4.0, 8.0)
+IMAGE_DELAY = (0.3, 0.8)
+MAX_RETRIES = 4
+RETRY_BACKOFF = 8
 PROGRESS_FILE = "progress.json"
 OUTPUT_FILE = "phones.json"
 IMAGES_DIR = "public/images/phones"
 LOG_FILE = "scraper.log"
 
-# Brand color map for UI glow effects
 BRAND_COLORS: dict[str, str] = {
-    "samsung": "#1428A0",
-    "apple": "#A2AAAD",
-    "google": "#4285F4",
-    "xiaomi": "#FF6700",
-    "oneplus": "#F5010C",
-    "huawei": "#CF0A2C",
-    "oppo": "#1BA784",
-    "vivo": "#415FFF",
-    "realme": "#FFC800",
-    "sony": "#000000",
-    "nokia": "#124191",
-    "motorola": "#5C2D91",
-    "lg": "#A50034",
-    "honor": "#00B0F0",
-    "nothing": "#000000",
-    "asus": "#00529B",
-    "lenovo": "#E2231A",
-    "tecno": "#0066CC",
-    "infinix": "#F37920",
-    "iqoo": "#F5C518",
-    "redmi": "#FF4500",
-    "poco": "#FBC02D",
-    "zte": "#0057B8",
-    "meizu": "#1E90FF",
-    "blackberry": "#000000",
-    "htc": "#6DB33F",
-    "alcatel": "#FF6600",
-    "panasonic": "#003DA5",
-    "sharp": "#C4002F",
-    "cat": "#FFD700",
-    "tcl": "#000000",
-    "fairphone": "#2DB84B",
-    "nothing": "#000000",
-    "google pixel": "#4285F4",
+    "samsung": "#1428A0", "apple": "#A2AAAD", "google": "#4285F4",
+    "xiaomi": "#FF6700", "oneplus": "#F5010C", "huawei": "#CF0A2C",
+    "oppo": "#1BA784", "vivo": "#415FFF", "realme": "#FFC800",
+    "sony": "#000000", "nokia": "#124191", "motorola": "#5C2D91",
+    "honor": "#00B0F0", "nothing": "#000000", "asus": "#00529B",
+    "lenovo": "#E2231A", "tecno": "#0066CC", "infinix": "#F37920",
+    "iqoo": "#F5C518", "redmi": "#FF4500", "poco": "#FBC02D",
+    "zte": "#0057B8", "meizu": "#1E90FF", "blackberry": "#000000",
+    "htc": "#6DB33F", "lg": "#A50034", "alcatel": "#FF6600",
+    "panasonic": "#003DA5", "sharp": "#C4002F", "cat": "#FFD700",
+    "tcl": "#000000", "fairphone": "#2DB84B",
 }
-
-# ============================================================================
-# Logging
-# ============================================================================
 
 logging.basicConfig(
     level=logging.INFO,
@@ -113,60 +85,12 @@ logging.basicConfig(
 )
 log = logging.getLogger("gsmarena")
 
-# ============================================================================
-# Data Models
-# ============================================================================
-
-
-@dataclass
-class CameraLens:
-    label: str = "wide"
-    megapixels: Optional[float] = None
-    aperture: str = ""
-    sensorSize: str = ""
-    pixelSizeUm: Optional[float] = None
-    fovDeg: Optional[float] = None
-    opticalZoom: Optional[float] = None
-    stabilization: str = ""
-    features: list[str] = field(default_factory=list)
-
-
-@dataclass
-class PhoneData:
-    id: str = ""
-    slug: str = ""
-    name: str = ""
-    brand: str = ""
-    gsmarenaId: Optional[int] = None
-    sourceUrl: str = ""
-    announcedAt: Optional[str] = None
-    releaseAt: Optional[str] = None
-    releaseYear: Optional[int] = None
-    status: str = "available"
-    images: dict = field(default_factory=lambda: {
-        "main": None,
-        "gallery": [],
-        "renders": [],
-        "cameraSamples": [],
-    })
-    specs: dict = field(default_factory=dict)
-    pricing: dict = field(default_factory=lambda: {
-        "msrp": None,
-        "currency": "USD",
-        "startingPrice": None,
-    })
-    scrapedAt: str = ""
-    updatedAt: str = ""
-
 
 # ============================================================================
 # HTTP Session
 # ============================================================================
 
-
 class HTTPSession:
-    """Rotating user-agent session with retries and rate limiting."""
-
     def __init__(self):
         self.session = requests.Session()
         self._ua_index = 0
@@ -186,29 +110,28 @@ class HTTPSession:
 
     def _rate_limit(self):
         elapsed = time.time() - self._last_request
-        delay = REQUEST_DELAY[0] + (REQUEST_DELAY[1] - REQUEST_DELAY[0]) * __import__("random").random()
+        delay = REQUEST_DELAY[0] + (REQUEST_DELAY[1] - REQUEST_DELAY[0]) * random.random()
         if elapsed < delay:
             time.sleep(delay - elapsed)
 
-    def get(self, url: str, retries: int = MAX_RETRIES) -> Optional[requests.Response]:
+    def get(self, url: str, retries: int = MAX_RETRIES, referer: str = "") -> Optional[requests.Response]:
         for attempt in range(retries):
             self._rotate_ua()
             self._rate_limit()
+            headers = {}
+            if referer:
+                headers["Referer"] = referer
             try:
-                resp = self.session.get(url, timeout=30)
+                resp = self.session.get(url, timeout=30, headers=headers)
                 self._last_request = time.time()
                 self._request_count += 1
-
                 if resp.status_code == 200:
                     return resp
-                elif resp.status_code == 403:
-                    log.warning(f"403 Forbidden (attempt {attempt + 1}): {url}")
-                    time.sleep(RETRY_BACKOFF * (attempt + 1) * 2)
-                elif resp.status_code == 429:
-                    log.warning(f"429 Rate Limited (attempt {attempt + 1}): {url}")
-                    time.sleep(RETRY_BACKOFF * (attempt + 1) * 3)
+                elif resp.status_code in (403, 429):
+                    wait = RETRY_BACKOFF * (attempt + 1) * (3 if resp.status_code == 429 else 1)
+                    log.warning(f"{resp.status_code} (attempt {attempt + 1}), waiting {wait}s: {url}")
+                    time.sleep(wait)
                 elif resp.status_code == 404:
-                    log.debug(f"404 Not Found: {url}")
                     return None
                 else:
                     log.warning(f"HTTP {resp.status_code} (attempt {attempt + 1}): {url}")
@@ -216,15 +139,12 @@ class HTTPSession:
             except requests.RequestException as e:
                 log.error(f"Request error (attempt {attempt + 1}): {e}")
                 time.sleep(RETRY_BACKOFF * (attempt + 1))
-
-        log.error(f"Failed after {retries} attempts: {url}")
         return None
 
     def get_image(self, url: str, save_path: Path) -> bool:
-        """Download an image with proper headers."""
         for attempt in range(MAX_RETRIES):
             self._rotate_ua()
-            time.sleep(IMAGE_DELAY[0] + (IMAGE_DELAY[1] - IMAGE_DELAY[0]) * __import__("random").random())
+            time.sleep(random.uniform(*IMAGE_DELAY))
             try:
                 resp = self.session.get(url, timeout=30, stream=True)
                 self._last_request = time.time()
@@ -234,42 +154,17 @@ class HTTPSession:
                         for chunk in resp.iter_content(8192):
                             f.write(chunk)
                     return True
-                else:
-                    log.debug(f"Image download failed {resp.status_code}: {url}")
-            except Exception as e:
-                log.debug(f"Image download error: {e}")
+            except Exception:
+                pass
             time.sleep(1)
         return False
 
-    @property
-    def request_count(self) -> int:
-        return self._request_count
-
 
 # ============================================================================
-# GSMArena Parsers
+# Text Parsing Helpers
 # ============================================================================
-
-
-def parse_text(soup: BeautifulSoup, selector: str, strip: bool = True) -> str:
-    """Extract text from a CSS selector."""
-    el = soup.select_one(selector)
-    if el and el.string:
-        text = el.string.strip() if strip else el.string
-        return text
-    return ""
-
-
-def parse_all_text(soup: BeautifulSoup, selector: str) -> str:
-    """Extract all text content from a selector (including children)."""
-    el = soup.select_one(selector)
-    if el:
-        return el.get_text(separator=" ", strip=True)
-    return ""
-
 
 def parse_int(text: str) -> Optional[int]:
-    """Extract first integer from text."""
     match = re.search(r"[\d,]+", text.replace(",", ""))
     if match:
         try:
@@ -280,7 +175,6 @@ def parse_int(text: str) -> Optional[int]:
 
 
 def parse_float(text: str) -> Optional[float]:
-    """Extract first float from text."""
     match = re.search(r"[\d.]+", text)
     if match:
         try:
@@ -290,15 +184,25 @@ def parse_float(text: str) -> Optional[float]:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Brand Discovery
-# ---------------------------------------------------------------------------
+def extract_between(text: str, start: str, end: str) -> str:
+    """Extract text between two markers."""
+    idx_start = text.find(start)
+    if idx_start == -1:
+        return ""
+    idx_start += len(start)
+    idx_end = text.find(end, idx_start)
+    if idx_end == -1:
+        return text[idx_start:]
+    return text[idx_start:idx_end]
 
+
+# ============================================================================
+# Brand Discovery
+# ============================================================================
 
 def discover_brands(session: HTTPSession) -> list[dict[str, str]]:
-    """Get all brands from GSMArena makers page."""
     log.info("Discovering brands...")
-    url = f"{BASE_URL}/makers.php"
+    url = f"{BASE_URL}/makers.php3"
     resp = session.get(url)
     if not resp:
         log.error("Failed to fetch brand list")
@@ -307,12 +211,13 @@ def discover_brands(session: HTTPSession) -> list[dict[str, str]]:
     soup = BeautifulSoup(resp.text, "lxml")
     brands = []
 
-    # GSMArena brand links are in <div class="brandmenu-v2">
     for link in soup.select("a[href]"):
         href = link.get("href", "")
-        # Brand pages look like: samsung-phones-f-1.php
-        if re.match(r"^[a-z0-9-]+-phones-f-\d+\.php$", href):
-            name = link.get_text(strip=True)
+        # Brand pages: samsung-phones-59.php, apple-phones-48.php
+        if re.match(r"^[a-z0-9_-]+-phones-\d+\.php$", href):
+            raw_text = link.get_text(strip=True)
+            # Text includes count like "Apple148 devices" — strip trailing digits+text
+            name = re.sub(r"\d+\s*devices?$", "", raw_text, flags=re.I).strip()
             if name and len(name) > 1:
                 slug = href.split("-phones")[0]
                 brands.append({
@@ -325,24 +230,24 @@ def discover_brands(session: HTTPSession) -> list[dict[str, str]]:
     return sorted(brands, key=lambda b: b["name"].lower())
 
 
-# ---------------------------------------------------------------------------
+# ============================================================================
 # Phone List Discovery (per brand, with pagination)
-# ---------------------------------------------------------------------------
-
+# ============================================================================
 
 def discover_brand_phones(session: HTTPSession, brand_url: str) -> list[dict[str, str]]:
-    """Get all phone page URLs for a brand (handles pagination)."""
     phones = []
     page = 1
+    brand_name = brand_url.split("/")[-1].split("-phones")[0]
 
     while True:
         if page == 1:
             url = brand_url
         else:
-            # GSMArena pagination: samsung-phones-f-1.php -> samsung-phones-f-1-p2.php
-            url = brand_url.replace(".php", f"-p{page}.php")
+            # GSMArena pagination: brand-phones-48.php -> brand-phones-48-p2.php
+            base = brand_url.replace(".php3", ".php") if brand_url.endswith(".php3") else brand_url.replace(".php", "")
+            url = f"{base}-p{page}.php"
 
-        resp = session.get(url)
+        resp = session.get(url, referer=brand_url if page > 1 else f"{BASE_URL}/")
         if not resp:
             break
 
@@ -351,196 +256,190 @@ def discover_brand_phones(session: HTTPSession, brand_url: str) -> list[dict[str
 
         for link in soup.select("a[href]"):
             href = link.get("href", "")
-            # Phone detail pages look like: samsung_galaxy_s24_ultra-12712.php
-            match = re.match(r"^([a-z0-9_]+)-(\d+)\.php$", href)
+            # Phone detail: apple_iphone_16_pro_max-13123.php
+            match = re.match(rf"^{re.escape(brand_name)}_[a-z0-9_]+-\d+\.php$", href)
+            if not match:
+                # Also match any phone from this brand
+                match = re.match(rf"^[a-z0-9_-]+_\w+-\d+\.php$", href)
+
             if match:
-                name_el = link.select_one(".phone-name, span")
-                name = name_el.get_text(strip=True) if name_el else link.get_text(strip=True)
-                if name:
-                    phones.append({
-                        "name": name,
-                        "slug": href.replace(".php", ""),
-                        "url": f"{BASE_URL}/{href}",
-                        "gsmarenaId": int(match.group(2)),
-                    })
-                    found_on_page += 1
+                name = link.get_text(strip=True)
+                if name and len(name) > 2:
+                    phone_url = f"{BASE_URL}/{href}"
+                    if phone_url not in [p["url"] for p in phones]:
+                        # Extract numeric ID from URL
+                        id_match = re.search(r"-(\d+)\.php$", href)
+                        phones.append({
+                            "name": name,
+                            "slug": href.replace(".php", ""),
+                            "url": phone_url,
+                            "gsmarenaId": int(id_match.group(1)) if id_match else None,
+                        })
+                        found_on_page += 1
 
         if found_on_page == 0:
             break
 
-        # Check for next page
-        next_link = soup.select_one("a.down-pagination")
-        if not next_link:
+        # Check for next page link
+        next_page = soup.select_one(f'a[href*="-p{page + 1}"]')
+        if not next_page:
             break
 
         page += 1
 
-    # Deduplicate by URL
-    seen = set()
-    unique = []
-    for p in phones:
-        if p["url"] not in seen:
-            seen.add(p["url"])
-            unique.append(p)
-
-    return unique
+    log.info(f"  Found {len(phones)} phones across {page} pages")
+    return phones
 
 
-# ---------------------------------------------------------------------------
+# ============================================================================
 # Phone Detail Extraction
-# ---------------------------------------------------------------------------
+# ============================================================================
 
-
-def extract_phone_detail(session: HTTPSession, phone: dict, download_images: bool = False) -> Optional[PhoneData]:
-    """Extract full specs from a GSMArena phone detail page."""
-    resp = session.get(phone["url"])
+def extract_phone_detail(session: HTTPSession, phone: dict, download_images: bool = False) -> Optional[Any]:
+    resp = session.get(phone["url"], referer=f"{BASE_URL}/")
     if not resp:
         return None
 
     soup = BeautifulSoup(resp.text, "lxml")
     now = datetime.now(timezone.utc).isoformat()
 
-    data = PhoneData()
-    data.id = phone["slug"]
-    data.slug = phone["slug"]
-    data.name = phone.get("name", "").strip()
-    data.gsmarenaId = phone.get("gsmarenaId")
-    data.sourceUrl = phone["url"]
-    data.scrapedAt = now
-    data.updatedAt = now
+    data = {
+        "id": phone["slug"],
+        "slug": phone["slug"],
+        "name": "",
+        "brand": "",
+        "gsmarenaId": phone.get("gsmarenaId"),
+        "sourceUrl": phone["url"],
+        "announcedAt": None,
+        "releaseAt": None,
+        "releaseYear": None,
+        "status": "available",
+        "brandColor": "",
+        "images": {"main": None, "gallery": [], "renders": [], "cameraSamples": []},
+        "specs": {},
+        "pricing": {"msrp": None, "currency": "USD", "startingPrice": None},
+        "scrapedAt": now,
+        "updatedAt": now,
+    }
 
-    # ── Brand ──
-    brand_el = soup.select_one(".brandmenu-v2 a.active, .article-info .brand")
-    if brand_el:
-        data.brand = brand_el.get_text(strip=True)
+    # ── Title & Brand ──
+    h1 = soup.select_one("h1")
+    if h1:
+        data["name"] = h1.get_text(strip=True)
     else:
-        # Infer brand from slug (first part before underscore)
-        data.brand = phone["slug"].split("_")[0].replace("-", " ").title()
+        data["name"] = phone.get("name", "")
 
-    # ── Dates ──
-    launch_el = soup.select_one(".launch-date")
-    if launch_el:
-        date_text = launch_el.get_text(" ", strip=True)
-        # "Announced 2024, January 17"
-        announced = re.search(r"(\d{4})(?:,\s*([A-Za-z]+)\s*(\d{1,2}))?", date_text)
-        if announced:
-            year = announced.group(1)
-            month = announced.group(2) or ""
-            day = announced.group(3) or ""
-            if month:
-                month_map = {
-                    "january": "01", "february": "02", "march": "03", "april": "04",
-                    "may": "05", "june": "06", "july": "07", "august": "08",
-                    "september": "09", "october": "10", "november": "11", "december": "12",
-                }
-                month_num = month_map.get(month.lower(), "")
-                if month_num and day:
-                    data.announcedAt = f"{year}-{month_num}-{day.zfill(2)}"
-                elif month_num:
-                    data.announcedAt = f"{year}-{month_num}"
-                else:
-                    data.announcedAt = year
-            else:
-                data.announcedAt = year
-
-            try:
-                data.releaseYear = int(year)
-            except ValueError:
-                pass
-
-    # Release status
-    status_el = soup.select_one(".status")
-    if status_el:
-        status_text = status_el.get_text(strip=True).lower()
-        if "discontinued" in status_text:
-            data.status = "discontinued"
-        elif "available" in status_text:
-            data.status = "available"
-        elif "expected" in status_text or "upcoming" in status_text:
-            data.status = "upcoming"
-        elif "rumored" in status_text:
-            data.status = "rumored"
-        else:
-            data.status = "available"
+    # Brand from page (in the title usually "Brand Model")
+    brand_match = re.match(r"^(\w[\w\s]*?)\s+", data["name"])
+    if brand_match:
+        data["brand"] = brand_match.group(1).strip()
     else:
-        data.status = "available"
+        data["brand"] = phone["slug"].split("_")[0].replace("-", " ").title()
+
+    brand_key = data["brand"].lower().split()[0]
+    data["brandColor"] = BRAND_COLORS.get(brand_key, "#6B7280")
 
     # ── Images ──
-    images = extract_images(soup, phone["url"], download_images, data.slug)
-    data.images = images
+    data["images"] = extract_images(soup, phone["url"], download_images, data["slug"])
 
-    # ── Specs Table ──
-    specs = extract_specs_table(soup)
-    data.specs = specs
+    # ── Dates & Status ──
+    specs_section = soup.select_one("#specs-list")
+    if specs_section:
+        # Find Launch section
+        for row in specs_section.select("tr"):
+            cells = row.select("th, td")
+            texts = [c.get_text(strip=True) for c in cells]
+            full_text = " ".join(texts).lower()
+
+            if "announced" in full_text:
+                date_match = re.search(r"(\d{4})(?:,\s*([A-Za-z]+)\s*(\d{1,2}))?", " ".join(texts))
+                if date_match:
+                    year = date_match.group(1)
+                    month = date_match.group(2) or ""
+                    day = date_match.group(3) or ""
+                    month_map = {
+                        "january": "01", "february": "02", "march": "03", "april": "04",
+                        "may": "05", "june": "06", "july": "07", "august": "08",
+                        "september": "09", "october": "10", "november": "11", "december": "12",
+                    }
+                    month_num = month_map.get(month.lower(), "")
+                    if month_num and day:
+                        data["announcedAt"] = f"{year}-{month_num}-{day.zfill(2)}"
+                    elif month_num:
+                        data["announcedAt"] = f"{year}-{month_num}"
+                    else:
+                        data["announcedAt"] = year
+                    try:
+                        data["releaseYear"] = int(year)
+                    except ValueError:
+                        pass
+
+            if "status" in full_text:
+                if "discontinued" in full_text:
+                    data["status"] = "discontinued"
+                elif "available" in full_text or "released" in full_text:
+                    data["status"] = "available"
+                elif "expected" in full_text or "upcoming" in full_text:
+                    data["status"] = "upcoming"
+
+    # ── Full Specs ──
+    data["specs"] = extract_specs(soup)
 
     # ── Pricing ──
-    price_el = soup.select_one(".price-body, .pricing")
-    if price_el:
-        price_text = price_el.get_text(strip=True)
-        price_val = parse_float(price_text.replace(",", ""))
+    price_text = ""
+    for row in (specs_section.select("tr") if specs_section else []):
+        th = row.select_one("th")
+        if th and "price" in th.get_text(strip=True).lower():
+            td = row.select_one("td")
+            if td:
+                price_text = td.get_text(strip=True)
+                break
+    if price_text:
+        price_val = parse_float(price_text.replace(",", "").replace("$", "").replace("€", "").replace("£", ""))
         if price_val:
-            data.pricing["msrp"] = price_val
-            data.pricing["startingPrice"] = price_val
+            data["pricing"]["msrp"] = price_val
+            data["pricing"]["startingPrice"] = price_val
 
     return data
 
 
 def extract_images(soup: BeautifulSoup, page_url: str, download: bool, slug: str) -> dict:
-    """Extract all images from the phone detail page."""
-    images: dict[str, Any] = {
-        "main": None,
-        "gallery": [],
-        "renders": [],
-        "cameraSamples": [],
-    }
+    images: dict[str, Any] = {"main": None, "gallery": [], "renders": [], "cameraSamples": []}
 
-    # Main product image
-    main_img = soup.select_one(".phone-image img, .review-body img, #review-body img, img.phone")
-    if main_img:
-        src = main_img.get("src") or main_img.get("data-src", "")
-        if src:
-            images["main"] = ensure_absolute_url(src, page_url)
+    # Main product image (usually in .phone-image or bigpic CDN)
+    for img in soup.select("img"):
+        src = img.get("src", "")
+        if "bigpic" in src or ("gsmarena" in src and ("phones" in src or "vv/bigpic" in src)):
+            images["main"] = ensure_absolute(src, page_url)
+            break
 
-    # Gallery images (color variants, different angles)
-    gallery_links = soup.select(".picture-list a img, .gallery a img, .review-gallery img")
-    for img in gallery_links:
-        src = img.get("src") or img.get("data-src", "")
+    # Gallery / pictures page images
+    for a in soup.select("a[href*='pictures'] img, a[href*='pictures-'] img"):
+        src = a.get("src", "")
         if src:
-            url = ensure_absolute_url(src, page_url)
-            if url and url not in images["gallery"]:
+            url = ensure_absolute(src, page_url)
+            if url not in images["gallery"]:
                 images["gallery"].append(url)
 
-    # Official renders (usually in the "pictures" section)
-    render_imgs = soup.select(".pictures a[href], .official-press-imgs a[href]")
-    for link in render_imgs:
-        href = link.get("href", "")
-        if href and ("pictures" in href or "pictures" in page_url):
-            url = ensure_absolute_url(href, page_url)
-            if url and url not in images["renders"]:
+    # Also check for official renders
+    for img in soup.select(".pictures a img, .official-press a img"):
+        src = img.get("src", "")
+        if src:
+            url = ensure_absolute(src, page_url)
+            if url not in images["renders"]:
                 images["renders"].append(url)
 
-    # Camera samples
-    sample_imgs = soup.select(".camera-sample img, .sample-photo img")
-    for img in sample_imgs:
-        src = img.get("src") or img.get("data-src", "")
-        if src:
-            url = ensure_absolute_url(src, page_url)
-            if url and url not in images["cameraSamples"]:
-                images["cameraSamples"].append(url)
-
-    # If no gallery, add the main image as the only gallery entry
+    # If no gallery found, use the main image
     if not images["gallery"] and images["main"]:
         images["gallery"] = [images["main"]]
 
-    # Download images if requested
     if download:
         images = download_phone_images(images, slug)
 
     return images
 
 
-def ensure_absolute_url(url: str, base_url: str) -> str:
-    """Ensure URL is absolute."""
+def ensure_absolute(url: str, base_url: str) -> str:
     if not url:
         return ""
     if url.startswith("//"):
@@ -551,444 +450,354 @@ def ensure_absolute_url(url: str, base_url: str) -> str:
 
 
 def download_phone_images(images: dict, slug: str) -> dict:
-    """Download images to public/images/phones/ and update URLs to local paths."""
     http = HTTPSession()
-    local_images: dict[str, Any] = {
-        "main": None,
-        "gallery": [],
-        "renders": [],
-        "cameraSamples": [],
-    }
-
+    local: dict[str, Any] = {"main": None, "gallery": [], "renders": [], "cameraSamples": []}
     img_dir = Path(IMAGES_DIR)
 
-    def download_one(url: str, suffix: str = "") -> Optional[str]:
+    def dl(url: str, suffix: str = "") -> Optional[str]:
         if not url:
             return None
-        # Generate filename from URL hash
-        url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+        h = hashlib.md5(url.encode()).hexdigest()[:8]
         ext = ".jpg"
         if ".png" in url.lower():
             ext = ".png"
         elif ".webp" in url.lower():
             ext = ".webp"
-        filename = f"{slug}{suffix}-{url_hash}{ext}"
+        filename = f"{slug}{suffix}-{h}{ext}"
         save_path = img_dir / filename
-
         if save_path.exists():
             return f"/images/phones/{filename}"
-
         if http.get_image(url, save_path):
             return f"/images/phones/{filename}"
         return None
 
-    # Download main image
-    local_images["main"] = download_one(images.get("main"), "-main")
-
-    # Download gallery (limit to 8)
+    local["main"] = dl(images.get("main"), "-main")
     for i, url in enumerate(images.get("gallery", [])[:8]):
-        local_url = download_one(url, f"-{i + 1}")
-        if local_url:
-            local_images["gallery"].append(local_url)
-
-    # Download renders (limit to 4)
+        u = dl(url, f"-{i + 1}")
+        if u:
+            local["gallery"].append(u)
     for i, url in enumerate(images.get("renders", [])[:4]):
-        local_url = download_one(url, f"-render-{i + 1}")
-        if local_url:
-            local_images["renders"].append(local_url)
-
-    # Download camera samples (limit to 6)
+        u = dl(url, f"-r{i + 1}")
+        if u:
+            local["renders"].append(u)
     for i, url in enumerate(images.get("cameraSamples", [])[:6]):
-        local_url = download_one(url, f"-sample-{i + 1}")
-        if local_url:
-            local_images["cameraSamples"].append(local_url)
-
-    return local_images
-
-
-# ---------------------------------------------------------------------------
-# Specs Table Parser
-# ---------------------------------------------------------------------------
+        u = dl(url, f"-s{i + 1}")
+        if u:
+            local["cameraSamples"].append(u)
+    return local
 
 
-def extract_specs_table(soup: BeautifulSoup) -> dict:
-    """Parse the GSMArena specs table into a structured dict."""
+# ============================================================================
+# Specs Table Parser — handles GSMArena's actual HTML structure
+# ============================================================================
+
+def extract_specs(soup: BeautifulSoup) -> dict:
     specs: dict[str, Any] = {
-        "body": {
-            "dimensions": "",
-            "weightG": None,
-            "build": "",
-            "ipRating": "",
-            "sim": "",
-            "colors": [],
-            "materials": [],
-        },
-        "screen": {
-            "type": "",
-            "sizeIn": None,
-            "resolution": "",
-            "ppi": None,
-            "refreshRateHz": None,
-            "peakBrightnessNits": None,
-            "hdr": [],
-            "protection": "",
-            "touchSamplingHz": None,
-        },
-        "cameras": {
-            "rear": [],
-            "front": None,
-            "videoMax": "",
-            "features": [],
-        },
-        "platform": {
-            "os": "",
-            "ui": "",
-            "chipset": "",
-            "processNodeNm": None,
-            "cpu": "",
-            "gpu": "",
-            "antutuV10": None,
-            "geekbench6Single": None,
-            "geekbench6Multi": None,
-        },
-        "memory": {
-            "ramGb": [],
-            "storageGb": [],
-            "storageType": "",
-            "cardSlot": False,
-        },
-        "battery": {
-            "capacityMah": None,
-            "type": "Li-Po",
-            "chargingW": None,
-            "wirelessChargingW": None,
-            "reverseW": None,
-        },
-        "connectivity": {
-            "network": "",
-            "wifi": "",
-            "bluetooth": "",
-            "nfc": False,
-            "usb": "",
-            "irBlaster": False,
-            "satelliteSos": False,
-            "uwb": False,
-        },
-        "extras": {
-            "fingerprint": "",
-            "faceUnlock": False,
-            "stylus": False,
-            "stylusStorage": False,
-            "speakers": "",
-            "headphoneJack": False,
-            "fmRadio": False,
-            "sensors": [],
-        },
+        "body": {"dimensions": "", "weightG": None, "build": "", "ipRating": "", "sim": "", "colors": [], "materials": []},
+        "screen": {"type": "", "sizeIn": None, "resolution": "", "ppi": None, "refreshRateHz": None, "peakBrightnessNits": None, "hdr": [], "protection": "", "touchSamplingHz": None},
+        "cameras": {"rear": [], "front": None, "videoMax": "", "features": []},
+        "platform": {"os": "", "ui": "", "chipset": "", "processNodeNm": None, "cpu": "", "gpu": "", "antutuV10": None, "geekbench6Single": None, "geekbench6Multi": None},
+        "memory": {"ramGb": [], "storageGb": [], "storageType": "", "cardSlot": False},
+        "battery": {"capacityMah": None, "type": "Li-Po", "chargingW": None, "wirelessChargingW": None, "reverseW": None},
+        "connectivity": {"network": "", "wifi": "", "bluetooth": "", "nfc": False, "usb": "", "irBlaster": False, "satelliteSos": False, "uwb": False},
+        "extras": {"fingerprint": "", "faceUnlock": False, "stylus": False, "stylusStorage": False, "speakers": "", "headphoneJack": False, "fmRadio": False, "sensors": []},
     }
 
-    # GSMArena uses a single table with class "spec-table" or "nfo"
-    # Each row has a <th> (label) and <td> (value)
-    tables = soup.select("table.spec-table, table.nfo, #specs-list table")
-    if not tables:
-        # Fallback: try all tables on the page
-        tables = soup.select("table")
+    specs_section = soup.select_one("#specs-list")
+    if not specs_section:
+        return specs
 
-    for table in tables:
-        rows = table.select("tr")
-        current_section = ""
+    current_section = ""
 
-        for row in rows:
-            th = row.select_one("th")
-            td = row.select_one("td")
-
-            if th and not td:
-                # Section header
-                current_section = th.get_text(strip=True).lower()
+    # Parse all rows — each table in #specs-list is a section
+    for table in specs_section.select("table"):
+        for row in table.select("tr"):
+            cells = row.select("th, td")
+            if not cells:
                 continue
 
-            if not th or not td:
+            texts = [c.get_text(" ", strip=True) for c in cells]
+
+            # 3 cells: section_header + label + value (first row of a section)
+            if len(cells) == 3:
+                current_section = texts[0].lower()
+                label = texts[1].lower()
+                value = texts[2]
+            # 2 cells: label + value
+            elif len(cells) == 2:
+                label = texts[0].lower()
+                value = texts[1]
+            else:
                 continue
 
-            label = th.get_text(strip=True).lower()
-            value = td.get_text(" ", strip=True)
+            full_text = " ".join(texts).lower()
+
+            # ── Network ──
+            if current_section == "network":
+                if "technology" in label:
+                    specs["connectivity"]["network"] = value
+                elif "5g" in label and "band" in label:
+                    pass  # bands handled below
+                elif "band" in label:
+                    pass
+
+            # ── Launch ──
+            elif current_section == "launch":
+                pass  # handled in extract_phone_detail
 
             # ── Body ──
-            if "dimensions" in label:
-                specs["body"]["dimensions"] = value
-            elif "weight" in label:
-                specs["body"]["weightG"] = parse_float(value)
-            elif label in ("build", "build type"):
-                specs["body"]["build"] = value
-            elif "ip rating" in label or "protection" in label or "dust" in label:
-                specs["body"]["ipRating"] = value
-            elif "sim" in label and "size" not in label:
-                specs["body"]["sim"] = value
-            elif "color" in label:
-                specs["body"]["colors"] = parse_color_list(value)
-            elif "material" in label:
-                specs["body"]["materials"] = [m.strip() for m in value.split(",") if m.strip()]
+            elif current_section == "body":
+                if "dimension" in label:
+                    specs["body"]["dimensions"] = value
+                elif "weight" in label:
+                    specs["body"]["weightG"] = parse_float(value)
+                elif "build" in label or "build type" in label:
+                    specs["body"]["build"] = value
+                elif "sim" in label:
+                    specs["body"]["sim"] = value
+                elif "ip" in label or "dust" in label:
+                    specs["body"]["ipRating"] = value
+                elif "color" in label:
+                    specs["body"]["colors"] = parse_colors(value)
+                elif "material" in label:
+                    specs["body"]["materials"] = [m.strip() for m in value.split(",") if m.strip()]
 
             # ── Display ──
-            elif "type" in label and ("display" in current_section or "screen" in current_section):
-                specs["screen"]["type"] = value
-            elif "type" in label and not specs["screen"]["type"]:
-                specs["screen"]["type"] = value
-            elif "size" in label and "inches" in value.lower() or re.search(r'[\d.]+["″]', value):
-                specs["screen"]["sizeIn"] = parse_float(value)
-            elif "resolution" in label:
-                specs["screen"]["resolution"] = value
-            elif "ppi" in label:
-                specs["screen"]["ppi"] = parse_int(value)
-            elif "refresh" in label or "hz" in label.lower():
-                specs["screen"]["refreshRateHz"] = parse_int(value)
-            elif "brightness" in label or "nits" in label.lower():
-                specs["screen"]["peakBrightnessNits"] = parse_int(value)
-            elif "hdr" in label:
-                specs["screen"]["hdr"] = [h.strip() for h in value.split(",") if h.strip()]
-            elif "protection" in label or "glass" in label:
-                specs["screen"]["protection"] = value
-            elif "touch" in label and "sampling" in label:
-                specs["screen"]["touchSamplingHz"] = parse_int(value)
+            elif current_section == "display":
+                if "type" in label:
+                    specs["screen"]["type"] = value
+                elif "size" in label:
+                    specs["screen"]["sizeIn"] = parse_float(value)
+                elif "resolution" in label:
+                    specs["screen"]["resolution"] = value
+                    ppi_match = re.search(r"(\d+)\s*ppi", value)
+                    if ppi_match:
+                        specs["screen"]["ppi"] = int(ppi_match.group(1))
+                elif "protection" in label or "glass" in label:
+                    specs["screen"]["protection"] = value
+                elif "brightness" in label or "nits" in full_text:
+                    nits = parse_int(value)
+                    if nits:
+                        specs["screen"]["peakBrightnessNits"] = nits
+                elif "refresh" in label or "hz" in full_text:
+                    hz = parse_int(value)
+                    if hz:
+                        specs["screen"]["refreshRateHz"] = hz
+                elif "touch" in label and "sampling" in label:
+                    hz = parse_int(value)
+                    if hz:
+                        specs["screen"]["touchSamplingHz"] = hz
+                elif "hdr" in label:
+                    specs["screen"]["hdr"] = [h.strip() for h in re.split(r",\s*", value) if h.strip()]
 
             # ── Platform ──
-            elif "os" in label and "operating" in current_section:
-                specs["platform"]["os"] = value
-            elif "chipset" in label:
-                specs["platform"]["chipset"] = value
-                # Try to extract process node
-                node_match = re.search(r"(\d+)\s*nm", value)
-                if node_match:
-                    specs["platform"]["processNodeNm"] = int(node_match.group(1))
-            elif "cpu" in label and "processor" not in label:
-                specs["platform"]["cpu"] = value
-            elif "gpu" in label:
-                specs["platform"]["gpu"] = value
-            elif "antutu" in label:
-                specs["platform"]["antutuV10"] = parse_int(value)
-            elif "geekbench" in label:
-                gb_match = re.search(r"(\d+)\s*(?:points?)?,?\s*(?:for\s*)?(\d+)?", value)
-                if gb_match:
-                    specs["platform"]["geekbench6Single"] = int(gb_match.group(1))
-                    if gb_match.group(2):
-                        specs["platform"]["geekbench6Multi"] = int(gb_match.group(2))
+            elif current_section == "platform":
+                if "os" in label:
+                    specs["platform"]["os"] = value
+                elif "chipset" in label:
+                    specs["platform"]["chipset"] = value
+                    node = re.search(r"(\d+)\s*nm", value)
+                    if node:
+                        specs["platform"]["processNodeNm"] = int(node.group(1))
+                elif "cpu" in label:
+                    specs["platform"]["cpu"] = value
+                elif "gpu" in label:
+                    specs["platform"]["gpu"] = value
 
             # ── Memory ──
-            elif "ram" in label:
-                specs["memory"]["ramGb"] = parse_ram_storage(value)
-            elif "internal" in label or "storage" in label:
-                specs["memory"]["storageGb"] = parse_ram_storage(value)
-                if "ufs" in value.lower():
-                    ufs_match = re.search(r"UFS\s*(\d+\.\d+)", value, re.I)
-                    if ufs_match:
-                        specs["memory"]["storageType"] = f"UFS {ufs_match.group(1)}"
-                elif "emmc" in value.lower():
-                    specs["memory"]["storageType"] = "eMMC 5.1"
-            elif "card" in label and "slot" in label:
-                specs["memory"]["cardSlot"] = value.lower() not in ("no", "none", "")
+            elif current_section == "memory":
+                if "card" in label and "slot" in label:
+                    specs["memory"]["cardSlot"] = "no" not in value.lower()
+                elif "internal" in label:
+                    specs["memory"]["storageGb"] = parse_storage_options(value)
+                    specs["memory"]["ramGb"] = parse_ram_options(value)
+                    if "ufs" in value.lower():
+                        ufs = re.search(r"UFS\s*(\d+\.\d+)", value, re.I)
+                        if ufs:
+                            specs["memory"]["storageType"] = f"UFS {ufs.group(1)}"
+                    elif "nvme" in value.lower():
+                        specs["memory"]["storageType"] = "NVMe"
+                    elif "emmc" in value.lower():
+                        specs["memory"]["storageType"] = "eMMC 5.1"
+
+            # ── Main Camera ──
+            elif current_section == "main camera":
+                if "feature" in label or "led" in label:
+                    specs["cameras"]["features"] = [f.strip() for f in re.split(r",\s*", value) if f.strip()]
+                elif "video" in label:
+                    specs["cameras"]["videoMax"] = value
+                elif label in ("triple", "dual", "single", "quad", "penta", "") or "mp" in value.lower():
+                    lenses = parse_camera_text(value)
+                    if lenses:
+                        specs["cameras"]["rear"] = lenses
+
+            # ── Selfie Camera ──
+            elif current_section == "selfie camera":
+                if "feature" in label:
+                    pass
+                elif "video" in label:
+                    pass
+                elif label in ("triple", "dual", "single", "quad", "penta", "") or "mp" in value.lower():
+                    lenses = parse_camera_text(value)
+                    if lenses:
+                        specs["cameras"]["front"] = lenses[0] if lenses else None
+
+            # ── Sound ──
+            elif current_section == "sound":
+                if "loudspeaker" in label:
+                    specs["extras"]["speakers"] = value
+                elif "3.5mm" in label or "jack" in label:
+                    specs["extras"]["headphoneJack"] = "no" not in value.lower()
+
+            # ── Comms ──
+            elif current_section == "comms":
+                if "wlan" in label or "wifi" in label:
+                    specs["connectivity"]["wifi"] = value
+                elif "bluetooth" in label:
+                    specs["connectivity"]["bluetooth"] = value
+                elif "nfc" in label:
+                    specs["connectivity"]["nfc"] = "no" not in value.lower()
+                elif "usb" in label:
+                    specs["connectivity"]["usb"] = value
+                elif "positioning" in label or "gps" in label:
+                    pass  # GNSS info
+
+            # ── Features ──
+            elif current_section == "features":
+                if "sensor" in label:
+                    specs["extras"]["sensors"] = [s.strip() for s in re.split(r",\s*", value) if s.strip()]
+                elif "fingerprint" in label:
+                    specs["extras"]["fingerprint"] = value
+                elif "uwb" in full_text or "ultra wideband" in full_text:
+                    specs["connectivity"]["uwb"] = True
+                elif "satellite" in full_text or "emergency" in full_text:
+                    specs["connectivity"]["satelliteSos"] = True
+                elif "face" in label and "id" in label:
+                    specs["extras"]["faceUnlock"] = True
+                elif "stylus" in label or "pen" in label:
+                    specs["extras"]["stylus"] = True
 
             # ── Battery ──
-            elif "capacity" in label or ("battery" in label and "type" not in label):
-                specs["battery"]["capacityMah"] = parse_int(value)
-            elif "type" in label and "battery" in current_section:
-                specs["battery"]["type"] = value
-            elif "charging" in label and "wireless" not in label:
-                specs["battery"]["chargingW"] = parse_int(value)
-            elif "wireless" in label and "charging" in label:
-                specs["battery"]["wirelessChargingW"] = parse_int(value)
-            elif "reverse" in label:
-                specs["battery"]["reverseW"] = parse_int(value)
+            elif current_section == "battery":
+                if "type" in label:
+                    # "Li-Ion 4685 mAh" or "Li-Po 5000 mAh"
+                    mah = re.search(r"(\d+)\s*mAh", value, re.I)
+                    if mah:
+                        specs["battery"]["capacityMah"] = int(mah.group(1))
+                    if "li-ion" in value.lower():
+                        specs["battery"]["type"] = "Li-Ion"
+                    elif "li-po" in value.lower():
+                        specs["battery"]["type"] = "Li-Po"
+                    elif "silicon" in value.lower():
+                        specs["battery"]["type"] = "Silicon-carbon"
+                elif "charging" in label:
+                    w = re.search(r"(\d+)W", value, re.I)
+                    if w:
+                        specs["battery"]["chargingW"] = int(w.group(1))
+                    wire_w = re.search(r"(\d+)W.*wireless", value, re.I)
+                    if wire_w:
+                        specs["battery"]["wirelessChargingW"] = int(wire_w.group(1))
 
-            # ── Connectivity ──
-            elif "technology" in label or "network" in label:
-                specs["connectivity"]["network"] = value
-            elif "wlan" in label or "wifi" in label.lower():
-                specs["connectivity"]["wifi"] = value
-            elif "bluetooth" in label:
-                specs["connectivity"]["bluetooth"] = value
-            elif "nfc" in label:
-                specs["connectivity"]["nfc"] = value.lower() not in ("no", "none", "")
-            elif "usb" in label:
-                specs["connectivity"]["usb"] = value
-            elif "infrared" in label:
-                specs["connectivity"]["irBlaster"] = value.lower() not in ("no", "none", "")
-
-            # ── Extras ──
-            elif "fingerprint" in label:
-                specs["extras"]["fingerprint"] = value
-            elif "face" in label and "unlock" in label:
-                specs["extras"]["faceUnlock"] = value.lower() not in ("no", "none", "")
-            elif "stylus" in label or "pen" in label:
-                specs["extras"]["stylus"] = value.lower() not in ("no", "none", "")
-            elif "speaker" in label:
-                specs["extras"]["speakers"] = value
-            elif "3.5mm" in label or "headphone" in label or "jack" in label:
-                specs["extras"]["headphoneJack"] = value.lower() not in ("no", "none", "")
-            elif "radio" in label and "fm" in label:
-                specs["extras"]["fmRadio"] = value.lower() not in ("no", "none", "")
-            elif "sensor" in label:
-                specs["extras"]["sensors"] = [s.strip() for s in value.split(",") if s.strip()]
-
-            # ── Camera ──
-            elif "main camera" in label or "quad camera" in label or "triple camera" in label or "dual camera" in label or "single camera" in label:
-                # Camera features line
-                specs["cameras"]["features"] = [f.strip() for f in value.split(",") if f.strip()]
-
-            elif "video" in label and ("max" in label or "resolution" in label or current_section in ("main camera", "selfie camera", "camera")):
-                if "front" in current_section or "selfie" in current_section:
-                    # Front camera video
+            # ── Misc ──
+            elif current_section == "misc":
+                if "color" in label:
+                    specs["body"]["colors"] = parse_colors(value)
+                elif "model" in label:
                     pass
-                else:
-                    specs["cameras"]["videoMax"] = value
+                elif "sar" in label:
+                    pass
+                elif "price" in label:
+                    pass  # handled in pricing section
 
-            elif "selfie" in label or "front" in label:
-                lens = parse_camera_from_text(value, td)
-                if lens:
-                    specs["cameras"]["front"] = lens
-
-    # ── Parse rear cameras from the detail sections ──
-    # GSMArena often lists camera details in separate sections
-    camera_sections = soup.select(".camera-feature, .cameras-info")
-    if not camera_sections:
-        # Try to parse from the main specs table camera rows
-        rear_cameras = parse_rear_cameras_from_specs(soup)
-        if rear_cameras:
-            specs["cameras"]["rear"] = rear_cameras
-
-    # If we still have no cameras, try to parse from the text
-    if not specs["cameras"]["rear"]:
-        camera_text = extract_camera_text(soup)
-        if camera_text:
-            lenses = parse_camera_text_to_lenses(camera_text)
-            specs["cameras"]["rear"] = lenses
+            # ── Our Tests ──
+            elif current_section == "our tests":
+                if "performance" in label or "antutu" in full_text:
+                    antutu = re.search(r"(\d[\d,]+)", value.replace(",", ""))
+                    if antutu:
+                        specs["platform"]["antutuV10"] = int(antutu.group(1).replace(",", ""))
+                    gb = re.search(r"GeekBench:\s*(\d+)", value)
+                    if gb:
+                        specs["platform"]["geekbench6Single"] = int(gb.group(1))
 
     return specs
 
 
-def parse_rear_cameras_from_specs(soup: BeautifulSoup) -> list[dict]:
-    """Parse rear cameras from the specs table detail rows."""
-    cameras = []
+# ============================================================================
+# Camera Text Parser
+# ============================================================================
 
-    # Look for camera detail sections in the table
-    for row in soup.select("tr"):
-        th = row.select_one("th")
-        td = row.select_one("td")
-        if not th or not td:
-            continue
-
-        label = th.get_text(strip=True).lower()
-        value = td.get_text(" ", strip=True)
-
-        # Match individual camera specs like "200 MP, f/1.7, 23mm (wide)"
-        camera_match = re.match(
-            r"(\d+(?:\.\d+)?)\s*(?:MP|megapixel)",
-            value,
-            re.IGNORECASE,
-        )
-        if camera_match:
-            mp = float(camera_match.group(1))
-            aperture_match = re.search(r"f/(\d+(?:\.\d+)?)", value)
-            aperture = f"f/{aperture_match.group(1)}" if aperture_match else ""
-
-            sensor_match = re.search(r'(\d+(?:\.\d+)?)\s*/\s*(\d+(?:\.\d+)?)["″]', value)
-            sensor_size = f'1/{sensor_match.group(2)}"' if sensor_match else ""
-
-            pixel_match = re.search(r"([\d.]+)\s*µm", value)
-            pixel_size = float(pixel_match.group(1)) if pixel_match else None
-
-            fov_match = re.search(r"(\d+(?:\.\d+)?)\s*mm", value)
-            fov = float(fov_match.group(1)) if fov_match else None
-
-            zoom_match = re.search(r"(\d+(?:\.\d+)?)x\s*(?:optical|zoom)", value, re.I)
-            optical_zoom = float(zoom_match.group(1)) if zoom_match else None
-
-            ois = "OIS" if "ois" in value.lower() or "optical image" in value.lower() else ""
-
-            # Determine lens type
-            lens_type = "wide"
-            if "ultra" in value.lower() or "uwd" in value.lower():
-                lens_type = "ultrawide"
-            elif "telephoto" in value.lower() or "periscope" in value.lower() or (optical_zoom and optical_zoom > 2):
-                lens_type = "periscope" if "periscope" in value.lower() or (optical_zoom and optical_zoom >= 5) else "telephoto"
-            elif "macro" in value.lower():
-                lens_type = "macro"
-            elif "depth" in value.lower():
-                lens_type = "depth"
-
-            cameras.append({
-                "label": lens_type,
-                "megapixels": mp,
-                "aperture": aperture,
-                "sensorSize": sensor_size,
-                "pixelSizeUm": pixel_size,
-                "fovDeg": fov,
-                "opticalZoom": optical_zoom,
-                "stabilization": ois,
-                "features": [],
-            })
-
-    return cameras
-
-
-def extract_camera_text(soup: BeautifulSoup) -> str:
-    """Extract camera description text from the page."""
-    # Try the cameras section
-    for section in soup.select("#camera, .camera, [id*='camera']"):
-        text = section.get_text(" ", strip=True)
-        if "MP" in text or "megapixel" in text.lower():
-            return text
-
-    # Fallback: look for the camera info in the specs table
-    for row in soup.select("tr"):
-        th = row.select_one("th")
-        if th and "camera" in th.get_text(strip=True).lower():
-            td = row.select_one("td")
-            if td:
-                return td.get_text(" ", strip=True)
-
-    return ""
-
-
-def parse_camera_text_to_lenses(text: str) -> list[dict]:
-    """Parse camera specifications from free-form text."""
+def parse_camera_text(text: str) -> list[dict]:
+    """Parse camera specifications like 'Triple 48 MP, f/1.8, 24mm (wide), ...'"""
     lenses = []
 
-    # Split by common delimiters
-    parts = re.split(r"[+|]", text)
+    # Remove the leading type word (Triple, Dual, Single, Quad, Penta)
+    text = re.sub(r"^(?:Triple|Dual|Single|Quad|Penta)\s+", "", text)
 
-    for part in parts:
-        part = part.strip()
-        mp_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:MP|megapixel)", part, re.I)
+    # Find all MP values and their positions to split the text into per-lens segments
+    mp_positions = [(m.start(), m.end()) for m in re.finditer(r"\b\d+(?:\.\d+)?\s*MP\b", text, re.I)]
+
+    if not mp_positions:
+        return []
+
+    # Extract segments: from one MP to the next
+    segments = []
+    for i, (start, _) in enumerate(mp_positions):
+        end = mp_positions[i + 1][0] if i + 1 < len(mp_positions) else len(text)
+        segments.append(text[start:end].strip())
+
+    for part in segments:
+        mp_match = re.search(r"(\d+(?:\.\d+)?)\s*MP", part, re.I)
         if not mp_match:
             continue
 
         mp = float(mp_match.group(1))
+
+        # Skip very low MP (LiDAR scanner etc)
+        if mp < 1.0:
+            continue
+
         aperture_match = re.search(r"f/(\d+(?:\.\d+)?)", part)
         aperture = f"f/{aperture_match.group(1)}" if aperture_match else ""
 
-        zoom_match = re.search(r"(\d+(?:\.\d+)?)x", part)
+        sensor_match = re.search(r'1/(\d+(?:\.\d+)?)["″]', part)
+        sensor_size = f'1/{sensor_match.group(1)}"' if sensor_match else ""
+
+        pixel_match = re.search(r"([\d.]+)\s*[µu]m", part)
+        pixel_size = float(pixel_match.group(1)) if pixel_match else None
+
+        zoom_match = re.search(r"(\d+(?:\.\d+)?)x\s*(?:optical|zoom|periscope)", part, re.I)
         optical_zoom = float(zoom_match.group(1)) if zoom_match else None
 
-        lens_type = "wide"
-        if "ultra" in part.lower():
-            lens_type = "ultrawide"
-        elif "tele" in part.lower() or "zoom" in part.lower():
-            lens_type = "telephoto"
-        elif "periscope" in part.lower():
-            lens_type = "periscope"
-        elif "macro" in part.lower():
-            lens_type = "macro"
-        elif "depth" in part.lower():
-            lens_type = "depth"
+        fov_match = re.search(r"(\d+(?:\.\d+)?)\s*mm\b", part)
+        fov = float(fov_match.group(1)) if fov_match else None
 
-        ois = "OIS" if "ois" in part.lower() else ""
+        ois = ""
+        if "ois" in part.lower() or "optical image" in part.lower() or "sensor-shift" in part.lower() or "sensor\u2011shift" in part.lower():
+            ois = "OIS"
+        elif "eis" in part.lower() or "gyro" in part.lower():
+            ois = "EIS"
+
+        # Determine lens type
+        lens_type = "wide"
+        part_lower = part.lower()
+        if "ultra" in part_lower or "uwd" in part_lower or "120°" in part:
+            lens_type = "ultrawide"
+        elif "periscope" in part_lower:
+            lens_type = "periscope"
+        elif "telephoto" in part_lower or (optical_zoom and optical_zoom >= 2):
+            lens_type = "telephoto"
+        elif "macro" in part_lower:
+            lens_type = "macro"
+        elif "depth" in part_lower or "lidar" in part_lower or "tof" in part_lower:
+            lens_type = "depth"
 
         lenses.append({
             "label": lens_type,
             "megapixels": mp,
             "aperture": aperture,
-            "sensorSize": "",
-            "pixelSizeUm": None,
-            "fovDeg": None,
+            "sensorSize": sensor_size,
+            "pixelSizeUm": pixel_size,
+            "fovDeg": fov,
             "opticalZoom": optical_zoom,
             "stabilization": ois,
             "features": [],
@@ -997,114 +806,83 @@ def parse_camera_text_to_lenses(text: str) -> list[dict]:
     return lenses
 
 
-def parse_camera_from_text(text: str, td: Tag) -> Optional[dict]:
-    """Parse a camera lens spec from text."""
-    mp_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:MP|megapixel)", text, re.I)
-    if not mp_match:
-        return None
+# ============================================================================
+# Storage / RAM Parsers
+# ============================================================================
 
-    mp = float(mp_match.group(1))
-    aperture_match = re.search(r"f/(\d+(?:\.\d+)?)", text)
-    aperture = f"f/{aperture_match.group(1)}" if aperture_match else ""
-
-    lens_type = "selfie" if "selfie" in text.lower() or "front" in text.lower() else "wide"
-    ois = "OIS" if "ois" in text.lower() else ""
-
-    return {
-        "label": lens_type,
-        "megapixels": mp,
-        "aperture": aperture,
-        "sensorSize": "",
-        "pixelSizeUm": None,
-        "fovDeg": None,
-        "opticalZoom": None,
-        "stabilization": ois,
-        "features": [],
-    }
+def parse_storage_options(text: str) -> list[int]:
+    """Parse '256GB 8GB RAM, 512GB 8GB RAM, 1TB 8GB RAM' into [256, 512, 1024]."""
+    options = set()
+    # Remove "XGB RAM" parts first to avoid matching RAM as storage
+    cleaned = re.sub(r"\d+\s*GB\s*RAM", "", text, flags=re.I)
+    # Match storage amounts (GB or TB)
+    for match in re.finditer(r"(\d+)\s*(TB|GB)", cleaned, re.I):
+        val = int(match.group(1))
+        unit = match.group(2).upper()
+        if unit == "TB":
+            val *= 1024
+        if val > 0:
+            options.add(val)
+    return sorted(options)
 
 
-def parse_color_list(text: str) -> list[str]:
-    """Parse a comma-separated color list."""
-    # "Cosmic Black, Nebula Blue, Silver" -> ["Cosmic Black", "Nebula Blue", "Silver"]
-    # Handle "Also in X colors: A, B, C" pattern
+def parse_ram_options(text: str) -> list[int]:
+    """Parse RAM from '256GB 8GB RAM, 512GB 12GB RAM'."""
+    options = set()
+    for match in re.finditer(r"(\d+)\s*GB\s*RAM", text, re.I):
+        val = int(match.group(1))
+        if 1 <= val <= 32:
+            options.add(val)
+    return sorted(options)
+
+
+def parse_colors(text: str) -> list[str]:
+    """Parse color list like 'Black Titanium, White Titanium, Natural Titanium'."""
+    # Remove "Also in X colors:" prefix
     text = re.sub(r"^(?:also\s+)?(?:in\s+)?(?:\d+\s+)?(?:additional\s+)?colou?rs?\s*:?\s*", "", text, flags=re.I)
+    # Split by comma followed by uppercase letter
     colors = re.split(r",\s*(?=[A-Z])", text)
     return [c.strip() for c in colors if c.strip() and len(c.strip()) > 1]
 
 
-def parse_ram_storage(text: str) -> list[int]:
-    """Parse RAM/Storage options like '256GB / 512GB / 1TB' or '8GB RAM'."""
-    # Extract all numbers with their units
-    options = []
-    parts = re.split(r"[/,]", text)
-
-    for part in parts:
-        part = part.strip()
-        gb_match = re.search(r"(\d+)\s*GB", part, re.I)
-        tb_match = re.search(r"(\d+)\s*TB", part, re.I)
-
-        if gb_match:
-            options.append(int(gb_match.group(1)))
-        elif tb_match:
-            options.append(int(tb_match.group(1)) * 1024)
-
-    return sorted(set(options))
-
-
-# ---------------------------------------------------------------------------
-# Daily Mode — Get latest phones
-# ---------------------------------------------------------------------------
-
+# ============================================================================
+# Daily Mode
+# ============================================================================
 
 def discover_daily_phones(session: HTTPSession) -> list[dict]:
-    """Get phones from the 'latest' / 'just announced' page."""
     log.info("Fetching latest phones...")
-
     phones = []
-    urls_to_try = [
-        f"{BASE_URL}/phones.php3",
-        f"{BASE_URL}/newphones.php",
-    ]
 
-    for url in urls_to_try:
+    for url in [f"{BASE_URL}/phones.php3", f"{BASE_URL}/newphones.php"]:
         resp = session.get(url)
         if not resp:
             continue
-
         soup = BeautifulSoup(resp.text, "lxml")
-
         for link in soup.select("a[href]"):
             href = link.get("href", "")
-            match = re.match(r"^([a-z0-9_]+)-(\d+)\.php$", href)
+            match = re.match(r"^[a-z0-9_-]+_[a-z0-9_]+-\d+\.php$", href)
             if match:
                 name = link.get_text(strip=True)
-                if name:
+                if name and len(name) > 2:
+                    id_match = re.search(r"-(\d+)\.php$", href)
                     phones.append({
                         "name": name,
                         "slug": href.replace(".php", ""),
                         "url": f"{BASE_URL}/{href}",
-                        "gsmarenaId": int(match.group(2)),
+                        "gsmarenaId": int(id_match.group(1)) if id_match else None,
                     })
-
         if phones:
             break
 
-    # Deduplicate
     seen = set()
-    unique = []
-    for p in phones:
-        if p["url"] not in seen:
-            seen.add(p["url"])
-            unique.append(p)
-
+    unique = [p for p in phones if p["url"] not in seen and not seen.add(p["url"])]
     log.info(f"Found {len(unique)} latest phones")
     return unique
 
 
 # ============================================================================
-# Progress / Checkpoint Management
+# Progress / Checkpoint
 # ============================================================================
-
 
 @dataclass
 class Progress:
@@ -1134,45 +912,33 @@ class Progress:
 
 
 # ============================================================================
-# Main Scraper Engine
+# Main Scraper
 # ============================================================================
 
-
 class PhoneScraper:
-    """Main scraper orchestrator."""
-
     def __init__(self, args: argparse.Namespace):
         self.args = args
         self.http = HTTPSession()
         self.progress = Progress()
-        self.phones: list[PhoneData] = []
+        self.phones: list[dict] = []
         self._load_existing()
 
     def _load_existing(self):
-        """Load existing phones.json if it exists."""
         if os.path.exists(OUTPUT_FILE):
             try:
                 with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                # Convert dicts back to PhoneData objects
-                for item in data:
-                    phone = PhoneData()
-                    for k, v in item.items():
-                        if hasattr(phone, k):
-                            setattr(phone, k, v)
-                    self.phones.append(phone)
+                    self.phones = json.load(f)
                 log.info(f"Loaded {len(self.phones)} existing phones from {OUTPUT_FILE}")
             except Exception as e:
                 log.warning(f"Could not load existing {OUTPUT_FILE}: {e}")
 
     def run(self):
-        """Main entry point."""
         self.progress.mode = self.args.mode
         self.progress.startedAt = datetime.now(timezone.utc).isoformat()
 
         if self.args.resume:
             self.progress = Progress.load()
-            log.info(f"Resuming from checkpoint: brand={self.progress.lastBrand}, page={self.progress.lastPage}")
+            log.info(f"Resuming: brand={self.progress.lastBrand}, page={self.progress.lastPage}")
         elif self.args.stats:
             self._show_stats()
             return
@@ -1186,23 +952,20 @@ class PhoneScraper:
             log.info("\nInterrupted! Saving progress...")
             self.progress.save()
         except Exception as e:
-            log.error(f"Scraper error: {e}", exc_info=True)
+            log.error(f"Error: {e}", exc_info=True)
             self.progress.save()
         finally:
             self._save_output()
 
     def _run_full(self):
-        """Scrape all brands and all phones."""
         brands = discover_brands(self.http)
-
         if self.args.brands:
-            filter_brands = [b.lower() for b in self.args.brands.split(",")]
-            brands = [b for b in brands if b["slug"].lower() in filter_brands or b["name"].lower() in filter_brands]
-            log.info(f"Filtered to {len(brands)} brands: {[b['name'] for b in brands]}")
+            filter_list = [b.lower() for b in self.args.brands.split(",")]
+            brands = [b for b in brands if b["slug"].lower() in filter_list or b["name"].lower() in filter_list]
+            log.info(f"Filtered to {len(brands)} brands")
 
         self.progress.totalBrands = len(brands)
 
-        # Resume from last completed brand
         start_idx = 0
         if self.progress.lastBrand:
             for i, brand in enumerate(brands):
@@ -1213,25 +976,19 @@ class PhoneScraper:
         for i, brand in enumerate(brands[start_idx:], start=start_idx):
             self.progress.lastBrand = brand["slug"]
             self.progress.completedBrands = i
-
-            log.info(f"[{i + 1}/{len(brands)}] Scraping brand: {brand['name']}")
+            log.info(f"[{i + 1}/{len(brands)}] {brand['name']}")
             self._scrape_brand(brand)
-
-            # Save checkpoint after each brand
             self.progress.save()
 
         self.progress.completedBrands = len(brands)
         self.progress.save()
 
     def _run_daily(self):
-        """Scrape only today's new releases."""
         daily_phones = discover_daily_phones(self.http)
         self.progress.totalPhones = len(daily_phones)
-
-        existing_slugs = {p.slug for p in self.phones}
+        existing_slugs = {p["slug"] for p in self.phones}
         new_phones = [p for p in daily_phones if p["slug"] not in existing_slugs]
-
-        log.info(f"Found {len(new_phones)} new phones to scrape (out of {len(daily_phones)} total)")
+        log.info(f"{len(new_phones)} new phones to scrape")
 
         for i, phone in enumerate(new_phones):
             self.progress.scrapedPhones = i + 1
@@ -1241,105 +998,89 @@ class PhoneScraper:
         self.progress.save()
 
     def _scrape_brand(self, brand: dict):
-        """Scrape all phones for a single brand."""
         phones = discover_brand_phones(self.http, brand["url"])
         self.progress.totalPhones += len(phones)
-
-        existing_slugs = {p.slug for p in self.phones}
+        existing_slugs = {p["slug"] for p in self.phones}
         new_phones = [p for p in phones if p["slug"] not in existing_slugs]
 
         if not new_phones:
-            log.info(f"  All {len(phones)} phones already scraped, skipping")
+            log.info(f"  All {len(phones)} phones already scraped")
             return
 
-        log.info(f"  {len(new_phones)} new phones to scrape (out of {len(phones)})")
+        log.info(f"  {len(new_phones)} new phones (out of {len(phones)})")
 
         for i, phone in enumerate(new_phones):
             log.info(f"  [{i + 1}/{len(new_phones)}] {phone['name']}")
             self._scrape_phone(phone)
 
-    def _scrape_phone(self, phone: dict):
-        """Scrape a single phone and add to the collection."""
-        try:
-            data = extract_phone_detail(
-                self.http,
-                phone,
-                download_images=self.args.download_images,
-            )
-            if data:
-                # Set brand color
-                brand_key = data.brand.lower().split()[0]
-                data_dict = asdict(data)
-                data_dict["brandColor"] = BRAND_COLORS.get(brand_key, "#6B7280")
+        # Save after each brand to prevent data loss
+        self._save_phone_data()
 
+    def _scrape_phone(self, phone: dict):
+        try:
+            data = extract_phone_detail(self.http, phone, self.args.download_images)
+            if data and data.get("name"):
                 self.phones.append(data)
-                self.progress.scrapedSlugs.append(data.slug)
+                self.progress.scrapedSlugs.append(data["slug"])
                 self.progress.scrapedPhones += 1
-                log.info(f"    ✓ {data.name} ({data.brand}) — {len(data.images.get('gallery', []))} images")
+                img_count = len(data.get("images", {}).get("gallery", []))
+                log.info(f"    ✓ {data['name']} ({data['brand']}) — {img_count} images")
+                # Save after every phone to prevent data loss
+                self._save_phone_data()
             else:
-                log.warning(f"    ✗ No data extracted for {phone['name']}")
+                log.warning(f"    ✗ No data: {phone['name']}")
                 self.progress.failedUrls.append(phone["url"])
         except Exception as e:
-            log.error(f"    ✗ Error scraping {phone['name']}: {e}")
+            log.error(f"    ✗ Error: {phone['name']}: {e}")
             self.progress.failedUrls.append(phone["url"])
             self.progress.errors.append({
-                "url": phone["url"],
-                "error": str(e),
+                "url": phone["url"], "error": str(e),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
 
-    def _save_output(self):
-        """Save all scraped phones to phones.json."""
-        log.info(f"Saving {len(self.phones)} phones to {OUTPUT_FILE}...")
-        output = [asdict(p) for p in self.phones]
-
-        # Sort by brand then name
-        output.sort(key=lambda p: (p["brand"].lower(), p["name"].lower()))
-
+    def _save_phone_data(self):
+        """Save phones data incrementally (after each brand)."""
+        output = sorted(self.phones, key=lambda p: (p.get("brand", "").lower(), p.get("name", "").lower()))
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
+        log.info(f"  💾 Saved {len(output)} phones to {OUTPUT_FILE}")
 
-        log.info(f"✓ Saved {len(output)} phones to {OUTPUT_FILE}")
+    def _save_output(self):
+        log.info(f"Saving {len(self.phones)} phones to {OUTPUT_FILE}...")
+        self._save_phone_data()
+        log.info(f"✓ Saved {len(self.phones)} phones")
         self._show_stats()
 
     def _show_stats(self):
-        """Display scraping statistics."""
         total = len(self.phones)
         if total == 0:
             log.info("No phones scraped yet.")
             return
 
-        brands = {}
+        brands, years = {}, {}
         with_images = 0
-        with_specs = 0
-        years = {}
-
         for p in self.phones:
-            brands[p.brand] = brands.get(p.brand, 0) + 1
-            if p.images.get("main"):
+            b = p.get("brand", "Unknown")
+            brands[b] = brands.get(b, 0) + 1
+            if p.get("images", {}).get("main"):
                 with_images += 1
-            if p.specs:
-                with_specs += 1
-            if p.releaseYear:
-                years[p.releaseYear] = years.get(p.releaseYear, 0) + 1
+            y = p.get("releaseYear")
+            if y:
+                years[y] = years.get(y, 0) + 1
 
         log.info("=" * 60)
         log.info("SCRAPER STATISTICS")
         log.info("=" * 60)
-        log.info(f"Total phones:    {total}")
-        log.info(f"With images:     {with_images} ({with_images * 100 // total}%)")
-        log.info(f"With specs:      {with_specs} ({with_specs * 100 // total}%)")
-        log.info(f"Unique brands:   {len(brands)}")
-        log.info(f"Failed URLs:     {len(self.progress.failedUrls)}")
+        log.info(f"Total phones:  {total}")
+        log.info(f"With images:   {with_images} ({with_images * 100 // max(total, 1)}%)")
+        log.info(f"Unique brands: {len(brands)}")
+        log.info(f"Failed URLs:   {len(self.progress.failedUrls)}")
         log.info("")
         log.info("Top brands:")
         for brand, count in sorted(brands.items(), key=lambda x: -x[1])[:20]:
             log.info(f"  {brand}: {count}")
-        log.info("")
         if years:
-            log.info(f"Year range: {min(years)} - {max(years)}")
-            for year in sorted(years.keys()):
-                log.info(f"  {year}: {years[year]}")
+            log.info(f"\nYear range: {min(years)} - {max(years)}")
         log.info("=" * 60)
 
 
@@ -1347,55 +1088,21 @@ class PhoneScraper:
 # CLI
 # ============================================================================
 
-
 def main():
     parser = argparse.ArgumentParser(
         description="iToPhone Scraper — Extract smartphone data from GSMArena",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-    python scraper.py --mode=full                      # Scrape everything
-    python scraper.py --mode=full --download-images    # Scrape + download images
-    python scraper.py --mode=full --brands=samsung,apple  # Specific brands only
-    python scraper.py --mode=daily                     # Today's new phones only
-    python scraper.py --resume                         # Resume from checkpoint
-    python scraper.py --stats                          # Show statistics
-        """,
     )
-
-    parser.add_argument(
-        "--mode",
-        choices=["full", "daily"],
-        default="full",
-        help="Scraping mode: full (all phones) or daily (new today)",
-    )
-    parser.add_argument(
-        "--brands",
-        type=str,
-        default=None,
-        help="Comma-separated brand slugs to scrape (e.g. samsung,apple,google)",
-    )
-    parser.add_argument(
-        "--download-images",
-        action="store_true",
-        help="Download images to public/images/phones/",
-    )
-    parser.add_argument(
-        "--resume",
-        action="store_true",
-        help="Resume from last checkpoint (progress.json)",
-    )
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        help="Show scraping statistics and exit",
-    )
+    parser.add_argument("--mode", choices=["full", "daily"], default="full")
+    parser.add_argument("--brands", type=str, default=None, help="Comma-separated brand slugs")
+    parser.add_argument("--download-images", action="store_true")
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--stats", action="store_true")
 
     args = parser.parse_args()
 
     log.info("=" * 60)
-    log.info("iToPhone Scraper — GSMArena Data Extractor")
-    log.info(f"Mode: {args.mode} | Images: {args.download_images} | Resume: {args.resume}")
+    log.info(f"iToPhone Scraper — Mode: {args.mode} | Images: {args.download_images}")
     log.info("=" * 60)
 
     scraper = PhoneScraper(args)
