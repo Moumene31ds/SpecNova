@@ -21,3 +21,13 @@ export const LazyDeviceViewer3D = dynamic(
   () => import("@/components/device/device-viewer-3d").then((m) => m.DeviceViewer3D),
   { ssr: false, loading: () => <div className="aspect-square animate-pulse rounded-2xl bg-card/50" /> },
 );
+
+export const LazyImageUpload = dynamic(
+  () => import("@/components/device/image-upload").then((m) => m.ImageUpload),
+  { ssr: false, loading: () => <div className="h-48 animate-pulse rounded-2xl bg-card/50" /> },
+);
+
+export const LazyImageLightbox = dynamic(
+  () => import("@/components/device/image-lightbox").then((m) => m.ImageLightbox),
+  { ssr: false },
+);

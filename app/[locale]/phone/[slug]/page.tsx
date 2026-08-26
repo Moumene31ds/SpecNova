@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ArrowRight, Cpu, Battery, Camera, Smartphone, Zap, Star, Clock, Shield } from "lucide-react";
+import { ArrowRight, Cpu, Battery, Camera, Smartphone, Zap, Star, Clock, Shield, Images } from "lucide-react";
 import { getDevice, getCatalog } from "@/lib/query/device-query";
 import { brandColor } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -24,6 +24,8 @@ import {
   LazyBandChecker,
   LazyPhoneImageGallery,
   LazyDeviceViewer3D,
+  LazyImageUpload,
+  LazyImageLightbox,
 } from "@/components/device/lazy-components";
 
 interface Props {
@@ -233,6 +235,7 @@ export default async function PhonePage({ params }: Props) {
             <TabsTrigger value="price" className="text-xs sm:text-sm">Price history</TabsTrigger>
             <TabsTrigger value="bands" className="text-xs sm:text-sm">Carrier bands</TabsTrigger>
             <TabsTrigger value="reviews" className="text-xs sm:text-sm gap-1"><Star className="h-3 w-3" /> Reviews</TabsTrigger>
+            <TabsTrigger value="photos" className="text-xs sm:text-sm gap-1"><Images className="h-3 w-3" /> Photos</TabsTrigger>
             <TabsTrigger value="updates" className="text-xs sm:text-sm gap-1"><Clock className="h-3 w-3" /> Updates</TabsTrigger>
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
           </TabsList>
@@ -271,6 +274,41 @@ export default async function PhonePage({ params }: Props) {
               deviceName={device.name}
               score={device.score}
             />
+          </TabsContent>
+          <TabsContent value="photos">
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                Upload your own photos of the {device.brand} {device.name}.
+                Best quality images help everyone make better decisions.
+              </p>
+              <LazyImageUpload
+                deviceId={device.id}
+                deviceBrand={device.brand}
+                deviceName={device.name}
+                accent={accent}
+                type="gallery"
+                existingCount={device.media.gallery.length}
+                maxFiles={10}
+              />
+              {device.media.gallery.length > 0 && (
+                <div>
+                  <h3 className="mb-3 text-sm font-medium">Community photos</h3>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {device.media.gallery.map((url, i) => (
+                      <div key={`${url}-${i}`} className="group relative aspect-square overflow-hidden rounded-xl border border-border/60">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`${device.brand} ${device.name} photo ${i + 1}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </TabsContent>
           <TabsContent value="updates">
             <UpdateTracker

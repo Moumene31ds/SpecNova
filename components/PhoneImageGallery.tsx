@@ -50,7 +50,9 @@ function isImageOptimizable(url: string): boolean {
       host.endsWith("apple.com") ||
       host === "images.unsplash.com" ||
       host.endsWith("cloudfront.net") ||
-      host === "i0.wp.com"
+      host === "i0.wp.com" ||
+      host === "res.cloudinary.com" ||
+      host.endsWith(".cloudinary.com")
     );
   } catch {
     return false;
