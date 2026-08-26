@@ -49,8 +49,16 @@ async function fetchDevice(slug: string): Promise<DeviceData | null> {
     modelNumbers: data.modelNumbers ?? [],
     codename: data.codename ?? null,
     status: data.status ?? "rumored",
-    announcedAt: data.announcedAt ? new Date(data.announcedAt.seconds * 1000).toISOString() : null,
-    releaseAt: data.releaseAt ? new Date(data.releaseAt.seconds * 1000).toISOString() : null,
+    announcedAt: (() => {
+      if (!data.announcedAt?.seconds) return null;
+      const d = new Date(data.announcedAt.seconds * 1000);
+      return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+    })(),
+    releaseAt: (() => {
+      if (!data.releaseAt?.seconds) return null;
+      const d = new Date(data.releaseAt.seconds * 1000);
+      return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+    })(),
     specs: data.specs as unknown as AiExtractedDevice["specs"],
     variants,
     media: {

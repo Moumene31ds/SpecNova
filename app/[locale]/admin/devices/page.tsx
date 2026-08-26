@@ -42,7 +42,11 @@ async function fetchDevices(): Promise<DeviceRow[]> {
       name: data.name ?? "",
       status: data.status ?? "rumored",
       score: data.score?.total ?? 0,
-      updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000).toISOString() : null,
+      updatedAt: (() => {
+        if (!data.updatedAt?.seconds) return null;
+        const d = new Date(data.updatedAt.seconds * 1000);
+        return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+      })(),
     };
   });
 }
