@@ -69,8 +69,9 @@ export async function POST(
     });
 
     return NextResponse.json({ ok: true, url });
-  } catch (err: any) {
-    console.error("[device/images] Error:", err?.message ?? err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[device/images] Error:", message);
     return NextResponse.json(
       { error: "Failed to save image." },
       { status: 500 },

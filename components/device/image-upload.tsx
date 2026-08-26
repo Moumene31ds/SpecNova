@@ -138,10 +138,11 @@ export function ImageUpload({
       );
 
       onUploadComplete?.(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Upload failed";
       setQueue((prev) =>
         prev.map((item, i) =>
-          i === index ? { ...item, status: "error", error: err.message } : item,
+          i === index ? { ...item, status: "error", error: message } : item,
         ),
       );
     }

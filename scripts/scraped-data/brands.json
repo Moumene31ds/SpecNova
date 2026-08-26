@@ -1,0 +1,582 @@
+{
+  "acer": {
+    "name": "Acer117 devices",
+    "listUrl": "acer-phones-59.php",
+    "id": 59
+  },
+  "alcatel": {
+    "name": "Alcatel",
+    "listUrl": "alcatel-phones-5.php",
+    "id": 5
+  },
+  "allview": {
+    "name": "Allview157 devices",
+    "listUrl": "allview-phones-88.php",
+    "id": 88
+  },
+  "amazon": {
+    "name": "Amazon25 devices",
+    "listUrl": "amazon-phones-76.php",
+    "id": 76
+  },
+  "amoi": {
+    "name": "Amoi47 devices",
+    "listUrl": "amoi-phones-28.php",
+    "id": 28
+  },
+  "apple": {
+    "name": "Apple",
+    "listUrl": "apple-phones-48.php",
+    "id": 48
+  },
+  "archos": {
+    "name": "Archos43 devices",
+    "listUrl": "archos-phones-90.php",
+    "id": 90
+  },
+  "asus": {
+    "name": "Asus",
+    "listUrl": "asus-phones-46.php",
+    "id": 46
+  },
+  "benefon": {
+    "name": "Benefon9 devices",
+    "listUrl": "benefon-phones-15.php",
+    "id": 15
+  },
+  "benq": {
+    "name": "BenQ35 devices",
+    "listUrl": "benq-phones-31.php",
+    "id": 31
+  },
+  "bird": {
+    "name": "Bird61 devices",
+    "listUrl": "bird-phones-34.php",
+    "id": 34
+  },
+  "blackberry": {
+    "name": "BlackBerry92 devices",
+    "listUrl": "blackberry-phones-36.php",
+    "id": 36
+  },
+  "blackview": {
+    "name": "Blackview",
+    "listUrl": "blackview-phones-116.php",
+    "id": 116
+  },
+  "blu": {
+    "name": "BLU369 devices",
+    "listUrl": "blu-phones-67.php",
+    "id": 67
+  },
+  "bosch": {
+    "name": "Bosch10 devices",
+    "listUrl": "bosch-phones-10.php",
+    "id": 10
+  },
+  "bq": {
+    "name": "BQ20 devices",
+    "listUrl": "bq-phones-108.php",
+    "id": 108
+  },
+  "casio": {
+    "name": "Casio5 devices",
+    "listUrl": "casio-phones-77.php",
+    "id": 77
+  },
+  "cat": {
+    "name": "Cat22 devices",
+    "listUrl": "cat-phones-89.php",
+    "id": 89
+  },
+  "celkon": {
+    "name": "Celkon229 devices",
+    "listUrl": "celkon-phones-75.php",
+    "id": 75
+  },
+  "chea": {
+    "name": "Chea12 devices",
+    "listUrl": "chea-phones-24.php",
+    "id": 24
+  },
+  "coolpad": {
+    "name": "Coolpad",
+    "listUrl": "coolpad-phones-105.php",
+    "id": 105
+  },
+  "cubot": {
+    "name": "Cubot",
+    "listUrl": "cubot-phones-130.php",
+    "id": 130
+  },
+  "dell": {
+    "name": "Dell20 devices",
+    "listUrl": "dell-phones-61.php",
+    "id": 61
+  },
+  "doogee": {
+    "name": "Doogee",
+    "listUrl": "doogee-phones-129.php",
+    "id": 129
+  },
+  "emporia": {
+    "name": "Emporia15 devices",
+    "listUrl": "emporia-phones-93.php",
+    "id": 93
+  },
+  "energizer": {
+    "name": "Energizer78 devices",
+    "listUrl": "energizer-phones-106.php",
+    "id": 106
+  },
+  "ericsson": {
+    "name": "Ericsson40 devices",
+    "listUrl": "ericsson-phones-2.php",
+    "id": 2
+  },
+  "eten": {
+    "name": "Eten22 devices",
+    "listUrl": "eten-phones-40.php",
+    "id": 40
+  },
+  "fairphone": {
+    "name": "Fairphone6 devices",
+    "listUrl": "fairphone-phones-127.php",
+    "id": 127
+  },
+  "gigabyte": {
+    "name": "Gigabyte63 devices",
+    "listUrl": "gigabyte-phones-47.php",
+    "id": 47
+  },
+  "gionee": {
+    "name": "Gionee95 devices",
+    "listUrl": "gionee-phones-92.php",
+    "id": 92
+  },
+  "google": {
+    "name": "Google",
+    "listUrl": "google-phones-107.php",
+    "id": 107
+  },
+  "haier": {
+    "name": "Haier59 devices",
+    "listUrl": "haier-phones-33.php",
+    "id": 33
+  },
+  "hmd": {
+    "name": "HMD39 devices",
+    "listUrl": "hmd-phones-133.php",
+    "id": 133
+  },
+  "honor": {
+    "name": "Honor",
+    "listUrl": "honor-phones-121.php",
+    "id": 121
+  },
+  "hp": {
+    "name": "HP41 devices",
+    "listUrl": "hp-phones-41.php",
+    "id": 41
+  },
+  "htc": {
+    "name": "HTC",
+    "listUrl": "htc-phones-45.php",
+    "id": 45
+  },
+  "huawei": {
+    "name": "Huawei",
+    "listUrl": "huawei-phones-58.php",
+    "id": 58
+  },
+  "icemobile": {
+    "name": "Icemobile61 devices",
+    "listUrl": "icemobile-phones-69.php",
+    "id": 69
+  },
+  "infinix": {
+    "name": "Infinix",
+    "listUrl": "infinix-phones-119.php",
+    "id": 119
+  },
+  "innostream": {
+    "name": "Innostream18 devices",
+    "listUrl": "innostream-phones-29.php",
+    "id": 29
+  },
+  "inq": {
+    "name": "iNQ5 devices",
+    "listUrl": "inq-phones-60.php",
+    "id": 60
+  },
+  "intex": {
+    "name": "Intex15 devices",
+    "listUrl": "intex-phones-102.php",
+    "id": 102
+  },
+  "itel": {
+    "name": "Itel",
+    "listUrl": "itel-phones-131.php",
+    "id": 131
+  },
+  "jolla": {
+    "name": "Jolla5 devices",
+    "listUrl": "jolla-phones-84.php",
+    "id": 84
+  },
+  "karbonn": {
+    "name": "Karbonn60 devices",
+    "listUrl": "karbonn-phones-83.php",
+    "id": 83
+  },
+  "kyocera": {
+    "name": "Kyocera28 devices",
+    "listUrl": "kyocera-phones-17.php",
+    "id": 17
+  },
+  "lava": {
+    "name": "Lava184 devices",
+    "listUrl": "lava-phones-94.php",
+    "id": 94
+  },
+  "leeco": {
+    "name": "LeEco9 devices",
+    "listUrl": "leeco-phones-109.php",
+    "id": 109
+  },
+  "lenovo": {
+    "name": "Lenovo",
+    "listUrl": "lenovo-phones-73.php",
+    "id": 73
+  },
+  "lg": {
+    "name": "LG",
+    "listUrl": "lg-phones-20.php",
+    "id": 20
+  },
+  "maxon": {
+    "name": "Maxon31 devices",
+    "listUrl": "maxon-phones-14.php",
+    "id": 14
+  },
+  "maxwest": {
+    "name": "Maxwest41 devices",
+    "listUrl": "maxwest-phones-87.php",
+    "id": 87
+  },
+  "meizu": {
+    "name": "Meizu",
+    "listUrl": "meizu-phones-74.php",
+    "id": 74
+  },
+  "micromax": {
+    "name": "Micromax",
+    "listUrl": "micromax-phones-66.php",
+    "id": 66
+  },
+  "microsoft": {
+    "name": "Microsoft32 devices",
+    "listUrl": "microsoft-phones-64.php",
+    "id": 64
+  },
+  "mitac": {
+    "name": "Mitac12 devices",
+    "listUrl": "mitac-phones-25.php",
+    "id": 25
+  },
+  "mitsubishi": {
+    "name": "Mitsubishi25 devices",
+    "listUrl": "mitsubishi-phones-8.php",
+    "id": 8
+  },
+  "modu": {
+    "name": "Modu8 devices",
+    "listUrl": "modu-phones-63.php",
+    "id": 63
+  },
+  "motorola": {
+    "name": "Motorola",
+    "listUrl": "motorola-phones-4.php",
+    "id": 4
+  },
+  "mwg": {
+    "name": "MWg5 devices",
+    "listUrl": "mwg-phones-56.php",
+    "id": 56
+  },
+  "nec": {
+    "name": "NEC73 devices",
+    "listUrl": "nec-phones-12.php",
+    "id": 12
+  },
+  "neonode": {
+    "name": "Neonode3 devices",
+    "listUrl": "neonode-phones-22.php",
+    "id": 22
+  },
+  "niu": {
+    "name": "NIU30 devices",
+    "listUrl": "niu-phones-79.php",
+    "id": 79
+  },
+  "nokia": {
+    "name": "Nokia",
+    "listUrl": "nokia-phones-1.php",
+    "id": 1
+  },
+  "nothing": {
+    "name": "Nothing",
+    "listUrl": "nothing-phones-128.php",
+    "id": 128
+  },
+  "nvidia": {
+    "name": "Nvidia3 devices",
+    "listUrl": "nvidia-phones-97.php",
+    "id": 97
+  },
+  "o2": {
+    "name": "O245 devices",
+    "listUrl": "o2-phones-30.php",
+    "id": 30
+  },
+  "oneplus": {
+    "name": "OnePlus",
+    "listUrl": "oneplus-phones-95.php",
+    "id": 95
+  },
+  "oppo": {
+    "name": "Oppo",
+    "listUrl": "oppo-phones-82.php",
+    "id": 82
+  },
+  "orange": {
+    "name": "Orange19 devices",
+    "listUrl": "orange-phones-71.php",
+    "id": 71
+  },
+  "oscal": {
+    "name": "Oscal",
+    "listUrl": "oscal-phones-134.php",
+    "id": 134
+  },
+  "oukitel": {
+    "name": "Oukitel",
+    "listUrl": "oukitel-phones-132.php",
+    "id": 132
+  },
+  "palm": {
+    "name": "Palm17 devices",
+    "listUrl": "palm-phones-27.php",
+    "id": 27
+  },
+  "panasonic": {
+    "name": "Panasonic123 devices",
+    "listUrl": "panasonic-phones-6.php",
+    "id": 6
+  },
+  "pantech": {
+    "name": "Pantech72 devices",
+    "listUrl": "pantech-phones-32.php",
+    "id": 32
+  },
+  "parla": {
+    "name": "Parla10 devices",
+    "listUrl": "parla-phones-81.php",
+    "id": 81
+  },
+  "philips": {
+    "name": "Philips233 devices",
+    "listUrl": "philips-phones-11.php",
+    "id": 11
+  },
+  "plum": {
+    "name": "Plum113 devices",
+    "listUrl": "plum-phones-72.php",
+    "id": 72
+  },
+  "posh": {
+    "name": "Posh30 devices",
+    "listUrl": "posh-phones-101.php",
+    "id": 101
+  },
+  "prestigio": {
+    "name": "Prestigio56 devices",
+    "listUrl": "prestigio-phones-86.php",
+    "id": 86
+  },
+  "qmobile": {
+    "name": "QMobile90 devices",
+    "listUrl": "qmobile-phones-103.php",
+    "id": 103
+  },
+  "qtek": {
+    "name": "Qtek21 devices",
+    "listUrl": "qtek-phones-38.php",
+    "id": 38
+  },
+  "razer": {
+    "name": "Razer2 devices",
+    "listUrl": "razer-phones-117.php",
+    "id": 117
+  },
+  "realme": {
+    "name": "Realme",
+    "listUrl": "realme-phones-118.php",
+    "id": 118
+  },
+  "rugone": {
+    "name": "RugOne",
+    "listUrl": "rugone-phones-136.php",
+    "id": 136
+  },
+  "sagem": {
+    "name": "Sagem120 devices",
+    "listUrl": "sagem-phones-13.php",
+    "id": 13
+  },
+  "samsung": {
+    "name": "Samsung",
+    "listUrl": "samsung-phones-9.php",
+    "id": 9
+  },
+  "sendo": {
+    "name": "Sendo19 devices",
+    "listUrl": "sendo-phones-18.php",
+    "id": 18
+  },
+  "sewon": {
+    "name": "Sewon25 devices",
+    "listUrl": "sewon-phones-26.php",
+    "id": 26
+  },
+  "sharp": {
+    "name": "Sharp",
+    "listUrl": "sharp-phones-23.php",
+    "id": 23
+  },
+  "siemens": {
+    "name": "Siemens94 devices",
+    "listUrl": "siemens-phones-3.php",
+    "id": 3
+  },
+  "sonim": {
+    "name": "Sonim24 devices",
+    "listUrl": "sonim-phones-54.php",
+    "id": 54
+  },
+  "sony": {
+    "name": "Sony",
+    "listUrl": "sony-phones-7.php",
+    "id": 7
+  },
+  "spice": {
+    "name": "Spice120 devices",
+    "listUrl": "spice-phones-68.php",
+    "id": 68
+  },
+  "tcl": {
+    "name": "TCL",
+    "listUrl": "tcl-phones-123.php",
+    "id": 123
+  },
+  "tecno": {
+    "name": "Tecno",
+    "listUrl": "tecno-phones-120.php",
+    "id": 120
+  },
+  "telit": {
+    "name": "Telit30 devices",
+    "listUrl": "telit-phones-16.php",
+    "id": 16
+  },
+  "thuraya": {
+    "name": "Thuraya2 devices",
+    "listUrl": "thuraya-phones-49.php",
+    "id": 49
+  },
+  "toshiba": {
+    "name": "Toshiba35 devices",
+    "listUrl": "toshiba-phones-44.php",
+    "id": 44
+  },
+  "ulefone": {
+    "name": "Ulefone151 devices",
+    "listUrl": "ulefone-phones-124.php",
+    "id": 124
+  },
+  "umidigi": {
+    "name": "Umidigi",
+    "listUrl": "umidigi-phones-135.php",
+    "id": 135
+  },
+  "unnecto": {
+    "name": "Unnecto30 devices",
+    "listUrl": "unnecto-phones-91.php",
+    "id": 91
+  },
+  "vertu": {
+    "name": "Vertu17 devices",
+    "listUrl": "vertu-phones-39.php",
+    "id": 39
+  },
+  "verykool": {
+    "name": "verykool139 devices",
+    "listUrl": "verykool-phones-70.php",
+    "id": 70
+  },
+  "vivo": {
+    "name": "vivo",
+    "listUrl": "vivo-phones-98.php",
+    "id": 98
+  },
+  "vodafone": {
+    "name": "Vodafone87 devices",
+    "listUrl": "vodafone-phones-53.php",
+    "id": 53
+  },
+  "wiko": {
+    "name": "Wiko103 devices",
+    "listUrl": "wiko-phones-96.php",
+    "id": 96
+  },
+  "wnd": {
+    "name": "WND5 devices",
+    "listUrl": "wnd-phones-51.php",
+    "id": 51
+  },
+  "xcute": {
+    "name": "XCute4 devices",
+    "listUrl": "xcute-phones-43.php",
+    "id": 43
+  },
+  "xiaomi": {
+    "name": "Xiaomi",
+    "listUrl": "xiaomi-phones-80.php",
+    "id": 80
+  },
+  "xolo": {
+    "name": "XOLO81 devices",
+    "listUrl": "xolo-phones-85.php",
+    "id": 85
+  },
+  "yezz": {
+    "name": "Yezz113 devices",
+    "listUrl": "yezz-phones-78.php",
+    "id": 78
+  },
+  "yota": {
+    "name": "Yota3 devices",
+    "listUrl": "yota-phones-99.php",
+    "id": 99
+  },
+  "yu": {
+    "name": "YU13 devices",
+    "listUrl": "yu-phones-100.php",
+    "id": 100
+  },
+  "zte": {
+    "name": "ZTE",
+    "listUrl": "zte-phones-62.php",
+    "id": 62
+  }
+}

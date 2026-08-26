@@ -1,0 +1,198 @@
+📦 Using cached brand list
+============================================================
+📱 GSMArena Scraper — 116 brands
+   Existing: 0 devices
+   Rate limit: 15 req/min, 4.0s delay
+   Batch: 40 phones, 180s break
+   Resume: yes
+============================================================
+
+🔍 Connectivity test...
+  ✅ GSMArena accessible!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 [1/116] ACER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📄 Page 1: https://www.gsmarena.com/acer-phones-59.php
+  📄 Page 2: https://www.gsmarena.com/acer-phones-f-59-0-p2.php
+  📄 Page 3: https://www.gsmarena.com/acer-phones-f-59-0-p3.php
+  📄 Page 4: https://www.gsmarena.com/acer-phones-f-59-0-p4.php
+  📋 Found 115 phones
+  🔧 [1/115] Iconia Duo S14 ✅ Mediatek Dimensity 8300 (4 nm)
+  🔧 [2/115] Iconia Duo S12 ✅ Mediatek Dimensity 7400 (4 nm)
+  🔧 [3/115] Iconia Duo D12 ✅ Mediatek Helio G99 (6 nm)
+  🔧 [4/115] Iconia iM11-22M5G ✅ Mediatek Dimensity 7050 (6 nm)
+  🔧 [5/115] Iconia V12 ✅ Mediatek Helio G99 (6 nm)
+  🔧 [6/115] Iconia V11 ✅ Mediatek Helio G99 (6 nm)
+  🔧 [7/115] Acerone Liquid S262F5 ✅ Mediatek Dimensity 6400 (6 nm)
+  🔧 [8/115] Iconia A14 ✅ Allwinner A733 (12 nm)
+  🔧 [9/115] Iconia A16 ✅ Allwinner A733 (12 nm)
+  🔧 [10/115] Iconia X14 ✅ Allwinner A733 (12 nm)
+  🔧 [11/115] Iconia X12 ✅ Mediatek Helio G99 (6 nm)
+  🔧 [12/115] Super ZX Pro ✅ Mediatek Dimensity 7400 (4 nm)
+  🔧 [13/115] Super ZX ✅ Mediatek Dimensity 6300 (6 nm)
+  🔧 [14/115] Acerone Liquid S272E4 ✅ Mediatek MT6765X (12 nm)
+  🔧 [15/115] Acerone Liquid S162E4 ✅ Mediatek MT6765 (12 nm)
+  🔧 [16/115] Chromebook Tab 10 ✅ Rockchip RK3399
+  🔧 [17/115] Iconia Talk S ✅ Mediatek MT8735
+  🔧 [18/115] Liquid Z6 Plus ✅ Mediatek MT6753 (28 nm)
+  🔧 [19/115] Liquid Z6 ✅ Mediatek MT6737 (28 nm)
+  🔧 [20/115] Iconia Tab 10 A3-A40 ✅ Mediatek MT8163A
+  🔧 [21/115] Liquid X2 ✅ Mediatek MT6753 (28 nm)
+  🔧 [22/115] Liquid Jade 2 ✅ Qualcomm MSM8992 Snapdragon 80
+  🔧 [23/115] Liquid Zest Plus ✅ Mediatek MT6735 (28 nm)
+  🔧 [24/115] Liquid Zest ✅ Mediatek MT6580 - Z525
+Mediate
+  🔧 [25/115] Predator 8 ✅ Intel Atom x7-Z8700
+  🔧 [26/115] Liquid Jade Primo ✅ Qualcomm MSM8992 Snapdragon 80
+  🔧 [27/115] Liquid Z330 ✅ Qualcomm MSM8909 Snapdragon 21
+  🔧 [28/115] Liquid Z320 ✅ Qualcomm MSM8909 Snapdragon 21
+  🔧 [29/115] Liquid Z630S ✅ Mediatek MT6753 (28 nm)
+  🔧 [30/115] Liquid Z630 ✅ Mediatek MT6735 (28 nm)
+  🔧 [31/115] Liquid Z530S ✅ Mediatek MT6753 (28 nm)
+  🔧 [32/115] Liquid Z530 ✅ Mediatek MT6735 (28 nm)
+  🔧 [33/115] Liquid M330 ✅ Qualcomm MSM8909 Snapdragon 21
+  🔧 [34/115] Liquid M320 ✅ Qualcomm MSM8909 Snapdragon 21
+  🔧 [35/115] Iconia Tab 10 A3-A30 ✅ Intel Atom Z3735F
+  🔧 [36/115] Iconia One 8 B1-820 ✅ Intel Atom Z3735G
+  🔧 [37/115] Iconia Tab A3-A20 ✅ Mediatek MT8127 (28 nm)
+  🔧 [38/115] Iconia Tab A3-A20FHD ✅ Mediatek MT8127 (28 nm)
+  🔧 [39/115] Liquid Jade Z ✅ Mediatek MT6732 (28 nm)
+  🔧 [40/115] Liquid Z520 ✅ Mediatek MT6582M (28 nm)
+  ⏸️  Batch break (40/115 done), waiting 180s...
+  🔧 [41/115] Liquid Z220 ✅ Qualcomm Snapdragon 200 (28 nm
+  🔧 [42/115] Liquid M220 ✅ Qualcomm MSM8210 Snapdragon 20
+  🔧 [43/115] Liquid Z410 ✅ Mediatek MT6732M (28 nm)
+  🔧 [44/115] Liquid Jade S ✅ Mediatek MT6752M
+  🔧 [45/115] Liquid Z500 ✅ Mediatek MT6582 (28 nm)
+  🔧 [46/115] Liquid X1 ✅ Mediatek MT6592 (28 nm)
+  🔧 [47/115] Liquid Jade ✅ Mediatek MT6582 (28 nm)
+  🔧 [48/115] Liquid E700 ✅ Mediatek MT6582 (28 nm)
+  🔧 [49/115] Liquid E600 ✅ Qualcomm MSM8926 Snapdragon 40
+  🔧 [50/115] Liquid Z200 ✅ Mediatek MT6572M (28 nm)
+  🔧 [51/115] Iconia Tab 8 A1-840FHD ✅ Intel Atom Z3745
+  🔧 [52/115] Iconia Tab 7 A1-713 ✅ 
+  🔧 [53/115] Iconia Tab 7 A1-713HD ✅ 
+  🔧 [54/115] Iconia One 7 B1-730 ✅ Intel Atom Z2560
+  🔧 [55/115] Liquid E3 Duo Plus ✅ Mediatek MT6589 (28 nm)
+  🔧 [56/115] Liquid E3 ✅ Mediatek MT6589 (28 nm)
+  🔧 [57/115] Liquid Z4 ✅ Mediatek MT6572 (28 nm)
+  🔧 [58/115] Iconia B1-721 ✅ Mediatek MT8312 (28 nm)
+  🔧 [59/115] Iconia B1-720 ✅ Mediatek MT8111
+  🔧 [60/115] Iconia A1-830 ✅ Intel Atom Z2560
+  🔧 [61/115] Liquid Z5 ✅ Mediatek MT6572 (28 nm)
+  🔧 [62/115] Liquid S2 ✅ Qualcomm MSM8974 Snapdragon 80
+  🔧 [63/115] Liquid Z3 ✅ Mediatek MT6572 (28 nm)
+  🔧 [64/115] Liquid S1 ✅ Mediatek MT6589 (28 nm)
+  🔧 [65/115] Iconia Tab A3 ✅ Mediatek MT8125T - Wi-Fi
+Media
+  🔧 [66/115] Iconia Tab A1-811 ✅ Mediatek MT8389W
+  🔧 [67/115] Iconia Tab A1-810 ✅ Mediatek MT8125 (28 nm)
+  🔧 [68/115] Liquid E2 ✅ Mediatek MT6589 (28 nm)
+  🔧 [69/115] Liquid Z2 ✅ Qualcomm MSM7227A Snapdragon S
+  🔧 [70/115] Liquid C1 ✅ Intel Atom Z2420
+  🔧 [71/115] Liquid E1 ✅ Mediatek MT6577 (40 nm)
+  🔧 [72/115] Iconia Tab B1-710 ✅ Mediatek MT8317T
+  🔧 [73/115] Iconia Tab B1-A71 ✅ Mediatek MT8317
+  🔧 [74/115] Iconia Tab A110 ✅ Nvidia Tegra 3 T30L
+  🔧 [75/115] Liquid Z110 ✅ Mediatek MT6575 (40 nm)
+  🔧 [76/115] Liquid Gallant E350 ✅ Mediatek MT6575 (40 nm)
+  🔧 [77/115] Liquid Gallant Duo ✅ Mediatek MT6575 (40 nm)
+  🔧 [78/115] Liquid Glow E330 ✅ Qualcomm MSM7227A Snapdragon S
+  🔧 [79/115] CloudMobile S500 ✅ Qualcomm MSM8260A Snapdragon S
+  🔧 [80/115] Iconia Tab A210 ✅ Nvidia Tegra 3
+  ⏸️  Batch break (80/115 done), waiting 180s...
+  🔧 [81/115] Iconia Tab A200 ✅ Nvidia Tegra 2 T20
+  🔧 [82/115] Iconia Tab A701 ✅ Nvidia Tegra 3
+  🔧 [83/115] Iconia Tab A700 ✅ Nvidia Tegra 3
+  🔧 [84/115] Iconia Tab A511 ✅ Nvidia Tegra 3
+  🔧 [85/115] Iconia Tab A510 ✅ Nvidia Tegra 3
+  🔧 [86/115] Allegro ✅ Qualcomm MSM8255 Snapdragon S2
+  🔧 [87/115] Liquid Express E320 ✅ Qualcomm MSM7227T-1 Snapdragon
+  🔧 [88/115] Iconia Tab A501 ✅ Nvidia Tegra 2 T20
+  🔧 [89/115] Iconia Tab A500 ✅ Nvidia Tegra 2 T20
+  🔧 [90/115] Iconia Smart ✅ Qualcomm MSM8255-1 Snapdragon 
+  🔧 [91/115] Iconia Tab A101 ✅ Nvidia Tegra 2 T20
+  🔧 [92/115] Iconia Tab A100 ✅ Nvidia Tegra 2 T20
+  🔧 [93/115] Liquid mini E310 ✅ Qualcomm MSM7227-1 Snapdragon 
+  🔧 [94/115] beTouch E210 ✅ Qualcomm MSM7227 Snapdragon S1
+  🔧 [95/115] beTouch E140 ✅ Qualcomm MSM7227 Snapdragon S1
+  🔧 [96/115] beTouch T500 ✅ 
+  🔧 [97/115] Liquid mt ✅ Qualcomm MSM7230
+  🔧 [98/115] beTouch E130 ✅ ST Ericsson PNX6715
+  🔧 [99/115] beTouch E120 ✅ 
+  🔧 [100/115] Stream ✅ Qualcomm QSD8250 Snapdragon S1
+  🔧 [101/115] Liquid E ✅ Qualcomm QSD8250 Snapdragon S1
+  🔧 [102/115] neoTouch P400 ✅ Qualcomm MSM7227 Snapdragon S1
+  🔧 [103/115] beTouch E400 ✅ Qualcomm MSM7227 Snapdragon S1
+  🔧 [104/115] neoTouch P300 ✅ Qualcomm MSM7225 Snapdragon S1
+  🔧 [105/115] beTouch E110 ✅ 
+  🔧 [106/115] Liquid ✅ Qualcomm QSD8250 Snapdragon S1
+  🔧 [107/115] neoTouch ✅ Qualcomm QSD8250 Snapdragon S1
+  🔧 [108/115] beTouch E200 ✅ Qualcomm MSM7225 Snapdragon S1
+  🔧 [109/115] beTouch E100 ✅ Qualcomm MSM7225 Snapdragon S1
+  🔧 [110/115] beTouch E101 ✅ Qualcomm MSM7225 Snapdragon S1
+  🔧 [111/115] DX650 ✅ 
+  🔧 [112/115] M900 ✅ 
+  🔧 [113/115] F900 ✅ 
+  🔧 [114/115] X960 ✅ 
+  🔧 [115/115] DX900 ✅ 
+  ✅ acer: 115 new phones scraped (0 failed) [15m11s]
+  💾 Saved (115 total)
+  ⏸️  Brand break: 60s...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 [2/116] ALCATEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📄 Page 1: https://www.gsmarena.com/alcatel-phones-5.php
+  📄 Page 2: https://www.gsmarena.com/alcatel-phones-f-5-0-p2.php
+  📄 Page 3: https://www.gsmarena.com/alcatel-phones-f-5-0-p3.php
+  📄 Page 4: https://www.gsmarena.com/alcatel-phones-f-5-0-p4.php
+  📄 Page 5: https://www.gsmarena.com/alcatel-phones-f-5-0-p5.php
+  📄 Page 6: https://www.gsmarena.com/alcatel-phones-f-5-0-p6.php
+  📄 Page 7: https://www.gsmarena.com/alcatel-phones-f-5-0-p7.php
+  📄 Page 8: https://www.gsmarena.com/alcatel-phones-f-5-0-p8.php
+  📄 Page 9: https://www.gsmarena.com/alcatel-phones-f-5-0-p9.php
+  📄 Page 10: https://www.gsmarena.com/alcatel-phones-f-5-0-p10.php
+  📋 Found 344 phones
+  🔧 [1/344] A62 ✅ Unisoc T7200 (12 nm)
+  🔧 [2/344] V3 Ultra ✅ Mediatek Dimensity 6300 (6 nm)
+  🔧 [3/344] V3 Pro ✅ Mediatek Dimensity 6300 (6 nm)
+  🔧 [4/344] V3 Classic ✅ Mediatek Dimensity 6300 (6 nm)
+  🔧 [5/344] Go Flip 4 ✅ QM215 Snapdragon 215 (28 nm)
+  🔧 [6/344] Go Flip 3 ✅ Qualcomm MSM8909 Snapdragon 21
+    ⏳ Error: HTTPSConnectionPool(host='www.gsmarena.com', port=443): Max retries exceeded with url: /alcatel_go_flip_v-10501.php (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x72742f1bf080>: Failed to resolve 'www.gsmarena.com' ([Errno -2] Name or service not known)")), retry 1/3
+    ⏳ Error: HTTPSConnectionPool(host='www.gsmarena.com', port=443): Max retries exceeded with url: /alcatel_go_flip_v-10501.php (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x72742c0772c0>: Failed to resolve 'www.gsmarena.com' ([Errno -2] Name or service not known)")), retry 2/3
+    ⏳ Error: HTTPSConnectionPool(host='www.gsmarena.com', port=443): Max retries exceeded with url: /alcatel_go_flip_v-10501.php (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x72742be873b0>: Failed to resolve 'www.gsmarena.com' ([Errno -2] Name or service not known)")), retry 3/3
+  🔧 [7/344] Go Flip V ❌ failed
+    ⏳ Error: HTTPSConnectionPool(host='www.gsmarena.com', port=443): Max retries exceeded with url: /alcatel_3t10_2020-12041.php (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x72742be875c0>: Failed to resolve 'www.gsmarena.com' ([Errno -2] Name or service not known)")), retry 1/3
+  🔧 [8/344] 3T10 2020 ✅ MediaTek MT8766B
+  🔧 [9/344] 3T 8 ✅ Mediatek MT8765
+  🔧 [10/344] Smart Tab 7 ✅ Mediatek MT8167D
+  🔧 [11/344] 3T 10 ✅ Mediatek MT8765WB
+  🔧 [12/344] Tetra ✅ Mediatek MT6739WM (28 nm)
+  🔧 [13/344] 3088 ✅ Spreadtrum SC9820E
+  🔧 [14/344] 1T 10 ✅ Mediatek MT8321 (28 nm)
+  🔧 [15/344] 1T 7 ✅ Mediatek MT8321A/D (28 nm)
+  🔧 [16/344] Idol 5s ✅ Mediatek MT6757 Helio P20 (16 
+  🔧 [17/344] Idol 5 ✅ Mediatek MT6753 (28 nm)
+  🔧 [18/344] A7 XL ✅ Mediatek MT6750S (28 nm)
+  🔧 [19/344] U5 HD ✅ Mediatek MT6737 (28 nm)
+  🔧 [20/344] Pulsemix ✅ Mediatek MT6738
+  🔧 [21/344] A5 LED ✅ Mediatek MT6753 (28 nm)
+  🔧 [22/344] A3 XL ✅ Mediatek MT8735B
+  🔧 [23/344] Shine Lite ✅ Mediatek MT6737 (28 nm)
+  🔧 [24/344] Pixi 4 Plus Power ✅ Mediatek MT6580 (28 nm)
+  🔧 [25/344] Fierce 4 ✅ Qualcomm MSM8909 Snapdragon 21
+  🔧 [26/344] Flash Plus 2 ✅ Mediatek MT6755 Helio P10 (28 
+  🔧 [27/344] Pop 7 LTE ✅ 
+  🔧 [28/344] Pop 4S ✅ Mediatek MT6755M (28 nm)
+  🔧 [29/344] Pop 4 ✅ Qualcomm MSM8909 Snapdragon 21
+  🔧 [30/344] Idol 4s Windows ✅ Qualcomm MSM8996 Snapdragon 82
+  🔧 [31/344] Idol 4s ✅ Qualcomm MSM8976 Snapdragon 65
+  🔧 [32/344] Idol 4 ✅ Qualcomm MSM8952 Snapdragon 61
+  🔧 [33/344] CareTime ✅ MT7198D
+  🔧 [34/344] Fierce XL ✅ Qualcomm MSM8909 Snapdragon 21
+  🔧 [35/344] Watch ✅ STM 429
+  🔧 [36/344] GO Watch ✅ STM 429
+    ⏳ 429! Waiting 36000s...
